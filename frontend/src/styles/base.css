@@ -10,8 +10,8 @@ body {
 
 body {
   font-family: var(--font-body);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 15.5px;
+  line-height: 1.55;
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -22,7 +22,8 @@ h2,
 h3 {
   font-family: var(--font-display);
   margin: 0;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.005em;
 }
 
 p {
@@ -69,7 +70,7 @@ button:focus-visible,
 a:focus-visible {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(14, 94, 99, 0.18);
+  box-shadow: var(--focus-ring);
 }
 
 a:focus-visible,
@@ -133,6 +134,15 @@ button {
 .btn-ghost:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.btn-on-dark {
+  background: #fff;
+  color: var(--primary-dark);
+}
+
+.btn-on-dark:hover {
+  background: #eef4fc;
 }
 
 .btn-danger-ghost {

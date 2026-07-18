@@ -1,18 +1,27 @@
 :root {
-  /* Paleta — petrol akademik me theks ari */
-  --ink: #17252e;
-  --ink-soft: #48595f;
-  --muted: #71838a;
+  /* Paleta — blu akademik me theks ari */
+  --ink: #15202e;
+  --ink-soft: #45566b;
+  --muted: #6d8098;
 
-  --bg: #f1f5f4;
+  --bg: #f0f4f9;
   --surface: #ffffff;
-  --line: #e2e9e7;
-  --line-strong: #ccd8d5;
+  --line: #e2e8f1;
+  --line-strong: #c9d5e4;
 
-  --primary: #0e5e63;
-  --primary-dark: #0a464a;
-  --primary-soft: #e1efee;
-  --gold: #c9a227;
+  --primary: #1257a6;
+  --primary-dark: #0b3f7d;
+  --primary-deep: #06294f;
+  --primary-light: #3b8ae0;
+  --primary-soft: #e6effa;
+  --primary-border: rgba(18, 87, 166, 0.18);
+  --focus-ring: 0 0 0 3px rgba(18, 87, 166, 0.22);
+
+  --gold: #d8a72c;
+
+  /* Ngjyrat e stemës (lexohen nga IspeLogo) */
+  --crest-top: #3b8ae0;
+  --crest-bottom: #0b3f7d;
 
   /* Statuset e pagesave */
   --green: #1e7f58;
@@ -21,18 +30,19 @@
   --amber-bg: #fbf0d7;
   --red: #b3382e;
   --red-bg: #fbe5e2;
-  --neutral: #5a6b70;
-  --neutral-bg: #ecf1f0;
+  --neutral: #56687f;
+  --neutral-bg: #ecf1f7;
 
-  /* Tipografia */
-  --font-display: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
-  --font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+  /* Tipografia — Lato: humaniste, e ngrohtë, e ngjashme me Calibri.
+     Calibri renderohet vendas në Windows nëse Lato nuk ngarkohet. */
+  --font-display: 'Lato', Calibri, 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Lato', Calibri, 'Segoe UI', system-ui, sans-serif;
 
   /* Forma */
   --radius: 12px;
   --radius-small: 8px;
-  --shadow: 0 1px 2px rgba(23, 37, 46, 0.05), 0 4px 16px rgba(23, 37, 46, 0.06);
-  --shadow-pop: 0 8px 32px rgba(23, 37, 46, 0.18);
+  --shadow: 0 1px 2px rgba(21, 32, 46, 0.05), 0 4px 16px rgba(21, 32, 46, 0.06);
+  --shadow-pop: 0 8px 32px rgba(21, 32, 46, 0.18);
 
   --sidebar-width: 248px;
 }

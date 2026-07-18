@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchDashboard } from '../api/dashboard';
 import { errorMessage } from '../api/client';
-import PageHeader from '../components/ui/PageHeader.jsx';
+import HomeHero from '../components/dashboard/HomeHero.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
@@ -26,11 +26,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <PageHeader title="Paneli" subtitle="Pasqyra e përgjithshme e shkollës ISPE">
-        <Link to="/studentet/regjistro" className="btn btn-primary">
-          + Regjistro student
-        </Link>
-      </PageHeader>
+      <HomeHero studentCount={totals.students} />
 
       <div className="stat-grid">
         <StatCard label="Studentë gjithsej" value={totals.students} />

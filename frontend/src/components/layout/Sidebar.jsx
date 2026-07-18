@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom';
+import IspeLogo from '../ui/IspeLogo.jsx';
+import InvasoftLogo from '../ui/InvasoftLogo.jsx';
 
 const NAV = [
   { to: '/', label: 'Paneli', icon: PanelIcon, end: true },
@@ -11,7 +13,9 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <span className="brand-mark">ISPE</span>
+        <span className="brand-plate">
+          <IspeLogo height={58} />
+        </span>
         <span className="brand-sub">Shkolla e Mesme e Lartë</span>
       </div>
 
@@ -29,7 +33,21 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="sidebar-foot">Viti shkollor 2025/2026</div>
+      <div className="sidebar-foot">
+        <span className="foot-year">Viti shkollor 2025/2026</span>
+
+        <div className="foot-brand-wrap">
+          <a
+            className="foot-brand"
+            href="https://invasoft.io"
+            target="_blank"
+            rel="noreferrer"
+            title="invasoft.io"
+          >
+            <InvasoftLogo fluid />
+          </a>
+        </div>
+      </div>
     </aside>
   );
 }
@@ -59,18 +77,8 @@ function StudentsIcon() {
 function RegisterIcon() {
   return (
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-      <path
-        d="M4 3h9l3 3v11H4z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-      <path
-        d="M10 8v5M7.5 10.5h5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
+      <path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M10 8v5M7.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -78,14 +86,7 @@ function RegisterIcon() {
 function FinanceIcon() {
   return (
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-      <circle
-        cx="10"
-        cy="10"
-        r="7"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
+      <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path
         d="M12.4 7.8c-.5-.7-1.4-1.1-2.4-1.1-1.5 0-2.6.8-2.6 1.9 0 2.6 5.3 1.2 5.3 3.7 0 1.1-1.2 1.9-2.7 1.9-1.1 0-2-.4-2.5-1.2M10 5.4v9.2"
         fill="none"
