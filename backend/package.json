@@ -1,0 +1,22 @@
+{
+  "name": "ispe-backend",
+  "version": "1.0.0",
+  "description": "API per sistemin e menaxhimit te shkolles se mesme ISPE",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.11",
+    "docxtemplater": "^3.47.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mysql2": "^3.10.0",
+    "pizzip": "^3.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

@@ -1,0 +1,166 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--primary-dark) 0%, #08363a 100%);
+  color: #d6e6e5;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 24px 16px;
+}
+
+.sidebar-brand {
+  padding: 4px 12px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 20px;
+}
+
+.brand-mark {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: 0.14em;
+  color: #fff;
+  position: relative;
+}
+
+.brand-mark::after {
+  content: '';
+  display: block;
+  width: 42px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 2px;
+  margin-top: 6px;
+}
+
+.brand-sub {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(214, 230, 229, 0.75);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: var(--radius-small);
+  font-weight: 500;
+  font-size: 14.5px;
+  color: rgba(214, 230, 229, 0.85);
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.sidebar-foot {
+  font-size: 12px;
+  color: rgba(214, 230, 229, 0.55);
+  padding: 16px 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- Permbajtja kryesore ---------- */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 36px 64px;
+  max-width: 1280px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.page-subtitle {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Pergjegjshmeria ---------- */
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    padding: 16px;
+  }
+
+  .sidebar-brand {
+    padding-bottom: 14px;
+    margin-bottom: 12px;
+  }
+
+  .brand-mark {
+    font-size: 24px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .sidebar-foot {
+    display: none;
+  }
+
+  .app-main {
+    padding: 20px 16px 48px;
+  }
+}

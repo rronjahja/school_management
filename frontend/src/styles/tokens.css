@@ -1,0 +1,38 @@
+:root {
+  /* Paleta — petrol akademik me theks ari */
+  --ink: #17252e;
+  --ink-soft: #48595f;
+  --muted: #71838a;
+
+  --bg: #f1f5f4;
+  --surface: #ffffff;
+  --line: #e2e9e7;
+  --line-strong: #ccd8d5;
+
+  --primary: #0e5e63;
+  --primary-dark: #0a464a;
+  --primary-soft: #e1efee;
+  --gold: #c9a227;
+
+  /* Statuset e pagesave */
+  --green: #1e7f58;
+  --green-bg: #e2f3ea;
+  --amber: #96690e;
+  --amber-bg: #fbf0d7;
+  --red: #b3382e;
+  --red-bg: #fbe5e2;
+  --neutral: #5a6b70;
+  --neutral-bg: #ecf1f0;
+
+  /* Tipografia */
+  --font-display: 'Bricolage Grotesque', 'Figtree', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, sans-serif;
+
+  /* Forma */
+  --radius: 12px;
+  --radius-small: 8px;
+  --shadow: 0 1px 2px rgba(23, 37, 46, 0.05), 0 4px 16px rgba(23, 37, 46, 0.06);
+  --shadow-pop: 0 8px 32px rgba(23, 37, 46, 0.18);
+
+  --sidebar-width: 248px;
+}

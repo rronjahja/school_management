@@ -1,0 +1,145 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { fetchDashboard } from '../api/dashboard';
+import { errorMessage } from '../api/client';
+import PageHeader from '../components/ui/PageHeader.jsx';
+import StatCard from '../components/ui/StatCard.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
+import CategoryChip from '../components/ui/CategoryChip.jsx';
+import Loader from '../components/ui/Loader.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import { money, date, initials } from '../utils/format';
+
+export default function Dashboard() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchDashboard().then(setData).catch((err) => setError(errorMessage(err)));
+  }, []);
+
+  if (error) return <EmptyState title="Gabim" hint={error} />;
+  if (!data) return <Loader />;
+
+  const { totals, categories, alerts, recent } = data;
+  const maxStudents = Math.max(...categories.map((c) => c.students), 1);
+
+  return (
+    <>
+      <PageHeader title="Paneli" subtitle="Pasqyra e përgjithshme e shkollës ISPE">
+        <Link to="/studentet/regjistro" className="btn btn-primary">
+          + Regjistro student
+        </Link>
+      </PageHeader>
+
+      <div className="stat-grid">
+        <StatCard label="Studentë gjithsej" value={totals.students} />
+        <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" />
+        <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" />
+        <StatCard
+          label="Vonesa në pagesa"
+          value={totals.overdue}
+          hint={`${totals.dueSoon} afër afatit`}
+          tone={totals.overdue > 0 ? 'red' : 'default'}
+        />
+      </div>
+
+      <div className="dashboard-columns">
+        <section className="card">
+          <h2 className="card-title">Drejtimet</h2>
+          {categories.length === 0 ? (
+            <p className="muted">Ende nuk ka studentë të regjistruar.</p>
+          ) : (
+            <ul className="category-bars">
+              {categories.map((c) => (
+                <li key={c.category_id}>
+                  <div className="bar-head">
+                    <CategoryChip name={c.name} color={c.color} />
+                    <span className="bar-count">{c.students} studentë</span>
+                  </div>
+                  <div className="bar-track">
+                    <div
+                      className="bar-fill"
+                      style={{
+                        width: `${(c.students / maxStudents) * 100}%`,
+                        background: c.color,
+                      }}
+                    />
+                  </div>
+                  <div className="bar-meta">
+                    <span>Arkëtuar: {money(c.collected)}</span>
+                    <span>Borxh: {money(c.outstanding)}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="card">
+          <h2 className="card-title">Paralajmërime pagesash</h2>
+          {alerts.length === 0 ? (
+            <p className="muted">Asnjë vonesë — të gjitha pagesat janë në rregull. ✓</p>
+          ) : (
+            <ul className="alert-list">
+              {alerts.map((s) => (
+                <li key={s.id}>
+                  <Link to={`/studentet/${s.id}`} className="alert-item">
+                    <span className="avatar" style={{ '--avatar-color': s.category_color }}>
+                      {initials(s.first_name, s.last_name)}
+                    </span>
+                    <span className="alert-body">
+                      <strong>
+                        {s.first_name} {s.last_name}
+                      </strong>
+                      <span className="alert-meta">
+                        {s.finance.next_due
+                          ? `Kësti ${s.finance.next_due.seq} · ${date(s.finance.next_due.due_date)} · ${money(s.finance.next_due.amount)}`
+                          : `Borxhi: ${money(s.finance.balance)}`}
+                      </span>
+                    </span>
+                    <StatusBadge status={s.finance.status} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <section className="card">
+        <h2 className="card-title">Regjistrimet e fundit</h2>
+        {recent.length === 0 ? (
+          <EmptyState
+            title="Ende nuk ka studentë"
+            hint="Filloni duke regjistruar studentin e parë."
+            action={
+              <Link to="/studentet/regjistro" className="btn btn-primary">
+                Regjistro studentin e parë
+              </Link>
+            }
+          />
+        ) : (
+          <ul className="recent-list">
+            {recent.map((s) => (
+              <li key={s.id}>
+                <Link to={`/studentet/${s.id}`} className="recent-item">
+                  <span className="avatar" style={{ '--avatar-color': s.category_color }}>
+                    {initials(s.first_name, s.last_name)}
+                  </span>
+                  <span className="recent-body">
+                    <strong>
+                      {s.first_name} {s.last_name}
+                    </strong>
+                    <span className="muted">{s.category_name} · {s.generation}</span>
+                  </span>
+                  <StatusBadge status={s.finance.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}
