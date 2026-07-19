@@ -16,14 +16,16 @@ export default function PaymentList({ payments, onDelete }) {
               {p.note ? ` · ${p.note}` : ''}
             </span>
           </div>
-          <button
-            type="button"
-            className="btn btn-ghost btn-small"
-            onClick={() => onDelete(p)}
-            title="Fshi pagesën"
-          >
-            Fshi
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-small"
+              onClick={() => onDelete(p)}
+              title="Fshi pagesën"
+            >
+              Fshi
+            </button>
+          )}
         </li>
       ))}
     </ul>

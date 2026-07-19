@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { computeNetQuota, buildInstallments, round2 } = require('../utils/finance');
 const { httpError } = require('../middleware/errorHandler');
+const { isValidDate } = require('../utils/validateStudent');
 
 const FINAL_YEAR = 3; // viti i fundit i shkollimit
 const ROMAN = ['X', 'XI', 'XII'];
@@ -154,7 +155,14 @@ async function promote({
   }
 
   const startDate = year_start_date || `${String(to).slice(0, 4)}-09-01`;
+  if (!isValidDate(startDate)) {
+    throw httpError(400, 'Data e fillimit të vitit nuk është e vlefshme.');
+  }
+
   const increase = Number(quota_increase) || 0;
+  if (!Number.isFinite(increase) || increase < 0 || increase > 100) {
+    throw httpError(400, 'Rritja e kuotës duhet të jetë midis 0% dhe 100%.');
+  }
 
   const conn = await pool.getConnection();
   try {

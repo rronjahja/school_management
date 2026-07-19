@@ -67,7 +67,7 @@ export function buildReminder(student) {
 
   if (target.length && Number(f.balance) > 0) {
     lines.push('');
-    lines.push(`Borxhi i përgjithshëm deri më sot: ${money(f.balance)}.`);
+    lines.push(`Detyrimi total i mbetur sipas planit: ${money(f.balance)}.`);
   }
 
   if (SCHOOL.banks.length) {

@@ -4,6 +4,7 @@ import Field from '../ui/Field.jsx';
 import { fetchNextContractNumber } from '../../api/students';
 import FinancePreview from './FinancePreview.jsx';
 import { DISCOUNT_LABELS, PLAN_LABELS, YEAR_LABELS } from '../../utils/format';
+import { ACADEMIC_YEAR } from '../../../config/school';
 
 const EMPTY = {
   first_name: '',
@@ -25,7 +26,7 @@ const EMPTY = {
   guardian_email: '',
   category_id: '',
   contract_number: '',
-  generation: '2025/2026',
+  generation: ACADEMIC_YEAR,
   class_name: '',
   study_year: 1,
   enrollment_date: dayjs().format('YYYY-MM-DD'),

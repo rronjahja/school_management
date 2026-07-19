@@ -1,11 +1,26 @@
 const pool = require('../config/db');
 const { httpError } = require('../middleware/errorHandler');
+const { isValidDate } = require('../utils/validateStudent');
 
 /** Regjistron nje pagese te re (kesh ose banke). */
 async function createPayment({ student_id, amount, payment_date, method, bank_id, note }) {
   if (!student_id) throw httpError(400, 'Studenti mungon.');
-  if (!amount || Number(amount) <= 0) throw httpError(400, 'Shuma duhet të jetë më e madhe se 0.');
-  if (!payment_date) throw httpError(400, 'Data e pagesës është e detyrueshme.');
+
+  // Shuma duhet te jete numer i fundem — "abc" jep NaN dhe duhet refuzuar
+  if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+    throw httpError(400, 'Shuma duhet të jetë numër më i madh se 0.');
+  }
+  const value = Math.round(Number(amount) * 100) / 100;
+  if (value > 1000000) throw httpError(400, 'Shuma duket e pasaktë.');
+
+  if (!isValidDate(payment_date)) {
+    throw httpError(400, 'Data e pagesës nuk është e vlefshme (formati: VVVV-MM-DD).');
+  }
+  // Nje pagese nuk mund te regjistrohet per te ardhmen
+  if (payment_date.slice(0, 10) > new Date().toISOString().slice(0, 10)) {
+    throw httpError(400, 'Data e pagesës nuk mund të jetë në të ardhmen.');
+  }
+
   if (!['cash', 'bank'].includes(method)) throw httpError(400, 'Mënyra e pagesës nuk është e vlefshme.');
   if (method === 'bank' && !bank_id) throw httpError(400, 'Zgjidhni bankën.');
 
@@ -21,8 +36,8 @@ async function createPayment({ student_id, amount, payment_date, method, bank_id
 
   const [result] = await pool.query('INSERT INTO payments SET ?', [{
     student_id,
-    amount: Number(amount),
-    payment_date,
+    amount: value,
+    payment_date: payment_date.slice(0, 10),
     method,
     bank_id: method === 'bank' ? bank_id : null,
     note: note || null,

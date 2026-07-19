@@ -112,6 +112,7 @@ function installmentStatus(inst, today = dayjs()) {
  * status: paid | overdue | due-soon | ok
  */
 function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
+  const currentGeneration = student.generation;
   const netQuota = computeNetQuota(
     student.yearly_quota,
     student.discount_type,
@@ -137,9 +138,29 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
 
   const nextUnpaid = allocated.find((i) => i.status !== 'paid') || null;
 
+  // Ndarja e viteve: ekranet financiare duhet te dine cfare i takon
+  // vitit aktual dhe cfara eshte trasheguar nga vitet e kaluara.
+  const curr = allocated.filter((i) => i.generation === currentGeneration);
+  const currentDue = round2(curr.reduce((a, i) => a + Number(i.amount), 0));
+  const currentPaid = round2(curr.reduce((a, i) => a + Number(i.paid), 0));
+
+  const past = allocated.filter((i) => i.generation !== currentGeneration);
+  const pastDue = round2(past.reduce((a, i) => a + Number(i.amount), 0));
+  const pastPaid = round2(past.reduce((a, i) => a + Number(i.paid), 0));
+
   return {
     net_quota: netQuota,   // kuota e vitit aktual
     total_due: totalDue,   // detyrimi total (te gjitha vitet)
+
+    // Viti aktual
+    current_year_due: currentDue,
+    current_year_paid: currentPaid,
+    current_year_balance: round2(Math.max(currentDue - currentPaid, 0)),
+
+    // Vitet e kaluara (borxh i trasheguar)
+    past_years_due: pastDue,
+    past_years_paid: pastPaid,
+    past_years_balance: round2(Math.max(pastDue - pastPaid, 0)),
     total_paid: paid,
     balance,
     status,

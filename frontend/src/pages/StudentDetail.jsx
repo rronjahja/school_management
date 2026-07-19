@@ -9,6 +9,7 @@ import {
 import { createPayment, deletePayment } from '../api/payments';
 import { fetchBanks } from '../api/meta';
 import { errorMessage } from '../api/client';
+import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
@@ -23,6 +24,7 @@ import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, parallel, shortGen
 
 export default function StudentDetail() {
   const { id } = useParams();
+  const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const [student, setStudent] = useState(null);
@@ -137,9 +139,11 @@ export default function StudentDetail() {
         <Link to={`/studentet/${id}/ndrysho`} className="btn btn-ghost">
           Ndrysho
         </Link>
-        <button type="button" className="btn btn-danger-ghost" onClick={handleDeleteStudent}>
-          Fshi
-        </button>
+        {isAdmin && (
+          <button type="button" className="btn btn-danger-ghost" onClick={handleDeleteStudent}>
+            Fshi
+          </button>
+        )}
       </PageHeader>
 
       {notice && <p className="form-error form-error-page">{notice}</p>}
@@ -210,7 +214,10 @@ export default function StudentDetail() {
               + Shto pagesë
             </button>
           </div>
-          <PaymentList payments={student.payments} onDelete={handleDeletePayment} />
+          <PaymentList
+            payments={student.payments}
+            onDelete={isAdmin ? handleDeletePayment : null}
+          />
         </section>
       </div>
 

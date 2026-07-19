@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
+import { ACADEMIC_YEAR } from '../../../config/school';
 
 /** Banderola e faqes kryesore — pa logo, vetëm titulli dhe veprimi kryesor. */
-export default function HomeHero({ generation = '2025/2026', studentCount }) {
+export default function HomeHero({ generation = ACADEMIC_YEAR, studentCount }) {
   return (
     <section className="hero">
       <div className="hero-identity">

@@ -57,7 +57,9 @@ async function generateContractNumber(conn, categoryId, generation, enrollmentDa
  * qe grupimet dhe krahasimet te mos ndahen ne dy variante te te njejtit vit.
  */
 function normalizeGeneration(value) {
-  const m = String(value || '').match(/(\d{4})/);
+  // Pranohen vetem 'VVVV/VVVV' ose 'VVVV/VV'; gjithcka tjeter kthehet e paprekur
+  // qe validimi ta kape (nuk "riparojme" tekste te gabuara si 'abc2025xyz').
+  const m = String(value || '').trim().match(/^(\d{4})\s*\/\s*(?:\d{2}|\d{4})$/);
   if (!m) return value;
   const start = Number(m[1]);
   return `${start}/${start + 1}`;
@@ -74,13 +76,16 @@ function pickStudentFields(body) {
   return data;
 }
 
-async function insertInstallments(conn, studentId, student) {
+async function insertInstallments(conn, studentId, student, seqOffset = 0) {
   const net = computeNetQuota(student.yearly_quota, student.discount_type, student.discount_value);
   const installments = buildInstallments(net, student.payment_plan, student.enrollment_date);
+  const generation = normalizeGeneration(student.generation);
 
-  const values = installments.map((i) => [studentId, i.seq, i.due_date, i.amount]);
+  const values = installments.map((i) => [
+    studentId, generation, seqOffset + i.seq, i.due_date, i.amount,
+  ]);
   await conn.query(
-    'INSERT INTO installments (student_id, seq, due_date, amount) VALUES ?',
+    'INSERT INTO installments (student_id, generation, seq, due_date, amount) VALUES ?',
     [values]
   );
 }
@@ -126,9 +131,30 @@ async function createStudent(body) {
  * Perditeson studentin. Nese ndryshon dicka qe prek kestet
  * (kuota, zbritja, plani, data e regjistrimit), kestet rigjenerohen.
  */
+/**
+ * Perditeson studentin.
+ *
+ * KUJDES: kestet e VITEVE TE KALUARA nuk preken kurre. Rigjenerohen vetem
+ * kestet e vitit shkollor aktual, dhe vetem nese ndryshon dicka financiare
+ * (kuota, zbritja, plani ose data e regjistrimit). Nje ndryshim i thjeshte
+ * i telefonit apo adreses nuk prek asnje kest.
+ */
+const FINANCE_KEYS = [
+  'yearly_quota', 'discount_type', 'discount_value', 'payment_plan', 'enrollment_date',
+];
+
 async function updateStudent(id, body) {
   const existing = await getStudentRow(id);
   const data = pickStudentFields(body);
+  const merged = { ...existing, ...data };
+
+  const financeChanged = FINANCE_KEYS.some(
+    (k) => data[k] !== undefined && String(data[k]) !== String(existing[k])
+  );
+  // Ndryshimi i gjenerates trajtohet nga kalimi i vitit, jo nga ky formular
+  const generationChanged =
+    data.generation !== undefined &&
+    normalizeGeneration(data.generation) !== normalizeGeneration(existing.generation);
 
   const conn = await pool.getConnection();
   try {
@@ -136,11 +162,30 @@ async function updateStudent(id, body) {
 
     await conn.query('UPDATE students SET ? WHERE id = ?', [data, id]);
 
-    // Kestet rigjenerohen gjithmone sipas rregullave aktuale;
-    // pagesat ruhen dhe rishperndahen automatikisht (FIFO)
-    const merged = { ...existing, ...data };
-    await conn.query('DELETE FROM installments WHERE student_id = ?', [id]);
-    await insertInstallments(conn, id, merged);
+    if (financeChanged || generationChanged) {
+      const currentGen = normalizeGeneration(merged.generation);
+
+      // Fshihen VETEM kestet e vitit aktual. Vitet e kaluara mbeten te paprekura.
+      await conn.query(
+        'DELETE FROM installments WHERE student_id = ? AND generation = ?',
+        [id, currentGen]
+      );
+
+      // Nese ndryshoi gjenerata, heqim edhe kestet pa vit (te dhena te vjetra)
+      if (generationChanged) {
+        await conn.query(
+          'DELETE FROM installments WHERE student_id = ? AND generation IS NULL',
+          [id]
+        );
+      }
+
+      // Numrat e kesteve vazhdojne pas atyre qe mbeten
+      const [[mx]] = await conn.query(
+        'SELECT COALESCE(MAX(seq), 0) AS m FROM installments WHERE student_id = ?',
+        [id]
+      );
+      await insertInstallments(conn, id, merged, Number(mx.m));
+    }
 
     await conn.commit();
   } catch (err) {

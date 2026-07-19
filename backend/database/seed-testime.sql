@@ -10,6 +10,12 @@
 -- ===============================================================
 
 SET NAMES utf8mb4;
+
+-- ═══════════════════════════════════════════════════════════════
+--  PARALAJMERIM: KY SKEDAR FSHIN TE GJITHA TE DHENAT E STUDENTEVE
+--  Perdoret VETEM per testim. Mos e ekzekutoni kurre ne baze reale.
+--  Emrat, adresat dhe numrat jane te shpikur.
+-- ═══════════════════════════════════════════════════════════════
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- E nevojshme per MySQL Workbench (safe update mode bllokon DELETE pa WHERE)
