@@ -3,6 +3,21 @@ const { computeNetQuota, buildInstallments, round2 } = require('../utils/finance
 const { httpError } = require('../middleware/errorHandler');
 
 const FINAL_YEAR = 3; // viti i fundit i shkollimit
+const ROMAN = ['X', 'XI', 'XII'];
+
+/**
+ * Ngre paralelen nje vit: X/1 -> XI/1 -> XII/1.
+ * Numri i paraleles ruhet; ndryshon vetem shkalla (X, XI, XII).
+ */
+function advanceClassName(className, newStudyYear) {
+  const roman = ROMAN[newStudyYear - 1];
+  if (!roman) return className;
+  if (!className) return null;
+
+  const m = String(className).match(/[-–_/]\s*(.+)$/);
+  const suffix = m ? m[1].trim() : '';
+  return suffix ? `${roman}/${suffix}` : roman;
+}
 
 /** '2024/2025' -> '2025/2026' */
 function nextGeneration(generation) {
@@ -181,16 +196,18 @@ async function promote({
       // 2b. Kalon ne vitin pasues
       const contract = await newContractNumber(conn, s.category_id, to);
       const newQuota = round2(Number(s.yearly_quota) * (1 + increase / 100));
+      const newClass = advanceClassName(s.class_name, s.study_year + 1);
 
       await conn.query(
         `UPDATE students
             SET study_year = study_year + 1,
                 generation = ?,
                 contract_number = ?,
+                class_name = ?,
                 enrollment_date = ?,
                 yearly_quota = ?
           WHERE id = ?`,
-        [to, contract, startDate, create_new_year ? newQuota : s.yearly_quota, s.id]
+        [to, contract, newClass, startDate, create_new_year ? newQuota : s.yearly_quota, s.id]
       );
 
       if (create_new_year) {
@@ -233,6 +250,7 @@ async function promote({
 }
 
 module.exports = {
+  advanceClassName,
   nextGeneration,
   currentGeneration,
   listGenerations,

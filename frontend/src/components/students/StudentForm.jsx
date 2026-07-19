@@ -222,8 +222,8 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               ))}
             </select>
           </Field>
-          <Field label="Klasa">
-            <input value={form.class_name || ''} onChange={set('class_name')} placeholder="p.sh. X-1" />
+          <Field label="Paralelja">
+            <input value={form.class_name || ''} onChange={set('class_name')} placeholder="p.sh. X/1" />
           </Field>
           <Field label="Data e regjistrimit" required>
             <input type="date" value={form.enrollment_date} onChange={set('enrollment_date')} required />

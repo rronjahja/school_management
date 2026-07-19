@@ -10,7 +10,8 @@ import Loader from '../components/ui/Loader.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Field from '../components/ui/Field.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, YEAR_LABELS } from '../utils/format';
+import { money, date, YEAR_LABELS, shortGen } from '../utils/format';
+import UserManager from '../components/settings/UserManager.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -67,7 +68,7 @@ export default function Settings() {
         force: Boolean(preview && preview.already_done),
       });
       setNotice(
-        `U krye: ${res.promoted} studentë kaluan në ${res.to_generation}, ` +
+        `U krye: ${res.promoted} studentë kaluan në ${shortGen(res.to_generation)}, ` +
           `${res.graduated} u diplomuan.`
       );
       setConfirmOpen(false);
@@ -104,7 +105,7 @@ export default function Settings() {
         </p>
 
         <p className="settings-current">
-          Viti shkollor aktual sipas datës: <strong>{data.current_generation}</strong>
+          Viti shkollor aktual sipas datës: <strong>{shortGen(data.current_generation)}</strong>
         </p>
 
         {data.generations.length === 0 ? (
@@ -129,13 +130,13 @@ export default function Settings() {
                   return (
                     <tr key={g.generation} className={selected === g.generation ? 'row-selected' : ''}>
                       <td>
-                        <strong>{g.generation}</strong>
+                        <strong>{shortGen(g.generation)}</strong>
                       </td>
                       <td className="num">{g.viti1}</td>
                       <td className="num">{g.viti2}</td>
                       <td className="num">{g.viti3}</td>
                       <td className="num">{g.total}</td>
-                      <td>{g.next || '—'}</td>
+                      <td>{g.next ? shortGen(g.next) : '—'}</td>
                       <td>
                         <span className="cell-actions">
                           {done && (
@@ -165,7 +166,7 @@ export default function Settings() {
         {preview && (
           <div className="promo-preview">
             <h3>
-              Parapamje: {preview.from_generation} → {preview.to_generation}
+              Parapamje: {shortGen(preview.from_generation)} → {shortGen(preview.to_generation)}
             </h3>
 
             {preview.already_done && (
@@ -275,8 +276,8 @@ export default function Settings() {
               <tbody>
                 {data.history.map((h) => (
                   <tr key={h.id}>
-                    <td>{h.from_generation}</td>
-                    <td>{h.to_generation}</td>
+                    <td>{shortGen(h.from_generation)}</td>
+                    <td>{shortGen(h.to_generation)}</td>
                     <td className="num">{h.promoted_count}</td>
                     <td className="num">{h.graduated_count}</td>
                     <td className="num">{Number(h.quota_increase)}%</td>
@@ -289,15 +290,17 @@ export default function Settings() {
         )}
       </section>
 
+      <UserManager />
+
       {confirmOpen && preview && (
         <Modal title="Konfirmo kalimin e vitit" onClose={() => setConfirmOpen(false)}>
           <p className="modal-hint">
             Do të preken <strong>{preview.promote_total + preview.graduate_total}</strong>{' '}
-            studentë të gjeneratës <strong>{preview.from_generation}</strong>:
+            studentë të gjeneratës <strong>{shortGen(preview.from_generation)}</strong>:
           </p>
           <ul className="confirm-list">
             <li>
-              <strong>{preview.promote_total}</strong> kalojnë në {preview.to_generation}
+              <strong>{preview.promote_total}</strong> kalojnë në {shortGen(preview.to_generation)}
               {opts.create_new_year && ' dhe u gjenerohen këstet e vitit të ri'}
             </li>
             <li>

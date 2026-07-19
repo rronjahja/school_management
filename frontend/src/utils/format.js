@@ -43,6 +43,19 @@ export function discountText(type, value) {
   return type === 'percent' ? `${Number(value)}%` : money(value);
 }
 
+/** Paralelja ne formatin X/1 (pranon edhe "X-1" nga te dhenat e vjetra). */
+export function parallel(className) {
+  if (!className) return '—';
+  return String(className).replace(/\s*[-–_]\s*/, '/');
+}
+
+/** Gjenerata e shkurter: "2026/2027" -> "2026/27". */
+export function shortGen(generation) {
+  const m = String(generation || '').match(/(\d{4})\s*\/\s*(\d{2,4})/);
+  if (!m) return generation || '—';
+  return `${m[1]}/${m[2].slice(-2)}`;
+}
+
 /** Iniciale per avatar, p.sh. "AB". */
 export const initials = (first, last) =>
   `${(first || '')[0] || ''}${(last || '')[0] || ''}`.toUpperCase();

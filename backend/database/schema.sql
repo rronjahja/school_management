@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS students (
   generation      VARCHAR(20)  NOT NULL,            -- p.sh. '2025/2026'
   class_name      VARCHAR(20)  DEFAULT NULL,        -- p.sh. 'X-1'
   study_year      TINYINT      NOT NULL DEFAULT 1,   -- 1 = Viti I, 2 = Viti II, 3 = Viti III
+  status          ENUM('active','graduated') NOT NULL DEFAULT 'active',
+  graduated_at    DATE         DEFAULT NULL,
+  graduation_generation VARCHAR(20) DEFAULT NULL,
   enrollment_date DATE NOT NULL,
 
   yearly_quota    DECIMAL(10,2) NOT NULL,
@@ -93,6 +96,7 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE INDEX idx_students_category ON students (category_id);
 CREATE INDEX idx_students_names    ON students (last_name, first_name);
 CREATE INDEX idx_students_study_year ON students (study_year);
+CREATE INDEX idx_students_status ON students (status);
 
 -- ----------------------------------------------------------------
 -- Kestet (gjenerohen automatikisht sipas planit te pageses)
@@ -100,6 +104,7 @@ CREATE INDEX idx_students_study_year ON students (study_year);
 CREATE TABLE IF NOT EXISTS installments (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   student_id INT NOT NULL,
+  generation VARCHAR(20) DEFAULT NULL,          -- viti shkollor i kestit
   seq        INT NOT NULL,
   due_date   DATE NOT NULL,
   amount     DECIMAL(10,2) NOT NULL,
@@ -131,3 +136,31 @@ CREATE TABLE IF NOT EXISTS payments (
 ) ENGINE = InnoDB;
 
 CREATE INDEX idx_payments_student ON payments (student_id);
+
+-- ----------------------------------------------------------------
+-- Perdoruesit e sistemit (hyrja)
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS users (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  username      VARCHAR(60)  NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name     VARCHAR(120) NOT NULL,
+  role          ENUM('admin','staff') NOT NULL DEFAULT 'staff',
+  is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+  failed_attempts INT       NOT NULL DEFAULT 0,
+  locked_until    DATETIME  DEFAULT NULL,
+  last_login_at TIMESTAMP NULL DEFAULT NULL,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS login_log (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  username   VARCHAR(60) NOT NULL,
+  success    TINYINT(1)  NOT NULL,
+  ip         VARCHAR(60) DEFAULT NULL,
+  user_agent VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
+
+CREATE INDEX idx_login_log_time ON login_log (created_at);

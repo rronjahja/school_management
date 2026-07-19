@@ -41,7 +41,7 @@
 .brand-sub {
   display: block;
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12.5px;
   letter-spacing: 0.04em;
   color: rgba(213, 228, 245, 0.72);
 }
@@ -60,7 +60,7 @@
   padding: 11px 12px;
   border-radius: var(--radius-small);
   font-weight: 500;
-  font-size: 14.5px;
+  font-size: 16px;
   color: rgba(213, 228, 245, 0.85);
   transition: background 0.15s, color 0.15s;
 }
@@ -84,7 +84,7 @@
 }
 
 .foot-year {
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   color: rgba(213, 228, 245, 0.6);
   padding-left: 2px;
@@ -134,7 +134,7 @@
 }
 
 .app-footer-credit {
-  font-size: 12.5px;
+  font-size: 14px;
   letter-spacing: 0.05em;
   color: rgba(21, 32, 46, 0.34);
 }
@@ -162,14 +162,14 @@
 }
 
 .page-title {
-  font-size: 27px;
+  font-size: 29.5px;
   font-weight: 700;
 }
 
 .page-subtitle {
   margin-top: 5px;
   color: var(--muted);
-  font-size: 14.5px;
+  font-size: 16px;
 }
 
 .page-actions {

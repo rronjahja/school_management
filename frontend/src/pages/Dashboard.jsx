@@ -8,7 +8,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, initials } from '../utils/format';
+import { money, date, initials, shortGen } from '../utils/format';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -135,7 +135,7 @@ export default function Dashboard() {
                     <strong>
                       {s.first_name} {s.last_name}
                     </strong>
-                    <span className="muted">{s.category_name} · {s.generation}</span>
+                    <span className="muted">{s.category_name} · {shortGen(s.generation)}</span>
                   </span>
                   <StatusBadge status={s.finance.status} />
                 </Link>

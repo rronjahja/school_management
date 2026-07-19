@@ -10,6 +10,7 @@ import StatCard from '../components/ui/StatCard.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import FinanceGroups from '../components/finance/FinanceGroups.jsx';
+import ReminderButton from '../components/finance/ReminderButton.jsx';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, initials } from '../utils/format';
 
 const STATUS_FILTERS = [
@@ -174,6 +175,7 @@ export default function Finance() {
                       <th className="num">Borxhi</th>
                       <th>Kësti i ardhshëm</th>
                       <th>Statusi</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
@@ -210,6 +212,12 @@ export default function Finance() {
                         </td>
                         <td>
                           <StatusBadge status={s.finance.status} />
+                        </td>
+                        <td className="cell-tight">
+                          {(s.finance.status === 'overdue' ||
+                            s.finance.status === 'due-soon') && (
+                            <ReminderButton studentId={s.id} compact />
+                          )}
                         </td>
                       </tr>
                     ))}

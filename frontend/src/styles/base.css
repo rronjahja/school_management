@@ -10,7 +10,7 @@ body {
 
 body {
   font-family: var(--font-body);
-  font-size: 15.5px;
+  font-size: 17px;
   line-height: 1.55;
   color: var(--ink);
   background: var(--bg);
@@ -102,7 +102,7 @@ button {
   padding: 9px 16px;
   border-radius: var(--radius-small);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15.5px;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s, transform 0.05s;
 }
@@ -158,7 +158,7 @@ button {
 
 .btn-small {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 14.5px;
 }
 
 @media (prefers-reduced-motion: reduce) {

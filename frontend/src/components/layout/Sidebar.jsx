@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.jsx';
 import IspeLogo from '../ui/IspeLogo.jsx';
 import InvasoftLogo from '../ui/InvasoftLogo.jsx';
 
@@ -10,9 +11,17 @@ const NAV = [
   { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon },
 ];
 
-const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon }];
+const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, adminOnly: true }];
 
 export default function Sidebar() {
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/hyrje', { replace: true });
+  };
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -37,7 +46,7 @@ export default function Sidebar() {
       </nav>
 
       <nav className="sidebar-nav sidebar-nav-bottom">
-        {NAV_BOTTOM.map(({ to, label, icon: Icon }) => (
+        {NAV_BOTTOM.filter((n) => !n.adminOnly || isAdmin).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -48,6 +57,26 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {user && (
+        <div className="sidebar-user">
+          <span className="sidebar-user-avatar">
+            {(user.full_name || user.username).slice(0, 1).toUpperCase()}
+          </span>
+          <span className="sidebar-user-body">
+            <strong>{user.full_name}</strong>
+            <em>{user.role === 'admin' ? 'Administrator' : 'Staf'}</em>
+          </span>
+          <button
+            type="button"
+            className="sidebar-logout"
+            onClick={handleSignOut}
+            title="Dil nga sistemi"
+          >
+            <LogoutIcon />
+          </button>
+        </div>
+      )}
 
       <div className="sidebar-foot">
         <span className="foot-year">Viti shkollor 2025/2026</span>
@@ -109,6 +138,28 @@ function GraduateIcon() {
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+      <path
+        d="M12 3H5a1 1 0 00-1 1v12a1 1 0 001 1h7"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14 7l3 3-3 3M17 10H8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

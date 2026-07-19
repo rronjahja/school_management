@@ -8,7 +8,7 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, PLAN_LABELS, initials } from '../utils/format';
+import { money, PLAN_LABELS, initials, shortGen } from '../utils/format';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ export default function Students() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchCategories().then(setCategories).catch(() => {});
+    fetchCategories().then(setCategories).catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function Students() {
                     <td>
                       <CategoryChip name={s.category_name} color={s.category_color} />
                     </td>
-                    <td>{s.generation}</td>
+                    <td>{shortGen(s.generation)}</td>
                     <td>{PLAN_LABELS[s.payment_plan]}</td>
                     <td className="num">{money(s.finance.net_quota)}</td>
                     <td className="num">{money(s.finance.total_paid)}</td>

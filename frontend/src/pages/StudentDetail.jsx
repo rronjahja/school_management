@@ -18,7 +18,8 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import InstallmentTable from '../components/finance/InstallmentTable.jsx';
 import PaymentList from '../components/finance/PaymentList.jsx';
 import PaymentModal from '../components/finance/PaymentModal.jsx';
-import { money, date, PLAN_LABELS, YEAR_LABELS, discountText } from '../utils/format';
+import ReminderButton from '../components/finance/ReminderButton.jsx';
+import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, parallel, shortGen } from '../utils/format';
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -104,13 +105,16 @@ export default function StudentDetail() {
           <span className="header-chips">
             <CategoryChip name={student.category_name} color={student.category_color} />
             <span className="muted">
-              {student.generation} · {YEAR_LABELS[student.study_year] || 'Viti I'}
-              {student.class_name ? ` · Klasa ${student.class_name}` : ''}
+              {shortGen(student.generation)} · {YEAR_LABELS[student.study_year] || 'Viti I'}
+              {student.class_name ? ` · Paralelja ${parallel(student.class_name)}` : ''}
             </span>
             <StatusBadge status={f.status} />
           </span>
         }
       >
+        {(f.status === 'overdue' || f.status === 'due-soon') && (
+          <ReminderButton studentId={id} />
+        )}
         <span className="doc-generate">
           {templates.length > 1 && (
             <select

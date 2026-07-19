@@ -51,11 +51,24 @@ async function generateContractNumber(conn, categoryId, generation, enrollmentDa
   return `${String(max + 1).padStart(2, '0')}${suffix}`;
 }
 
+/**
+ * Normalizon gjeneraten ne formatin e plote "2025/2026".
+ * Perdoruesi mund te shkruaje "2025/26" ose "2025" — ruhet gjithmone i njejti format,
+ * qe grupimet dhe krahasimet te mos ndahen ne dy variante te te njejtit vit.
+ */
+function normalizeGeneration(value) {
+  const m = String(value || '').match(/(\d{4})/);
+  if (!m) return value;
+  const start = Number(m[1]);
+  return `${start}/${start + 1}`;
+}
+
 function pickStudentFields(body) {
   const data = {};
   STUDENT_FIELDS.forEach((f) => {
     if (body[f] !== undefined) data[f] = body[f] === '' ? null : body[f];
   });
+  if (data.generation) data.generation = normalizeGeneration(data.generation);
   if (!data.discount_type) data.discount_type = 'none';
   if (data.discount_value === undefined || data.discount_value === null) data.discount_value = 0;
   return data;
@@ -221,6 +234,7 @@ async function nextContractNumber(categoryId, generation, enrollmentDate) {
 }
 
 module.exports = {
+  normalizeGeneration,
   nextContractNumber,
   createStudent,
   updateStudent,

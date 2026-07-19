@@ -61,7 +61,7 @@
 }
 
 .hero-eyebrow {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -70,14 +70,14 @@
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: 29px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1.1;
   margin: 5px 0 5px;
 }
 
 .hero-sub {
-  font-size: 14px;
+  font-size: 15.5px;
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .bar-count {
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -159,7 +159,7 @@
 .bar-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--muted);
   margin-top: 6px;
   font-variant-numeric: tabular-nums;
@@ -223,12 +223,12 @@
 }
 
 .alert-meta {
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--muted);
 }
 
 .recent-body .muted {
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 /* ---------- Detajet e studentit ---------- */
@@ -261,7 +261,7 @@
 }
 
 .info-item dt {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -270,7 +270,7 @@
 }
 
 .info-item dd {
-  font-size: 14.5px;
+  font-size: 16px;
 }
 
 /* ---------- Pagesat ---------- */
@@ -303,7 +303,7 @@
 }
 
 .payment-meta {
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -326,7 +326,7 @@
 }
 
 .preview-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -335,7 +335,7 @@
 
 .finance-preview strong {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 18.5px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -371,7 +371,7 @@
 .field-with-action .btn {
   flex-shrink: 0;
   padding: 0 12px;
-  font-size: 15px;
+  font-size: 16.5px;
 }
 
 /* ---------- Ndarësi Grupuar / Listë ---------- */
@@ -386,7 +386,7 @@
 
 .view-toggle button {
   padding: 9px 16px;
-  font-size: 14px;
+  font-size: 15.5px;
   font-weight: 600;
   color: var(--muted);
   transition: background 0.15s, color 0.15s;
@@ -437,7 +437,7 @@
 
 .fin-title {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 18.5px;
   font-weight: 700;
   color: var(--primary-dark);
   white-space: nowrap;
@@ -445,7 +445,7 @@
 
 .fin-caret {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   transition: transform 0.15s;
   flex-shrink: 0;
 }
@@ -464,7 +464,7 @@
 }
 
 .fin-stat {
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -503,7 +503,7 @@
   }
 
   .fin-stat {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .view-toggle {
@@ -520,7 +520,7 @@
 
 .settings-current {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15.5px;
   margin-bottom: 16px;
 }
 
@@ -534,7 +534,7 @@
   border: 1px solid rgba(30, 127, 88, 0.25);
   border-radius: var(--radius-small);
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 15.5px;
   margin-bottom: 18px;
 }
 
@@ -547,7 +547,7 @@
 }
 
 .promo-preview h3 {
-  font-size: 16px;
+  font-size: 17.5px;
   margin-bottom: 16px;
   color: var(--primary-dark);
 }
@@ -573,7 +573,7 @@
 
 .promo-label {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -583,7 +583,7 @@
 .promo-big {
   display: block;
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 31px;
   line-height: 1.1;
   margin: 2px 0 8px;
 }
@@ -592,7 +592,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13.5px;
+  font-size: 15px;
   color: var(--ink-soft);
 }
 
@@ -605,7 +605,7 @@
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  font-size: 14px;
+  font-size: 15.5px;
   padding: 6px 0;
   cursor: pointer;
 }
@@ -619,7 +619,7 @@
 .check-field em {
   display: block;
   font-style: normal;
-  font-size: 12.5px;
+  font-size: 14px;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -628,7 +628,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 15.5px;
   color: var(--ink-soft);
   cursor: pointer;
   white-space: nowrap;
@@ -652,7 +652,7 @@
   padding-left: 18px;
   list-style: disc;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 .confirm-warning {
@@ -661,7 +661,7 @@
   color: var(--amber);
   border-radius: var(--radius-small);
   padding: 10px 14px;
-  font-size: 13.5px;
+  font-size: 15px;
 }
 
 .sidebar-nav-bottom {
@@ -683,6 +683,214 @@
   color: var(--amber);
   border-radius: var(--radius-small);
   padding: 9px 13px;
-  font-size: 13px;
+  font-size: 14.5px;
   margin-bottom: 14px;
+}
+
+/* ---------- Rikujtesa e pageses ---------- */
+.btn-icon {
+  padding: 5px 9px;
+  font-size: 15.5px;
+  line-height: 1;
+}
+
+.cell-tight {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.reminder-text {
+  width: 100%;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 14.5px;
+  line-height: 1.55;
+  resize: vertical;
+  min-height: 260px;
+  background: var(--bg);
+}
+
+.copy-note {
+  font-size: 14.5px;
+  border-radius: var(--radius-small);
+  padding: 9px 13px;
+  margin-bottom: 12px;
+}
+
+.copy-note.ok {
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid rgba(30, 127, 88, 0.25);
+}
+
+.copy-note.warn {
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid rgba(150, 105, 14, 0.25);
+}
+
+/* ---------- Faqja e hyrjes ---------- */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(59, 138, 224, 0.18), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(216, 167, 44, 0.12), transparent 40%),
+    linear-gradient(150deg, var(--primary-deep) 0%, var(--primary-dark) 60%, #0f4f96 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(4, 26, 51, 0.35);
+  padding: 34px 32px 30px;
+  border-top: 4px solid var(--gold);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+}
+
+.login-logo .logo {
+  margin: 0 auto;
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.login-sub {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-btn {
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 4px;
+}
+
+.login-setup {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.login-setup h2 {
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.login-setup code {
+  display: block;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--radius-small);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.login-credit {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.15s;
+}
+
+.login-credit strong {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
+.login-credit:hover {
+  color: #fff;
+}
+
+/* ---------- Perdoruesi ne menyne anesore ---------- */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--primary-dark);
+  background: var(--gold);
+}
+
+.sidebar-user-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.sidebar-user-body strong {
+  font-size: 13.5px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-body em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: rgba(213, 228, 245, 0.6);
+}
+
+.sidebar-logout {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 7px;
+  border-radius: var(--radius-small);
+  color: rgba(213, 228, 245, 0.7);
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }

@@ -13,7 +13,7 @@
 }
 
 .card-title {
-  font-size: 16.5px;
+  font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
 }
@@ -67,7 +67,7 @@
 }
 
 .stat-label {
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -76,13 +76,13 @@
 
 .stat-value {
   font-family: var(--font-display);
-  font-size: 25px;
+  font-size: 27.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .stat-hint {
-  font-size: 13px;
+  font-size: 14.5px;
   color: var(--muted);
 }
 
@@ -94,12 +94,12 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 .table th {
   text-align: left;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -150,7 +150,7 @@
 
 .cell-sub {
   display: block;
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 .cell-paid {
@@ -172,7 +172,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 999px;
@@ -210,7 +210,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 500;
   white-space: nowrap;
   color: var(--ink-soft);
@@ -230,7 +230,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
   color: #fff;
   background: var(--avatar-color, var(--primary));
@@ -250,7 +250,7 @@
 }
 
 .form-section-title {
-  font-size: 15px;
+  font-size: 16.5px;
   font-weight: 600;
   color: var(--primary);
   margin-bottom: 16px;
@@ -284,7 +284,7 @@
 }
 
 .field-label {
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--ink-soft);
 }
@@ -306,7 +306,7 @@
   border: 1px solid rgba(179, 56, 46, 0.25);
   border-radius: var(--radius-small);
   padding: 10px 14px;
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 .form-error-page {
@@ -356,7 +356,7 @@
 }
 
 .modal-head h3 {
-  font-size: 17px;
+  font-size: 18.5px;
 }
 
 .modal-close {
@@ -379,7 +379,7 @@
 .modal-hint {
   margin-bottom: 16px;
   color: var(--ink-soft);
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 .modal-form .form-error {
@@ -429,13 +429,13 @@
 }
 
 .empty-glyph {
-  font-size: 34px;
+  font-size: 37.5px;
   color: var(--line-strong);
 }
 
 .empty-state h3 {
   color: var(--ink);
-  font-size: 17px;
+  font-size: 18.5px;
 }
 
 .empty-state .btn {
