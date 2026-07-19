@@ -15,7 +15,7 @@ function advanceClassName(className, newStudyYear) {
   if (!roman) return className;
   if (!className) return null;
 
-  const m = String(className).match(/[-–_/]\s*(.+)$/);
+  const m = String(className).match(/[-–_/\s]+(.+)$/);
   const suffix = m ? m[1].trim() : '';
   return suffix ? `${roman}/${suffix}` : roman;
 }
@@ -220,7 +220,7 @@ async function promote({
 
       if (create_new_year) {
         const net = computeNetQuota(newQuota, s.discount_type, s.discount_value);
-        const fresh = buildInstallments(net, s.payment_plan, startDate);
+        const fresh = buildInstallments(net, s.payment_plan, startDate, to);
 
         const [[mx]] = await conn.query(
           'SELECT COALESCE(MAX(seq), 0) AS m FROM installments WHERE student_id = ?',

@@ -2,8 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import IspeLogo from '../ui/IspeLogo.jsx';
 import InvasoftLogo from '../ui/InvasoftLogo.jsx';
-import { ACADEMIC_YEAR } from '../../../config/school';
-import { shortGen } from '../../utils/format';
+import { shortGen, currentSchoolYear } from '../../utils/format';
 
 const NAV = [
   { to: '/', label: 'Paneli', icon: PanelIcon, end: true },
@@ -81,7 +80,7 @@ export default function Sidebar() {
       )}
 
       <div className="sidebar-foot">
-        <span className="foot-year">Viti shkollor {shortGen(ACADEMIC_YEAR)}</span>
+        <span className="foot-year">Viti shkollor {shortGen(currentSchoolYear())}</span>
 
         <div className="foot-brand-wrap">
           <a

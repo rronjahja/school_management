@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchDashboard().then(setData).catch((err) => setError(errorMessage(err)));
+    fetchDashboard().then((d) => { setData(d); setError(''); }).catch((err) => setError(errorMessage(err)));
   }, []);
 
   if (error) return <EmptyState title="Gabim" hint={error} />;

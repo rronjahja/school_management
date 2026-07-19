@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ACADEMIC_YEAR } from '../../../config/school';
 
 /** Banderola e faqes kryesore — pa logo, vetëm titulli dhe veprimi kryesor. */
-export default function HomeHero({ generation = ACADEMIC_YEAR, studentCount }) {
+import { currentSchoolYear, shortGen } from '../../utils/format';
+
+export default function HomeHero({ generation, studentCount }) {
+  const shown = shortGen(generation || currentSchoolYear());
   return (
     <section className="hero">
       <div className="hero-identity">
@@ -19,7 +21,7 @@ export default function HomeHero({ generation = ACADEMIC_YEAR, studentCount }) {
           <p className="hero-eyebrow">Shkolla e Mesme e Lartë Profesionale</p>
           <h1 className="hero-title">Paneli i menaxhimit</h1>
           <p className="hero-sub">
-            Viti shkollor {generation}
+            Viti shkollor {shown}
             {typeof studentCount === 'number' && ` · ${studentCount} studentë`}
           </p>
         </div>

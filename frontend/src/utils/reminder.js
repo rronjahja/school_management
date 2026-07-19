@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { SCHOOL } from '../../config/school';
-import { money, date, parallel, shortGen, YEAR_LABELS } from './format';
+import { money, date, parallel, YEAR_LABELS } from './format';
 
 /** Kontakti i parë prindëror: babai nëse ekziston, përndryshe nëna. */
 export function parentContact(s) {
@@ -11,12 +11,15 @@ export function parentContact(s) {
 
 /**
  * Ndërton mesazhin e rikujtesës për një student.
- * `student` duhet të jetë objekti i plotë (me finance.installments).
+ *
+ * `student` — objekti i plotë me finance.installments (nga API-ja e studentit).
+ * `banks`   — bankat NGA BAZA E TË DHËNAVE (fetchBanks); përdoren vetëm ato
+ *             me numër llogarie. Asgjë në mesazh nuk vjen nga konstante të
+ *             ngurta që mund të mos përputhen me studentin konkret.
  */
-export function buildReminder(student) {
+export function buildReminder(student, banks = []) {
   const f = student.finance || {};
   const insts = f.installments || [];
-  const today = dayjs();
 
   const overdue = insts.filter((i) => i.status === 'overdue');
   const soon = insts.filter((i) => i.status === 'due-soon');
@@ -34,7 +37,7 @@ export function buildReminder(student) {
   lines.push(
     `Ky është një rikujtesë nga ${SCHOOL.name} për obligimet financiare të ` +
       `nxënësit/es ${fullName}, drejtimi ${student.category_name}` +
-      `${yearLabel ? `, ${yearLabel}` : ''}${klasa}, viti shkollor ${shortGen(student.generation)}.`
+      `${yearLabel ? `, ${yearLabel}` : ''}${klasa}.`
   );
   lines.push('');
 
@@ -62,7 +65,7 @@ export function buildReminder(student) {
         money(target.reduce((a, i) => a + remaining(i), 0))
     );
   } else {
-    lines.push(`Detyrimi i mbetur deri më sot është ${money(f.balance)}.`);
+    lines.push(`Detyrimi total i mbetur sipas planit është ${money(f.balance)}.`);
   }
 
   if (target.length && Number(f.balance) > 0) {
@@ -70,10 +73,11 @@ export function buildReminder(student) {
     lines.push(`Detyrimi total i mbetur sipas planit: ${money(f.balance)}.`);
   }
 
-  if (SCHOOL.banks.length) {
+  const withAccounts = banks.filter((b) => b.account_number);
+  if (withAccounts.length) {
     lines.push('');
     lines.push('Pagesa mund të kryhet përmes llogarive bankare:');
-    SCHOOL.banks.forEach((b) => lines.push(`  ${b.name}: ${b.account}`));
+    withAccounts.forEach((b) => lines.push(`  ${b.name}: ${b.account_number}`));
   }
 
   lines.push('');
@@ -85,7 +89,7 @@ export function buildReminder(student) {
   lines.push('Faleminderit për bashkëpunimin,');
   lines.push(SCHOOL.name);
   lines.push(SCHOOL.phone);
-  lines.push(`Datë: ${today.format('DD.MM.YYYY')}`);
+  lines.push(`Datë: ${dayjs().format('DD.MM.YYYY')}`);
 
   return lines.join('\n');
 }

@@ -28,7 +28,7 @@ export default function Students() {
         search: search || undefined,
         category_id: categoryId || undefined,
       })
-        .then(setStudents)
+        .then((d) => { setStudents(d); setError(''); })
         .catch((err) => setError(errorMessage(err)));
     }, 250); // debounce i kerkimit
     return () => clearTimeout(timer);

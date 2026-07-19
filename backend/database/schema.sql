@@ -35,17 +35,18 @@ ON DUPLICATE KEY UPDATE code = VALUES(code), color = VALUES(color);
 -- Bankat (emrat mund t'i ndryshoni lirisht ketu)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS banks (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(100) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  name           VARCHAR(100) NOT NULL UNIQUE,
+  account_number VARCHAR(40)  DEFAULT NULL,        -- perdoret te mesazhet e rikujteses
+  created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE = InnoDB;
 
-INSERT INTO banks (name) VALUES
-  ('BKT'),
-  ('Raiffeisen Bank'),
-  ('NLB Banka'),
-  ('TEB Bank')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+INSERT INTO banks (name, account_number) VALUES
+  ('BKT',             NULL),
+  ('Raiffeisen Bank', '1501 1500 0091 7205'),
+  ('NLB Banka',       NULL),
+  ('TEB Bank',        '2011 0000 2024 7044')
+ON DUPLICATE KEY UPDATE account_number = COALESCE(banks.account_number, VALUES(account_number));
 
 -- ----------------------------------------------------------------
 -- Studentet

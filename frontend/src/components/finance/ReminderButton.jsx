@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { fetchStudent } from '../../api/students';
+import { fetchBanks } from '../../api/meta';
 import { errorMessage } from '../../api/client';
 import { buildReminder, copyToClipboard } from '../../utils/reminder';
 import Modal from '../ui/Modal.jsx';
@@ -20,8 +21,8 @@ export default function ReminderButton({ studentId, compact = false, label = 'Ri
     setBusy(true);
     setError('');
     try {
-      const student = await fetchStudent(studentId);
-      const msg = buildReminder(student);
+      const [student, banks] = await Promise.all([fetchStudent(studentId), fetchBanks()]);
+      const msg = buildReminder(student, banks);
       setText(msg);
       setOpen(true);
       setCopied(await copyToClipboard(msg));

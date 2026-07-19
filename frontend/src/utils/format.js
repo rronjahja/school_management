@@ -17,6 +17,26 @@ export const PLAN_LABELS = {
   monthly: 'Mujore (12 muaj)',
 };
 
+/**
+ * Viti shkollor AKTUAL sipas dates: gusht e tutje = viti i ri.
+ * P.sh. me 19 korrik 2026 -> '2025/2026'.
+ */
+export function currentSchoolYear(now = new Date()) {
+  const start = now.getMonth() + 1 >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${start}/${start + 1}`;
+}
+
+/**
+ * Gjenerata e PARAZGJEDHUR per formularin e regjistrimit.
+ * Nga qershori e tutje regjistrimet behen zakonisht per vitin e ardhshem
+ * shkollor, prandaj pragu ketu eshte qershori (jo gushti). Administratori
+ * mund ta ndryshoje gjithmone ne formular.
+ */
+export function defaultRegistrationGeneration(now = new Date()) {
+  const start = now.getMonth() + 1 >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  return `${start}/${start + 1}`;
+}
+
 export const YEAR_LABELS = {
   1: 'Viti I',
   2: 'Viti II',

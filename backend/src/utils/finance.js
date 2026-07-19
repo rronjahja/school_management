@@ -24,13 +24,21 @@ function computeNetQuota(yearlyQuota, discountType, discountValue) {
  *   vitin e regjistrimit, janar-korrik ne vitin pasues.
  * - Nese nje date fikse ka kaluar para regjistrimit (regjistrim gjate vitit),
  *   ajo zhvendoset ne daten e kestit te pare.
+ * - `generation` ('2026/2027') percakton vitin shkollor te datave fikse;
+ *   pa te, viti nxirret nga data e regjistrimit.
  */
-function buildInstallments(netQuota, plan, startDate) {
+function buildInstallments(netQuota, plan, startDate, generation) {
   const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.monthly;
   const start = dayjs(startDate);
 
-  // Viti i fillimit te vitit shkollor
-  const schoolYear = start.month() + 1 >= 8 ? start.year() : start.year() - 1;
+  // Viti shkollor merret nga GJENERATA e studentit — jo nga data e regjistrimit.
+  // Nje regjistrim ne korrik 2026 per gjeneraten 2026/2027 duhet t'i kete
+  // afatet ne nentor 2026 / shkurt 2027, jo te llogaritura nga viti i kaluar.
+  // Data e regjistrimit perdoret vetem si rezerve kur gjenerata mungon.
+  const genMatch = String(generation || '').match(/^(\d{4})\s*\//);
+  const schoolYear = genMatch
+    ? Number(genMatch[1])
+    : (start.month() + 1 >= 8 ? start.year() : start.year() - 1);
   const fixedToDate = (mmdd) => {
     const [mm, dd] = mmdd.split('-').map(Number);
     const year = mm >= 8 ? schoolYear : schoolYear + 1;

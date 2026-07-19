@@ -78,8 +78,8 @@ function pickStudentFields(body) {
 
 async function insertInstallments(conn, studentId, student, seqOffset = 0) {
   const net = computeNetQuota(student.yearly_quota, student.discount_type, student.discount_value);
-  const installments = buildInstallments(net, student.payment_plan, student.enrollment_date);
   const generation = normalizeGeneration(student.generation);
+  const installments = buildInstallments(net, student.payment_plan, student.enrollment_date, generation);
 
   const values = installments.map((i) => [
     studentId, generation, seqOffset + i.seq, i.due_date, i.amount,

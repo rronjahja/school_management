@@ -49,7 +49,7 @@ export default function Graduates() {
   useEffect(() => {
     const t = setTimeout(() => {
       fetchStudents({ status: 'graduated', search: search || undefined })
-        .then(setStudents)
+        .then((d) => { setStudents(d); setError(''); })
         .catch((err) => setError(errorMessage(err)));
     }, 250);
     return () => clearTimeout(t);

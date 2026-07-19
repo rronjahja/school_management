@@ -45,7 +45,7 @@ export default function Finance() {
         study_year: studyYear || undefined,
         search: search || undefined,
       })
-        .then(setStudents)
+        .then((d) => { setStudents(d); setError(''); })
         .catch((err) => setError(errorMessage(err)));
     }, 250); // debounce i kerkimit
     return () => clearTimeout(timer);
