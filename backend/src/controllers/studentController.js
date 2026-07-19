@@ -16,6 +16,19 @@ async function detail(req, res, next) {
   } catch (err) { next(err); }
 }
 
+async function nextContractNumber(req, res, next) {
+  try {
+    const { category_id, generation, enrollment_date } = req.query;
+    if (!category_id) return res.json({ contract_number: '' });
+
+    res.json({
+      contract_number: await studentService.nextContractNumber(
+        category_id, generation, enrollment_date
+      ),
+    });
+  } catch (err) { next(err); }
+}
+
 async function create(req, res, next) {
   try {
     const errors = validateStudent(req.body);
@@ -43,4 +56,4 @@ async function remove(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { list, detail, create, update, remove };
+module.exports = { list, detail, create, update, remove, nextContractNumber };

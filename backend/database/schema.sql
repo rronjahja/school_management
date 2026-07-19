@@ -9,23 +9,27 @@ CREATE DATABASE IF NOT EXISTS ispe_school
 
 USE ispe_school;
 
+-- E domosdoshme: pa kete, shkronjat shqipe (ë, ç) prishen gjate importimit
+SET NAMES utf8mb4;
+
 -- ----------------------------------------------------------------
 -- Drejtimet (kategorite e studimit)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS categories (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(100) NOT NULL UNIQUE,
+  code       VARCHAR(6)   NOT NULL DEFAULT '',    -- perdoret te nr. i kontrates, p.sh. TF
   color      VARCHAR(7)   NOT NULL DEFAULT '#2E6FB7',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE = InnoDB;
 
-INSERT INTO categories (name, color) VALUES
-  ('Teknik Dentar', '#6E59C7'),
-  ('Farmaci',       '#1F8A70'),
-  ('Fizioterapi',   '#D07A2F'),
-  ('Infermieri',    '#C24E6A'),
-  ('Informatikë',   '#2E6FB7')
-ON DUPLICATE KEY UPDATE color = VALUES(color);
+INSERT INTO categories (name, code, color) VALUES
+  ('Teknik Dentar', 'TD', '#6E59C7'),
+  ('Farmaci',       'TF', '#1F8A70'),
+  ('Fizioterapi',   'AF', '#D07A2F'),
+  ('Infermieri',    'AI', '#C24E6A'),   -- konfirmoni kodin
+  ('Informatikë',   'TI', '#2E6FB7')    -- konfirmoni kodin
+ON DUPLICATE KEY UPDATE code = VALUES(code), color = VALUES(color);
 
 -- ----------------------------------------------------------------
 -- Bankat (emrat mund t'i ndryshoni lirisht ketu)
@@ -53,11 +57,22 @@ CREATE TABLE IF NOT EXISTS students (
   birthday        DATE         NOT NULL,
   city            VARCHAR(80)  NOT NULL,
   address         VARCHAR(160) NOT NULL,
+  email           VARCHAR(120) DEFAULT NULL,
+  citizenship     VARCHAR(60)  DEFAULT NULL,      -- shtetesia
+  nationality     VARCHAR(60)  DEFAULT NULL,      -- kombesia
+
   mother_name     VARCHAR(80)  NOT NULL,
+  mother_last_name VARCHAR(80) DEFAULT NULL,
+  mother_birthday DATE         DEFAULT NULL,
   father_name     VARCHAR(80)  NOT NULL,
+  father_last_name VARCHAR(80) DEFAULT NULL,
+  guardian_personal_id VARCHAR(20) DEFAULT NULL,  -- nr. personal i prindit
+  guardian_phone  VARCHAR(30)  DEFAULT NULL,
+  guardian_email  VARCHAR(120) DEFAULT NULL,
   phone           VARCHAR(30)  NOT NULL,
 
   category_id     INT NOT NULL,
+  contract_number VARCHAR(30)  DEFAULT NULL,        -- p.sh. '22/2025/TF'
   generation      VARCHAR(20)  NOT NULL,            -- p.sh. '2025/2026'
   class_name      VARCHAR(20)  DEFAULT NULL,        -- p.sh. 'X-1'
   enrollment_date DATE NOT NULL,
@@ -65,7 +80,7 @@ CREATE TABLE IF NOT EXISTS students (
   yearly_quota    DECIMAL(10,2) NOT NULL,
   discount_type   ENUM('none','percent','amount') NOT NULL DEFAULT 'none',
   discount_value  DECIMAL(10,2) NOT NULL DEFAULT 0,
-  payment_plan    ENUM('monthly','semiannual','annual') NOT NULL DEFAULT 'monthly',
+  payment_plan    ENUM('immediate','two','four','six','monthly') NOT NULL DEFAULT 'monthly',
 
   created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

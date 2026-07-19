@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   fetchStudent,
   deleteStudent,
-  downloadRegistrationDoc,
+  fetchTemplates,
+  downloadDocument,
 } from '../api/students';
 import { createPayment, deletePayment } from '../api/payments';
 import { fetchBanks } from '../api/meta';
@@ -25,6 +26,8 @@ export default function StudentDetail() {
 
   const [student, setStudent] = useState(null);
   const [banks, setBanks] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [templateFile, setTemplateFile] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showPayment, setShowPayment] = useState(false);
@@ -36,6 +39,12 @@ export default function StudentDetail() {
       .then(setStudent)
       .catch((err) => setError(errorMessage(err)));
     fetchBanks().then(setBanks).catch(() => {});
+    fetchTemplates()
+      .then((t) => {
+        setTemplates(t);
+        if (t.length) setTemplateFile(t[0].file);
+      })
+      .catch(() => {});
   }, [id]);
 
   const handlePayment = async (data) => {
@@ -76,7 +85,7 @@ export default function StudentDetail() {
   const handleDocument = async () => {
     setNotice('');
     try {
-      await downloadRegistrationDoc(id, `${student.first_name} ${student.last_name}`);
+      await downloadDocument(id, `${student.first_name} ${student.last_name}`, templateFile);
     } catch (err) {
       setNotice(errorMessage(err));
     }
@@ -102,9 +111,25 @@ export default function StudentDetail() {
           </span>
         }
       >
-        <button type="button" className="btn btn-ghost" onClick={handleDocument}>
-          ⬇ Gjenero dokumentin
-        </button>
+        <span className="doc-generate">
+          {templates.length > 1 && (
+            <select
+              className="doc-select"
+              value={templateFile}
+              onChange={(e) => setTemplateFile(e.target.value)}
+              aria-label="Zgjidh dokumentin"
+            >
+              {templates.map((t) => (
+                <option key={t.file} value={t.file}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <button type="button" className="btn btn-ghost" onClick={handleDocument}>
+            ⬇ {templates.length === 1 ? `Gjenero: ${templates[0].label}` : 'Gjenero dokumentin'}
+          </button>
+        </span>
         <Link to={`/studentet/${id}/ndrysho`} className="btn btn-ghost">
           Ndrysho
         </Link>
@@ -145,12 +170,32 @@ export default function StudentDetail() {
           <dl className="info-grid">
             <Info label="Datëlindja" value={date(student.birthday)} />
             <Info label="Qyteti" value={student.city} />
-            <Info label="Adresa" value={student.address} />
-            <Info label="Emri i nënës" value={student.mother_name} />
-            <Info label="Emri i babait" value={student.father_name} />
+            <Info label="Adresa" value={student.address} span />
+            <Info label="Shtetësia" value={student.citizenship} />
+            <Info label="Kombësia" value={student.nationality} />
             <Info label="Telefoni" value={student.phone} />
+            <Info label="E-mail" value={student.email} />
+            <Info label="Nr. i kontratës" value={student.contract_number} />
             <Info label="Data e regjistrimit" value={date(student.enrollment_date)} />
             <Info label="Plani i pagesës" value={PLAN_LABELS[student.payment_plan]} />
+          </dl>
+        </section>
+
+        <section className="card">
+          <h2 className="card-title">Prindërit / Kujdestari</h2>
+          <dl className="info-grid">
+            <Info
+              label="Nëna"
+              value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')}
+            />
+            <Info label="Datëlindja e nënës" value={date(student.mother_birthday)} />
+            <Info
+              label="Babai"
+              value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')}
+            />
+            <Info label="Nr. personal" value={student.guardian_personal_id} />
+            <Info label="Telefoni i prindit" value={student.guardian_phone} />
+            <Info label="E-maili i prindit" value={student.guardian_email} />
           </dl>
         </section>
 
@@ -187,9 +232,9 @@ export default function StudentDetail() {
   );
 }
 
-function Info({ label, value }) {
+function Info({ label, value, span }) {
   return (
-    <div className="info-item">
+    <div className={`info-item${span ? ' info-span' : ''}`}>
       <dt>{label}</dt>
       <dd>{value || '—'}</dd>
     </div>

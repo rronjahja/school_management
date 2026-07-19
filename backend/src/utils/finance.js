@@ -1,5 +1,5 @@
 const dayjs = require('dayjs');
-const { PLAN_CONFIG, WARNING_DAYS, EPSILON } = require('../config/finance');
+const { PLAN_CONFIG, WARNING_DAYS, EPSILON, SIGNING_GRACE_DAYS } = require('../config/finance');
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -16,25 +16,64 @@ function computeNetQuota(yearlyQuota, discountType, discountValue) {
 }
 
 /**
- * Gjeneron kestet sipas planit te pageses.
- * Kesti i pare bie ne daten e regjistrimit, te tjeret cdo `stepMonths` muaj.
+ * Gjeneron kestet sipas planit te pageses (Neni 6 i Kontratës).
+ *
+ * - Kesti i pare bie `SIGNING_GRACE_DAYS` dite pas dates se regjistrimit
+ *   (te plani mujor dhe 6-keste: ne vete daten e regjistrimit).
+ * - Datat fikse 'MM-DD' ankorohen ne vitin shkollor: gusht-dhjetor ne
+ *   vitin e regjistrimit, janar-korrik ne vitin pasues.
+ * - Nese nje date fikse ka kaluar para regjistrimit (regjistrim gjate vitit),
+ *   ajo zhvendoset ne daten e kestit te pare.
  */
 function buildInstallments(netQuota, plan, startDate) {
   const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.monthly;
   const start = dayjs(startDate);
 
-  const base = Math.floor((netQuota * 100) / cfg.count) / 100;
-  const installments = [];
+  // Viti i fillimit te vitit shkollor
+  const schoolYear = start.month() + 1 >= 8 ? start.year() : start.year() - 1;
+  const fixedToDate = (mmdd) => {
+    const [mm, dd] = mmdd.split('-').map(Number);
+    const year = mm >= 8 ? schoolYear : schoolYear + 1;
+    return dayjs(new Date(year, mm - 1, dd));
+  };
 
-  for (let i = 0; i < cfg.count; i += 1) {
-    const isLast = i === cfg.count - 1;
-    installments.push({
-      seq: i + 1,
-      due_date: start.add(i * cfg.stepMonths, 'month').format('YYYY-MM-DD'),
-      amount: isLast ? round2(netQuota - base * (cfg.count - 1)) : base,
-    });
+  const firstDue = start.add(SIGNING_GRACE_DAYS, 'day');
+  const clamp = (d) => (d.isBefore(firstDue, 'day') ? firstDue : d);
+
+  // 1) Datat e kesteve
+  let dates;
+  if (plan === 'monthly') {
+    dates = Array.from({ length: cfg.count }, (_, i) => start.add(i, 'month'));
+  } else if (plan === 'immediate') {
+    dates = [firstDue];
+  } else if (plan === 'two') {
+    dates = [firstDue, clamp(fixedToDate(cfg.secondDate))];
+  } else if (plan === 'six') {
+    dates = [start, ...cfg.fixedDates.map((d) => clamp(fixedToDate(d)))];
+  } else {
+    // four
+    dates = [firstDue, ...cfg.fixedDates.map((d) => clamp(fixedToDate(d)))];
   }
-  return installments;
+
+  // 2) Shumat e kesteve
+  const count = dates.length;
+  let amounts;
+  if (plan === 'six') {
+    // Kesti i pare 30%, pjesa tjeter ndahet ne 5 pjese te barabarta
+    const first = round2((netQuota * cfg.firstPercent) / 100);
+    const rest = netQuota - first;
+    const base = Math.floor((rest * 100) / (count - 1)) / 100;
+    amounts = [first, ...Array(count - 2).fill(base), round2(rest - base * (count - 2))];
+  } else {
+    const base = Math.floor((netQuota * 100) / count) / 100;
+    amounts = [...Array(count - 1).fill(base), round2(netQuota - base * (count - 1))];
+  }
+
+  return dates.map((d, i) => ({
+    seq: i + 1,
+    due_date: d.format('YYYY-MM-DD'),
+    amount: amounts[i],
+  }));
 }
 
 /**

@@ -15,7 +15,7 @@ const REQUIRED_FIELDS = [
 ];
 
 const DISCOUNT_TYPES = ['none', 'percent', 'amount'];
-const PAYMENT_PLANS = ['monthly', 'semiannual', 'annual'];
+const PAYMENT_PLANS = ['immediate', 'two', 'four', 'six', 'monthly'];
 
 /** Kthen listen e gabimeve; bosh nese te dhenat jane ne rregull. */
 function validateStudent(body) {

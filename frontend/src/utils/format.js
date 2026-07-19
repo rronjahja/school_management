@@ -10,9 +10,11 @@ export const money = (n) => euro.format(Number(n) || 0);
 export const date = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '—');
 
 export const PLAN_LABELS = {
-  monthly: 'Mujore',
-  semiannual: '6-Mujore',
-  annual: 'Vjetore',
+  immediate: 'E menjëhershme',
+  two: '2 Këste',
+  four: '4 Këste',
+  six: '6 Këste',
+  monthly: 'Mujore (12 muaj)',
 };
 
 export const STATUS_META = {

@@ -9,6 +9,7 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'ispe_school',
   waitForConnections: true,
   connectionLimit: 10,
+  charset: 'utf8mb4',
   dateStrings: true, // DATE columns come back as 'YYYY-MM-DD' strings
 });
 

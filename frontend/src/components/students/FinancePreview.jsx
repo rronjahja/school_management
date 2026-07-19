@@ -1,6 +1,7 @@
 import { money, PLAN_LABELS } from '../../utils/format';
 
-const PLAN_COUNTS = { monthly: 10, semiannual: 2, annual: 1 };
+const PLAN_COUNTS = { immediate: 1, two: 2, four: 4, six: 6, monthly: 12 };
+const SIX_FIRST_PERCENT = 30;
 
 /** Llogaritje e njejte me serverin, vetem per parapamje vizuale. */
 export default function FinancePreview({ quota, discountType, discountValue, plan }) {
@@ -13,7 +14,17 @@ export default function FinancePreview({ quota, discountType, discountValue, pla
   net = Math.max(Math.round(net * 100) / 100, 0);
 
   const count = PLAN_COUNTS[plan] || 1;
-  const perInstallment = Math.round((net / count) * 100) / 100;
+
+  let kestet;
+  if (plan === 'six') {
+    const first = Math.round(net * SIX_FIRST_PERCENT) / 100;
+    const rest = Math.round(((net - first) / 5) * 100) / 100;
+    kestet = `${money(first)} (30%) + 5 × ${money(rest)}`;
+  } else if (count === 1) {
+    kestet = money(net);
+  } else {
+    kestet = `${count} × ${money(Math.round((net / count) * 100) / 100)}`;
+  }
 
   if (!gross) return null;
 
@@ -29,9 +40,7 @@ export default function FinancePreview({ quota, discountType, discountValue, pla
       </div>
       <div>
         <span className="preview-label">Këstet</span>
-        <strong>
-          {count} × {money(perInstallment)}
-        </strong>
+        <strong>{kestet}</strong>
       </div>
       {net < gross && (
         <div>

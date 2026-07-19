@@ -16,14 +16,18 @@ router.get('/banks', metaController.banks);
 router.get('/dashboard', dashboardController.stats);
 
 // Studentet
+router.get('/students/next-contract-number', studentController.nextContractNumber);
 router.get('/students', studentController.list);
 router.post('/students', studentController.create);
 router.get('/students/:id', studentController.detail);
 router.put('/students/:id', studentController.update);
 router.delete('/students/:id', studentController.remove);
 
-// Dokumenti Word i regjistrimit
-router.get('/students/:id/registration-doc', documentController.registrationDoc);
+// Dokumentet Word (shabllonet ne backend/templates)
+router.get('/templates', documentController.listTemplates);
+router.get('/students/:id/document', documentController.generate);
+// rruga e vjeter mbahet per pajtueshmeri
+router.get('/students/:id/registration-doc', documentController.generate);
 
 // Pagesat
 router.post('/payments', paymentController.create);

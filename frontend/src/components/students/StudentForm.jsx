@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import Field from '../ui/Field.jsx';
+import { fetchNextContractNumber } from '../../api/students';
 import FinancePreview from './FinancePreview.jsx';
 import { DISCOUNT_LABELS, PLAN_LABELS } from '../../utils/format';
 
@@ -10,10 +11,20 @@ const EMPTY = {
   birthday: '',
   city: '',
   address: '',
-  mother_name: '',
-  father_name: '',
   phone: '',
+  email: '',
+  citizenship: 'Kosovar',
+  nationality: 'Shqiptar',
+  mother_name: '',
+  mother_last_name: '',
+  mother_birthday: '',
+  father_name: '',
+  father_last_name: '',
+  guardian_personal_id: '',
+  guardian_phone: '',
+  guardian_email: '',
   category_id: '',
+  contract_number: '',
   generation: '2025/2026',
   class_name: '',
   enrollment_date: dayjs().format('YYYY-MM-DD'),
@@ -24,9 +35,48 @@ const EMPTY = {
 };
 
 export default function StudentForm({ initial, categories, onSubmit, busy, submitLabel }) {
-  const [form, setForm] = useState(() => ({ ...EMPTY, ...(initial || {}) }));
+  // Vlerat NULL nga baza nuk duhet t'i fshijnë vlerat e parazgjedhura
+  const [form, setForm] = useState(() => {
+    const merged = { ...EMPTY };
+    Object.entries(initial || {}).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') merged[k] = v;
+    });
+    return merged;
+  });
 
   const set = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
+
+  // ---- Nr. i kontratës: mbushet vetvetiu sipas drejtimit + gjeneratës ----
+  const isEdit = Boolean(initial && initial.id);
+  const [contractBusy, setContractBusy] = useState(false);
+  const reqId = useRef(0);
+
+  const loadContractNumber = (categoryId, generation, enrollmentDate) => {
+    if (!categoryId) return;
+    const id = ++reqId.current;
+    setContractBusy(true);
+    fetchNextContractNumber(categoryId, generation, enrollmentDate)
+      .then((nr) => {
+        // vetëm përgjigjja e fundit vlen (mbrojtje ndaj klikimeve të shpejta)
+        if (id === reqId.current && nr) setForm((f) => ({ ...f, contract_number: nr }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (id === reqId.current) setContractBusy(false);
+      });
+  };
+
+  // Në regjistrim: rifreskohet sa herë ndryshon drejtimi ose gjenerata.
+  // Në ndryshim: numri i lëshuar nuk preket — përdoret butoni ↻.
+  useEffect(() => {
+    if (isEdit) return undefined;
+    const t = setTimeout(
+      () => loadContractNumber(form.category_id, form.generation, form.enrollment_date),
+      250
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.category_id, form.generation, isEdit]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -57,6 +107,22 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           <Field label="Qyteti" required>
             <input value={form.city} onChange={set('city')} required maxLength={80} />
           </Field>
+          <Field label="Shtetësia">
+            <input
+              value={form.citizenship ?? ''}
+              onChange={set('citizenship')}
+              maxLength={60}
+              placeholder="Kosovar"
+            />
+          </Field>
+          <Field label="Kombësia">
+            <input
+              value={form.nationality ?? ''}
+              onChange={set('nationality')}
+              maxLength={60}
+              placeholder="Shqiptar"
+            />
+          </Field>
           <Field label="Adresa" required span>
             <input value={form.address} onChange={set('address')} required maxLength={160} />
           </Field>
@@ -64,14 +130,8 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
       </section>
 
       <section className="form-section">
-        <h2 className="form-section-title">Prindërit dhe kontakti</h2>
+        <h2 className="form-section-title">Kontakti i nxënësit</h2>
         <div className="form-grid">
-          <Field label="Emri i nënës" required>
-            <input value={form.mother_name} onChange={set('mother_name')} required maxLength={80} />
-          </Field>
-          <Field label="Emri i babait" required>
-            <input value={form.father_name} onChange={set('father_name')} required maxLength={80} />
-          </Field>
           <Field label="Numri i telefonit" required>
             <input
               type="tel"
@@ -80,6 +140,56 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               required
               maxLength={30}
               placeholder="+383 4x xxx xxx"
+            />
+          </Field>
+          <Field label="E-mail">
+            <input
+              type="email"
+              value={form.email || ''}
+              onChange={set('email')}
+              maxLength={120}
+              placeholder="emri@email.com"
+            />
+          </Field>
+        </div>
+      </section>
+
+      <section className="form-section">
+        <h2 className="form-section-title">Prindërit / Kujdestari ligjor</h2>
+        <div className="form-grid">
+          <Field label="Emri i nënës" required>
+            <input value={form.mother_name} onChange={set('mother_name')} required maxLength={80} />
+          </Field>
+          <Field label="Mbiemri i nënës">
+            <input value={form.mother_last_name || ''} onChange={set('mother_last_name')} maxLength={80} />
+          </Field>
+          <Field label="Datëlindja e nënës">
+            <input type="date" value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
+          </Field>
+          <Field label="Emri i babait" required>
+            <input value={form.father_name} onChange={set('father_name')} required maxLength={80} />
+          </Field>
+          <Field label="Mbiemri i babait">
+            <input value={form.father_last_name || ''} onChange={set('father_last_name')} maxLength={80} />
+          </Field>
+          <Field label="Nr. personal i prindit">
+            <input value={form.guardian_personal_id || ''} onChange={set('guardian_personal_id')} maxLength={20} />
+          </Field>
+          <Field label="Telefoni i prindit">
+            <input
+              type="tel"
+              value={form.guardian_phone || ''}
+              onChange={set('guardian_phone')}
+              maxLength={30}
+              placeholder="+383 4x xxx xxx"
+            />
+          </Field>
+          <Field label="E-maili i prindit">
+            <input
+              type="email"
+              value={form.guardian_email || ''}
+              onChange={set('guardian_email')}
+              maxLength={120}
             />
           </Field>
         </div>
@@ -106,6 +216,27 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           </Field>
           <Field label="Data e regjistrimit" required>
             <input type="date" value={form.enrollment_date} onChange={set('enrollment_date')} required />
+          </Field>
+          <Field label="Nr. i kontratës">
+            <span className="field-with-action">
+              <input
+                value={form.contract_number || ''}
+                onChange={set('contract_number')}
+                maxLength={30}
+                placeholder={contractBusy ? 'Duke gjeneruar…' : 'Zgjidhni drejtimin'}
+              />
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                onClick={() =>
+                  loadContractNumber(form.category_id, form.generation, form.enrollment_date)
+                }
+                disabled={!form.category_id || contractBusy}
+                title="Rigjenero numrin e kontratës"
+              >
+                ↻
+              </button>
+            </span>
           </Field>
         </div>
       </section>
