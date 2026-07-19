@@ -9,7 +9,9 @@ const { round2 } = require('../utils/finance');
  */
 async function stats(req, res, next) {
   try {
-    const students = await financeService.listStudentsWithFinance();
+    const students = await financeService.listStudentsWithFinance(); // vetem aktivet
+    const graduates = await financeService.listStudentsWithFinance({ status: 'graduated' });
+    const graduatesInDebt = graduates.filter((g) => g.finance.balance > 0.005);
 
     const totals = {
       students: students.length,
@@ -17,6 +19,9 @@ async function stats(req, res, next) {
       outstanding: round2(students.reduce((s, x) => s + x.finance.balance, 0)),
       overdue: students.filter((x) => x.finance.status === 'overdue').length,
       dueSoon: students.filter((x) => x.finance.status === 'due-soon').length,
+      graduates: graduates.length,
+      graduatesInDebt: graduatesInDebt.length,
+      graduatesDebt: round2(graduatesInDebt.reduce((s, x) => s + x.finance.balance, 0)),
     };
 
     const byCategory = {};

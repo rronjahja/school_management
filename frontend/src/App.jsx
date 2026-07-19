@@ -6,6 +6,8 @@ import RegisterStudent from './pages/RegisterStudent.jsx';
 import EditStudent from './pages/EditStudent.jsx';
 import StudentDetail from './pages/StudentDetail.jsx';
 import Finance from './pages/Finance.jsx';
+import Graduates from './pages/Graduates.jsx';
+import Settings from './pages/Settings.jsx';
 
 export default function App() {
   return (
@@ -17,6 +19,8 @@ export default function App() {
         <Route path="/studentet/:id" element={<StudentDetail />} />
         <Route path="/studentet/:id/ndrysho" element={<EditStudent />} />
         <Route path="/financat" element={<Finance />} />
+        <Route path="/te-diplomuarit" element={<Graduates />} />
+        <Route path="/cilesimet" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

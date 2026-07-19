@@ -9,7 +9,8 @@ import CategoryChip from '../components/ui/CategoryChip.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, PLAN_LABELS, discountText, initials } from '../utils/format';
+import FinanceGroups from '../components/finance/FinanceGroups.jsx';
+import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, initials } from '../utils/format';
 
 const STATUS_FILTERS = [
   ['', 'Të gjitha statuset'],
@@ -26,6 +27,9 @@ export default function Finance() {
   const [categoryId, setCategoryId] = useState('');
   const [plan, setPlan] = useState('');
   const [status, setStatus] = useState('');
+  const [studyYear, setStudyYear] = useState('');
+  const [search, setSearch] = useState('');
+  const [view, setView] = useState('grouped'); // 'grouped' | 'list'
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -33,13 +37,18 @@ export default function Finance() {
   }, []);
 
   useEffect(() => {
-    fetchStudents({
-      category_id: categoryId || undefined,
-      payment_plan: plan || undefined,
-    })
-      .then(setStudents)
-      .catch((err) => setError(errorMessage(err)));
-  }, [categoryId, plan]);
+    const timer = setTimeout(() => {
+      fetchStudents({
+        category_id: categoryId || undefined,
+        payment_plan: plan || undefined,
+        study_year: studyYear || undefined,
+        search: search || undefined,
+      })
+        .then(setStudents)
+        .catch((err) => setError(errorMessage(err)));
+    }, 250); // debounce i kerkimit
+    return () => clearTimeout(timer);
+  }, [categoryId, plan, studyYear, search]);
 
   const filtered = useMemo(() => {
     if (!students) return null;
@@ -73,6 +82,21 @@ export default function Finance() {
       />
 
       <div className="filter-bar">
+        <input
+          type="search"
+          className="filter-search"
+          placeholder="Kërko sipas emrit…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={studyYear} onChange={(e) => setStudyYear(e.target.value)}>
+          <option value="">Të gjithë vitet</option>
+          {Object.entries(YEAR_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
         <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
           <option value="">Të gjitha drejtimet</option>
           {categories.map((c) => (
@@ -96,6 +120,23 @@ export default function Finance() {
             </option>
           ))}
         </select>
+
+        <span className="view-toggle">
+          <button
+            type="button"
+            className={view === 'grouped' ? 'active' : ''}
+            onClick={() => setView('grouped')}
+          >
+            Grupuar
+          </button>
+          <button
+            type="button"
+            className={view === 'list' ? 'active' : ''}
+            onClick={() => setView('list')}
+          >
+            Listë
+          </button>
+        </span>
       </div>
 
       {!filtered || !totals ? (
@@ -115,6 +156,8 @@ export default function Finance() {
 
           {filtered.length === 0 ? (
             <EmptyState title="Asnjë rezultat" hint="Ndryshoni filtrat për të parë studentët." />
+          ) : view === 'grouped' ? (
+            <FinanceGroups students={filtered} />
           ) : (
             <div className="card table-card">
               <div className="table-wrap">

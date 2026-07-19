@@ -46,6 +46,10 @@ function validateStudent(body) {
     errors.push('Zbritja nuk mund të jetë më e madhe se kuota vjetore.');
   }
 
+  if (body.study_year !== undefined && ![1, 2, 3, '1', '2', '3'].includes(body.study_year)) {
+    errors.push('Viti i studimit duhet të jetë 1, 2 ose 3.');
+  }
+
   if (body.payment_plan && !PAYMENT_PLANS.includes(body.payment_plan)) {
     errors.push('Plani i pagesës nuk është i vlefshëm.');
   }

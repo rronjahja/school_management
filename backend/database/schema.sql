@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS students (
   contract_number VARCHAR(30)  DEFAULT NULL,        -- p.sh. '22/2025/TF'
   generation      VARCHAR(20)  NOT NULL,            -- p.sh. '2025/2026'
   class_name      VARCHAR(20)  DEFAULT NULL,        -- p.sh. 'X-1'
+  study_year      TINYINT      NOT NULL DEFAULT 1,   -- 1 = Viti I, 2 = Viti II, 3 = Viti III
   enrollment_date DATE NOT NULL,
 
   yearly_quota    DECIMAL(10,2) NOT NULL,
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS students (
 
 CREATE INDEX idx_students_category ON students (category_id);
 CREATE INDEX idx_students_names    ON students (last_name, first_name);
+CREATE INDEX idx_students_study_year ON students (study_year);
 
 -- ----------------------------------------------------------------
 -- Kestet (gjenerohen automatikisht sipas planit te pageses)

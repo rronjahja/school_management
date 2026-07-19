@@ -4,8 +4,10 @@ const { validateStudent } = require('../utils/validateStudent');
 
 async function list(req, res, next) {
   try {
-    const { search, category_id, payment_plan } = req.query;
-    const students = await financeService.listStudentsWithFinance({ search, category_id, payment_plan });
+    const { search, category_id, payment_plan, study_year, status } = req.query;
+    const students = await financeService.listStudentsWithFinance({
+      search, category_id, payment_plan, study_year, status,
+    });
     res.json(students);
   } catch (err) { next(err); }
 }

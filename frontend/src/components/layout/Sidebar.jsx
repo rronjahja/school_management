@@ -7,7 +7,10 @@ const NAV = [
   { to: '/studentet', label: 'Studentët', icon: StudentsIcon },
   { to: '/studentet/regjistro', label: 'Regjistrimi', icon: RegisterIcon },
   { to: '/financat', label: 'Financat', icon: FinanceIcon },
+  { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon },
 ];
+
+const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon }];
 
 export default function Sidebar() {
   return (
@@ -25,6 +28,19 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={end || to === '/studentet'}
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          >
+            <Icon />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <nav className="sidebar-nav sidebar-nav-bottom">
+        {NAV_BOTTOM.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
             <Icon />
@@ -79,6 +95,35 @@ function RegisterIcon() {
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
       <path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path d="M10 8v5M7.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function GraduateIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path d="M10 3 19 7l-9 4-9-4z" fill="currentColor" />
+      <path
+        d="M5 9.5V14c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V9.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M10 6.6a3.4 3.4 0 100 6.8 3.4 3.4 0 000-6.8zm7 3.4c0 .5 0 .9-.1 1.3l1.5 1.1-1.5 2.6-1.8-.6c-.6.5-1.3.9-2 1.2L12.8 18H9.2l-.3-2.4c-.7-.3-1.4-.7-2-1.2l-1.8.6-1.5-2.6L5.1 11a7.6 7.6 0 010-2L3.6 7.9l1.5-2.6 1.8.6c.6-.5 1.3-.9 2-1.2L9.2 2h3.6l.3 2.4c.7.3 1.4.7 2 1.2l1.8-.6 1.5 2.6L16.9 9c.1.4.1.7.1 1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

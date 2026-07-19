@@ -5,6 +5,7 @@ const paymentController = require('../controllers/paymentController');
 const metaController = require('../controllers/metaController');
 const dashboardController = require('../controllers/dashboardController');
 const documentController = require('../controllers/documentController');
+const promotionController = require('../controllers/promotionController');
 
 const router = Router();
 
@@ -28,6 +29,11 @@ router.get('/templates', documentController.listTemplates);
 router.get('/students/:id/document', documentController.generate);
 // rruga e vjeter mbahet per pajtueshmeri
 router.get('/students/:id/registration-doc', documentController.generate);
+
+// Promovimi i gjeneratave (kalimi i vitit)
+router.get('/promotion', promotionController.overview);
+router.get('/promotion/preview', promotionController.preview);
+router.post('/promotion/run', promotionController.run);
 
 // Pagesat
 router.post('/payments', paymentController.create);

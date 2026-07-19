@@ -171,6 +171,33 @@
   flex-direction: column;
 }
 
+/* Lista e alarmeve mund te jete e gjate — e bejme te rrokullisshme */
+.alert-list {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.alert-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alert-list::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-radius: 999px;
+}
+
+.alert-list::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+}
+
+.alert-list::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
 .alert-item,
 .recent-item {
   display: flex;
@@ -345,4 +372,317 @@
   flex-shrink: 0;
   padding: 0 12px;
   font-size: 15px;
+}
+
+/* ---------- Ndarësi Grupuar / Listë ---------- */
+.view-toggle {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.view-toggle button {
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-toggle button + button {
+  border-left: 1px solid var(--line-strong);
+}
+
+.view-toggle button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ---------- Financat: grupimi sipas vitit dhe drejtimit ---------- */
+.fin-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fin-year {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.fin-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 14px 18px;
+  transition: background 0.12s;
+}
+
+.fin-head:hover {
+  background: var(--primary-soft);
+}
+
+.fin-head-year {
+  background: linear-gradient(90deg, var(--primary-soft), transparent 70%);
+  border-bottom: 1px solid var(--line);
+}
+
+.fin-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  white-space: nowrap;
+}
+
+.fin-caret {
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.fin-caret.open {
+  transform: rotate(90deg);
+}
+
+.fin-totals {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fin-stat {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.fin-stat em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-year-body {
+  padding: 6px 10px 12px;
+}
+
+.fin-cat {
+  border-bottom: 1px solid var(--line);
+}
+
+.fin-cat:last-child {
+  border-bottom: none;
+}
+
+.fin-head-cat {
+  padding: 11px 12px;
+  border-radius: var(--radius-small);
+}
+
+.fin-cat-table {
+  padding: 0 6px 14px;
+}
+
+@media (max-width: 900px) {
+  .fin-totals {
+    gap: 10px;
+  }
+
+  .fin-stat {
+    font-size: 12px;
+  }
+
+  .view-toggle {
+    margin-left: 0;
+  }
+}
+
+/* ---------- Cilesimet / promovimi ---------- */
+.settings-intro {
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  max-width: 70ch;
+}
+
+.settings-current {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.row-selected {
+  background: var(--primary-soft);
+}
+
+.form-success {
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid rgba(30, 127, 88, 0.25);
+  border-radius: var(--radius-small);
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.promo-preview {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--primary-border);
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+}
+
+.promo-preview h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--primary-dark);
+}
+
+.promo-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.promo-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  padding: 14px 16px;
+  border-top: 3px solid var(--primary);
+}
+
+.promo-box-grad {
+  border-top-color: var(--gold);
+}
+
+.promo-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.promo-big {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  margin: 2px 0 8px;
+}
+
+.promo-box ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.promo-opts {
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.check-field {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.check-field input {
+  width: auto;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.check-field em {
+  display: block;
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.check-inline input {
+  width: auto;
+}
+
+.promo-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.confirm-warning {
+  background: var(--amber-bg);
+  border: 1px solid rgba(150, 105, 14, 0.25);
+  color: var(--amber);
+  border-radius: var(--radius-small);
+  padding: 10px 14px;
+  font-size: 13.5px;
+}
+
+.sidebar-nav-bottom {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cell-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.promo-repeat {
+  background: var(--amber-bg);
+  border: 1px solid rgba(150, 105, 14, 0.25);
+  color: var(--amber);
+  border-radius: var(--radius-small);
+  padding: 9px 13px;
+  font-size: 13px;
+  margin-bottom: 14px;
 }

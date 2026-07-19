@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import Field from '../ui/Field.jsx';
 import { fetchNextContractNumber } from '../../api/students';
 import FinancePreview from './FinancePreview.jsx';
-import { DISCOUNT_LABELS, PLAN_LABELS } from '../../utils/format';
+import { DISCOUNT_LABELS, PLAN_LABELS, YEAR_LABELS } from '../../utils/format';
 
 const EMPTY = {
   first_name: '',
@@ -27,6 +27,7 @@ const EMPTY = {
   contract_number: '',
   generation: '2025/2026',
   class_name: '',
+  study_year: 1,
   enrollment_date: dayjs().format('YYYY-MM-DD'),
   yearly_quota: '',
   discount_type: 'none',
@@ -84,6 +85,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
       ...form,
       discount_value: form.discount_type === 'none' ? 0 : Number(form.discount_value || 0),
       yearly_quota: Number(form.yearly_quota),
+      study_year: Number(form.study_year) || 1,
     });
   };
 
@@ -210,6 +212,15 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           </Field>
           <Field label="Gjenerata" required>
             <input value={form.generation} onChange={set('generation')} required placeholder="2025/2026" />
+          </Field>
+          <Field label="Viti i studimit" required>
+            <select value={form.study_year} onChange={set('study_year')} required>
+              {Object.entries(YEAR_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="Klasa">
             <input value={form.class_name || ''} onChange={set('class_name')} placeholder="p.sh. X-1" />

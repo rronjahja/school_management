@@ -38,6 +38,14 @@ export default function Dashboard() {
           hint={`${totals.dueSoon} afër afatit`}
           tone={totals.overdue > 0 ? 'red' : 'default'}
         />
+        {totals.graduatesInDebt > 0 && (
+          <StatCard
+            label="Të diplomuar me borxh"
+            value={totals.graduatesInDebt}
+            hint={money(totals.graduatesDebt)}
+            tone="red"
+          />
+        )}
       </div>
 
       <div className="dashboard-columns">

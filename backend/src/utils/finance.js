@@ -124,7 +124,11 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
   }));
 
   const paid = round2(Number(totalPaid) || 0);
-  const balance = round2(Math.max(netQuota - paid, 0));
+
+  // Detyrimi total = shuma e TE GJITHA kesteve (mund te perfshije disa vite
+  // shkollore pas promovimit). Nese ka vetem nje vit, eshte i barabarte me kuoten neto.
+  const totalDue = round2(installments.reduce((sum, i) => sum + Number(i.amount), 0));
+  const balance = round2(Math.max(totalDue - paid, 0));
 
   let status = 'ok';
   if (balance <= EPSILON && installments.length > 0) status = 'paid';
@@ -134,7 +138,8 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
   const nextUnpaid = allocated.find((i) => i.status !== 'paid') || null;
 
   return {
-    net_quota: netQuota,
+    net_quota: netQuota,   // kuota e vitit aktual
+    total_due: totalDue,   // detyrimi total (te gjitha vitet)
     total_paid: paid,
     balance,
     status,

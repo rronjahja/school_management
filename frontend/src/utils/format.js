@@ -17,6 +17,12 @@ export const PLAN_LABELS = {
   monthly: 'Mujore (12 muaj)',
 };
 
+export const YEAR_LABELS = {
+  1: 'Viti I',
+  2: 'Viti II',
+  3: 'Viti III',
+};
+
 export const STATUS_META = {
   paid: { label: 'E paguar', tone: 'green' },
   ok: { label: 'Në rregull', tone: 'neutral' },

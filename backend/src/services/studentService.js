@@ -8,7 +8,7 @@ const STUDENT_FIELDS = [
   'mother_name', 'mother_last_name', 'mother_birthday',
   'father_name', 'father_last_name',
   'guardian_personal_id', 'guardian_phone', 'guardian_email',
-  'category_id', 'contract_number', 'generation', 'class_name', 'enrollment_date',
+  'category_id', 'contract_number', 'generation', 'class_name', 'study_year', 'enrollment_date',
   'yearly_quota', 'discount_type', 'discount_value', 'payment_plan',
 ];
 
@@ -156,7 +156,7 @@ async function deleteStudent(id) {
 }
 
 /** Lista e studenteve me filtra opsionale (kerkim + drejtim + plan). */
-async function listStudents({ search, category_id, payment_plan } = {}) {
+async function listStudents({ search, category_id, payment_plan, study_year, status } = {}) {
   const where = [];
   const params = [];
 
@@ -172,6 +172,17 @@ async function listStudents({ search, category_id, payment_plan } = {}) {
   if (payment_plan) {
     where.push('s.payment_plan = ?');
     params.push(payment_plan);
+  }
+  if (study_year) {
+    where.push('s.study_year = ?');
+    params.push(study_year);
+  }
+  // Si parazgjedhje shfaqen vetem studentet aktive
+  if (status === 'all') {
+    // pa filtrim
+  } else {
+    where.push('s.status = ?');
+    params.push(status || 'active');
   }
 
   const [rows] = await pool.query(
