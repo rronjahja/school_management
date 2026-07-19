@@ -138,6 +138,44 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE INDEX idx_payments_student ON payments (student_id);
 
 -- ----------------------------------------------------------------
+-- Historiku i viteve te mbyllura (mbushet nga kalimi i vitit)
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS student_year_history (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  student_id      INT NOT NULL,
+  generation      VARCHAR(20) NOT NULL,
+  study_year      TINYINT NOT NULL,
+  contract_number VARCHAR(30) DEFAULT NULL,
+  yearly_quota    DECIMAL(10,2) NOT NULL,
+  discount_type   ENUM('none','percent','amount') NOT NULL DEFAULT 'none',
+  discount_value  DECIMAL(10,2) NOT NULL DEFAULT 0,
+  payment_plan    VARCHAR(20) NOT NULL,
+  enrollment_date DATE NOT NULL,
+  closed_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_history_student
+    FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE,
+  CONSTRAINT uq_history UNIQUE (student_id, generation)
+) ENGINE = InnoDB;
+
+-- ----------------------------------------------------------------
+-- Regjistri i kalimeve te vitit (pengon perseritjen aksidentale)
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS promotions (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  from_generation  VARCHAR(20) NOT NULL,
+  to_generation    VARCHAR(20) NOT NULL,
+  promoted_count   INT NOT NULL DEFAULT 0,
+  graduated_count  INT NOT NULL DEFAULT 0,
+  new_year_created TINYINT(1) NOT NULL DEFAULT 0,
+  quota_increase   DECIMAL(5,2) NOT NULL DEFAULT 0,
+  note             VARCHAR(255) DEFAULT NULL,
+  run_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT uq_promotion UNIQUE (from_generation, to_generation)
+) ENGINE = InnoDB;
+
+-- ----------------------------------------------------------------
 -- Perdoruesit e sistemit (hyrja)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (

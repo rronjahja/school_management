@@ -9,6 +9,16 @@ async function createPayment({ student_id, amount, payment_date, method, bank_id
   if (!['cash', 'bank'].includes(method)) throw httpError(400, 'Mënyra e pagesës nuk është e vlefshme.');
   if (method === 'bank' && !bank_id) throw httpError(400, 'Zgjidhni bankën.');
 
+  // Kontrollojme ekzistencen para insert-it, qe te japim mesazh te qarte
+  // ne vend te nje gabimi te pergjithshem 500 nga kufizimet e bazes.
+  const [[student]] = await pool.query('SELECT id FROM students WHERE id = ?', [student_id]);
+  if (!student) throw httpError(404, 'Studenti nuk u gjet.');
+
+  if (method === 'bank') {
+    const [[bank]] = await pool.query('SELECT id FROM banks WHERE id = ?', [bank_id]);
+    if (!bank) throw httpError(400, 'Banka e zgjedhur nuk ekziston.');
+  }
+
   const [result] = await pool.query('INSERT INTO payments SET ?', [{
     student_id,
     amount: Number(amount),
