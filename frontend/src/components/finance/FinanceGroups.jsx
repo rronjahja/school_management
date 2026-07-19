@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import ReminderButton from './ReminderButton.jsx';
 import CategoryChip from '../ui/CategoryChip.jsx';
-import { money, date, PLAN_LABELS, YEAR_LABELS, initials, parallel } from '../../utils/format';
+import { money, date, PLAN_LABELS, YEAR_LABELS, initials, classLabel } from '../../utils/format';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -137,7 +137,7 @@ export default function FinanceGroups({ students }) {
                                       </strong>
                                     </span>
                                   </td>
-                                  <td>{parallel(s.class_name)}</td>
+                                  <td>{classLabel(s.study_year, s.class_name)}</td>
                                   <td>{PLAN_LABELS[s.payment_plan]}</td>
                                   <td className="num">{money(s.finance.net_quota)}</td>
                                   <td className="num cell-paid">{money(s.finance.total_paid)}</td>

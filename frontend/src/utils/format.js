@@ -64,9 +64,22 @@ export function discountText(type, value) {
 }
 
 /** Paralelja ne formatin X/1 (pranon edhe "X-1" nga te dhenat e vjetra). */
-export function parallel(className) {
-  if (!className) return '—';
-  return String(className).replace(/\s*[-–_]\s*/, '/');
+/** Prefiksi roman sipas vitit te studimit. */
+export const YEAR_ROMAN = { 1: 'X', 2: 'XI', 3: 'XII' };
+
+/**
+ * Paralelja e plote per shfaqje: viti (roman) + numri i ruajtur.
+ * Ne baze ruhet vetem numri ('1'), sepse viti ndodhet te study_year —
+ * keshtu te dyja nuk mund te bien ne kundershtim.
+ *   classLabel(2, '1') -> 'XI/1'
+ */
+export function classLabel(studyYear, className) {
+  if (className === null || className === undefined || String(className).trim() === '') {
+    return '—';
+  }
+  const nr = String(className).trim();
+  const roman = YEAR_ROMAN[studyYear];
+  return roman ? `${roman}/${nr}` : nr;
 }
 
 /** Gjenerata e shkurter: "2026/2027" -> "2026/27". */

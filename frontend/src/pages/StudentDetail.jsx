@@ -20,7 +20,14 @@ import InstallmentTable from '../components/finance/InstallmentTable.jsx';
 import PaymentList from '../components/finance/PaymentList.jsx';
 import PaymentModal from '../components/finance/PaymentModal.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
-import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, parallel, shortGen } from '../utils/format';
+import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortGen } from '../utils/format';
+
+/** Kush kontaktohet i pari — shfaqet te kartela e prindërve. */
+const CONTACT_LABELS = {
+  mother: 'Nëna',
+  father: 'Babai',
+  guardian: 'Kujdestari ligjor',
+};
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -41,13 +48,13 @@ export default function StudentDetail() {
     fetchStudent(id)
       .then(setStudent)
       .catch((err) => setError(errorMessage(err)));
-    fetchBanks().then(setBanks).catch(() => {});
+    fetchBanks().then(setBanks).catch(() => { });
     fetchTemplates()
       .then((t) => {
         setTemplates(t);
         if (t.length) setTemplateFile(t[0].file);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [id]);
 
   const handlePayment = async (data) => {
@@ -108,7 +115,7 @@ export default function StudentDetail() {
             <CategoryChip name={student.category_name} color={student.category_color} />
             <span className="muted">
               {shortGen(student.generation)} · {YEAR_LABELS[student.study_year] || 'Viti I'}
-              {student.class_name ? ` · Paralelja ${parallel(student.class_name)}` : ''}
+              {student.class_name ? ` · Paralelja ${classLabel(student.study_year, student.class_name)}` : ''}
             </span>
             <StatusBadge status={f.status} />
           </span>
@@ -133,7 +140,7 @@ export default function StudentDetail() {
             </select>
           )}
           <button type="button" className="btn btn-ghost" onClick={handleDocument}>
-            ⬇ {templates.length === 1 ? `Gjenero: ${templates[0].label}` : 'Gjenero dokumentin'}
+            ⬇ {templates.length === 1 ? 'Krijo Kontratën' : 'Krijo dokumentin'}
           </button>
         </span>
         <Link to={`/studentet/${id}/ndrysho`} className="btn btn-ghost">
@@ -177,7 +184,7 @@ export default function StudentDetail() {
           <h2 className="card-title">Të dhënat personale</h2>
           <dl className="info-grid">
             <Info label="Datëlindja" value={date(student.birthday)} />
-            <Info label="Qyteti" value={student.city} />
+            <Info label="Komuna" value={student.city} />
             <Info label="Adresa" value={student.address} span />
             <Info label="Shtetësia" value={student.citizenship} />
             <Info label="Kombësia" value={student.nationality} />
@@ -190,32 +197,62 @@ export default function StudentDetail() {
         </section>
 
         <section className="card">
-          <h2 className="card-title">Prindërit / Kujdestari</h2>
-          <dl className="info-grid">
-            <Info
-              label="Nëna"
-              value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')}
-            />
-            <Info label="Datëlindja e nënës" value={date(student.mother_birthday)} />
-            <Info
-              label="Babai"
-              value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')}
-            />
-            <Info label="Nr. personal" value={student.guardian_personal_id} />
-            <Info label="Telefoni i prindit" value={student.guardian_phone} />
-            <Info label="E-maili i prindit" value={student.guardian_email} />
-          </dl>
+          <h2 className="card-title">
+            {student.primary_contact === 'guardian' ? 'Kujdestari ligjor' : 'Prindërit'}
+          </h2>
+          <div className="info-grid">
+            {student.primary_contact === 'guardian' ? (
+              <>
+                <Info label="Emri" value={student.guardian_name} />
+                <Info label="Mbiemri" value={student.guardian_last_name} />
+                <Info
+                  label="Telefoni"
+                  value={student.guardian_phone}
+                  strong
+                  contactTag={CONTACT_LABELS.guardian}
+                />
+                <Info label="Datëlindja" value={date(student.guardian_birthday)} />
+                <Info label="Nr. personal" value={student.guardian_personal_id} />
+              </>
+            ) : (
+              <>
+                <Info label="Nëna" value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')} />
+                <Info
+                  label="Telefoni i nënës"
+                  value={student.mother_phone}
+                  strong={student.primary_contact === 'mother'}
+                  contactTag={student.primary_contact === 'mother' ? CONTACT_LABELS.mother : null}
+                />
+                <Info label="Datëlindja e nënës" value={date(student.mother_birthday)} />
+                <Info label="Nr. personal i nënës" value={student.mother_personal_id} />
+                <Info label="Babai" value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')} />
+                <Info
+                  label="Telefoni i babait"
+                  value={student.father_phone}
+                  strong={student.primary_contact === 'father'}
+                  contactTag={student.primary_contact === 'father' ? CONTACT_LABELS.father : null}
+                />
+                <Info label="Datëlindja e babait" value={date(student.father_birthday)} />
+                <Info label="Nr. personal i babait" value={student.father_personal_id} />
+              </>
+            )}
+          </div>
         </section>
 
         <section className="card">
           <div className="card-title-row">
             <h2 className="card-title">Pagesat</h2>
-            <button type="button" className="btn btn-primary btn-small" onClick={() => setShowPayment(true)}>
+            <button
+              type="button"
+              className="btn btn-primary btn-small"
+              onClick={() => setShowPayment(true)}
+            >
               + Shto pagesë
             </button>
           </div>
           <PaymentList
             payments={student.payments}
+            finance={f}
             onDelete={isAdmin ? handleDeletePayment : null}
           />
         </section>
@@ -243,11 +280,18 @@ export default function StudentDetail() {
   );
 }
 
-function Info({ label, value, span }) {
+function Info({ label, value, span, strong, contactTag }) {
   return (
     <div className={`info-item${span ? ' info-span' : ''}`}>
       <dt>{label}</dt>
-      <dd>{value || '—'}</dd>
+      <dd className={strong ? 'is-primary' : undefined}>
+        {value || '—'}
+        {contactTag && (
+          <span className="contact-note">
+            ★ Kontakti i parë: <strong>{contactTag}</strong>
+          </span>
+        )}
+      </dd>
     </div>
   );
 }

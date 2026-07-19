@@ -1,12 +1,27 @@
 import dayjs from 'dayjs';
 import { SCHOOL } from '../../config/school';
-import { money, date, parallel, YEAR_LABELS } from './format';
+import { money, date, classLabel, YEAR_LABELS } from './format';
 
-/** Kontakti i parë prindëror: babai nëse ekziston, përndryshe nëna. */
+/**
+ * Emri i prindit qe duhet kontaktuar i pari.
+ *
+ * Zgjedhja vjen nga vete regjistrimi i nxenesit (`primary_contact`), jo nga
+ * ndonje rregull i ngurte. Nese ai prind nuk ka emer te regjistruar,
+ * perdoret tjetri; ne mungese te te dyve, nje formulim asnjanes.
+ */
 export function parentContact(s) {
-  const father = [s.father_name, s.father_last_name].filter(Boolean).join(' ').trim();
-  const mother = [s.mother_name, s.mother_last_name].filter(Boolean).join(' ').trim();
-  return father || mother || 'prind/kujdestar';
+  const full = (a, b) => [a, b].filter(Boolean).join(' ').trim();
+  const mother = full(s.mother_name, s.mother_last_name);
+  const father = full(s.father_name, s.father_last_name);
+  const guardian = full(s.guardian_name, s.guardian_last_name);
+
+  if (s.primary_contact === 'guardian') {
+    return guardian || father || mother || 'prind/kujdestar';
+  }
+
+  const chosen = s.primary_contact === 'mother' ? mother : father;
+  const other = s.primary_contact === 'mother' ? father : mother;
+  return chosen || other || 'prind/kujdestar';
 }
 
 /**
@@ -27,8 +42,11 @@ export function buildReminder(student, banks = []) {
 
   const fullName = `${student.first_name} ${student.last_name}`;
   const yearLabel = YEAR_LABELS[student.study_year] || '';
-  const klasa = student.class_name ? `, paralelja ${parallel(student.class_name)}` : '';
+  const klasa = student.class_name
+    ? `, paralelja ${classLabel(student.study_year, student.class_name)}`
+    : '';
   const remaining = (i) => Number(i.amount) - Number(i.paid || 0);
+  const label = (i) => (i.is_carryover ? 'Borxhi i vitit të kaluar' : `Kësti ${i.seq}`);
 
   const lines = [];
   lines.push(`Përshëndetje i/e nderuar ${parentContact(student)},`);
@@ -44,11 +62,14 @@ export function buildReminder(student, banks = []) {
   if (target.length === 1) {
     const i = target[0];
     lines.push(
-      overdue.length
-        ? `Kësti ${i.seq} në shumën ${money(remaining(i))} ka pasur afat pagese më ` +
-            `${date(i.due_date)} dhe ende nuk figuron i paguar.`
-        : `Kësti ${i.seq} në shumën ${money(remaining(i))} ka afat pagese më ` +
-            `${date(i.due_date)}.`
+      i.is_carryover
+        ? `Borxhi i mbetur nga viti i kaluar shkollor është ${money(remaining(i))} ` +
+            'dhe duhet shlyer sa më parë.'
+        : overdue.length
+          ? `Kësti ${i.seq} në shumën ${money(remaining(i))} ka pasur afat pagese më ` +
+              `${date(i.due_date)} dhe ende nuk figuron i paguar.`
+          : `Kësti ${i.seq} në shumën ${money(remaining(i))} ka afat pagese më ` +
+              `${date(i.due_date)}.`
     );
   } else if (target.length > 1) {
     lines.push(
@@ -57,7 +78,11 @@ export function buildReminder(student, banks = []) {
         : 'Këstet e mëposhtme janë afër afatit të pagesës:'
     );
     target.forEach((i) => {
-      lines.push(`  • Kësti ${i.seq} — afati ${date(i.due_date)} — ${money(remaining(i))}`);
+      lines.push(
+        i.is_carryover
+          ? `  • ${label(i)} — ${money(remaining(i))}`
+          : `  • ${label(i)} — afati ${date(i.due_date)} — ${money(remaining(i))}`
+      );
     });
     lines.push('');
     lines.push(

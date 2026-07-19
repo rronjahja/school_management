@@ -127,12 +127,22 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
     student.discount_value
   );
 
-  const allocated = allocatePayments(installments, totalPaid).map((inst) => ({
-    ...inst,
-    status: installmentStatus(inst, today),
-  }));
+  // 'settled_paid' = pagesa te konsumuara nga keste qe u hoqen gjate kalimit
+  // te vitit (u zevendesuan me rreshtin "Borxhi i vitit te kaluar").
+  // Vetem pjesa EFEKTIVE e pagesave shperndahet mbi kestet aktuale —
+  // perndryshe e njejta pagese do te numerohej dy here.
+  const lifetimePaid = round2(Number(totalPaid) || 0);
+  const settled = round2(Number(student.settled_paid) || 0);
+  const effectivePaid = round2(Math.max(lifetimePaid - settled, 0));
 
-  const paid = round2(Number(totalPaid) || 0);
+  const allocated = allocatePayments(installments, effectivePaid).map((inst) => {
+    const st = installmentStatus(inst, today);
+    // Borxhi i bartur i papaguar eshte GJITHMONE i vonuar (i kuq)
+    const overdue = inst.is_carryover && Number(inst.amount) - Number(inst.paid || 0) > EPSILON;
+    return { ...inst, status: overdue ? 'overdue' : st };
+  });
+
+  const paid = effectivePaid;
 
   // Detyrimi total = shuma e TE GJITHA kesteve (mund te perfshije disa vite
   // shkollore pas promovimit). Nese ka vetem nje vit, eshte i barabarte me kuoten neto.
@@ -169,7 +179,8 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
     past_years_due: pastDue,
     past_years_paid: pastPaid,
     past_years_balance: round2(Math.max(pastDue - pastPaid, 0)),
-    total_paid: paid,
+    total_paid: paid,          // pagesat qe mbulojne strukturen AKTUALE te kesteve
+    lifetime_paid: lifetimePaid, // gjithcka e paguar ndonjehere (historiku)
     balance,
     status,
     next_due: nextUnpaid

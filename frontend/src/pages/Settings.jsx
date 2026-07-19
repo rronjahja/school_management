@@ -12,6 +12,7 @@ import Field from '../components/ui/Field.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import { money, date, YEAR_LABELS, shortGen } from '../utils/format';
 import UserManager from '../components/settings/UserManager.jsx';
+import DataManager from '../components/settings/DataManager.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -289,6 +290,8 @@ export default function Settings() {
           </div>
         )}
       </section>
+
+      <DataManager />
 
       <UserManager />
 

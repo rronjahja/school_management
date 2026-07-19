@@ -2,11 +2,10 @@ const REQUIRED_FIELDS = [
   ['first_name', 'Emri'],
   ['last_name', 'Mbiemri'],
   ['birthday', 'Datëlindja'],
-  ['city', 'Qyteti'],
+  ['city', 'Komuna'],
   ['address', 'Adresa'],
-  ['mother_name', 'Emri i nënës'],
-  ['father_name', 'Emri i babait'],
-  ['phone', 'Numri i telefonit'],
+  ['citizenship', 'Shtetësia'],
+  ['nationality', 'Kombësia'],
   ['category_id', 'Drejtimi'],
   ['generation', 'Gjenerata'],
   ['enrollment_date', 'Data e regjistrimit'],
@@ -66,6 +65,9 @@ function validateStudent(body) {
   if (body.mother_birthday && !isValidDate(body.mother_birthday)) {
     errors.push('Datëlindja e nënës nuk është datë e vlefshme.');
   }
+  if (body.father_birthday && !isValidDate(body.father_birthday)) {
+    errors.push('Datëlindja e babait nuk është datë e vlefshme.');
+  }
 
   // mosha e arsyeshme për shkollë të mesme
   if (body.birthday && isValidDate(body.birthday)) {
@@ -113,7 +115,7 @@ function validateStudent(body) {
         errors.push('Zbritja në përqindje nuk mund të kalojë 100%.');
       }
       if (discountType === 'amount' && isFiniteNumber(body.yearly_quota) &&
-          dv > Number(body.yearly_quota)) {
+        dv > Number(body.yearly_quota)) {
         errors.push('Zbritja nuk mund të jetë më e madhe se kuota vjetore.');
       }
     }
@@ -127,12 +129,56 @@ function validateStudent(body) {
     errors.push('Viti i studimit duhet të jetë 1, 2 ose 3.');
   }
 
+  // ---- prinderit ----
+  // Emrat nuk jane te detyrueshem. Kontakti i pare duhet te jete i vlefshem.
+  if (body.primary_contact !== undefined &&
+    !['mother', 'father', 'guardian'].includes(body.primary_contact)) {
+    errors.push('Kontakti i parë duhet të jetë nëna, babai ose kujdestari ligjor.');
+  }
+
+  // Me kujdestar ligjor, emri i tij eshte i detyrueshem — pa te, mesazhet
+  // e rikujteses nuk kane kujt t'i drejtohen.
+  if (body.primary_contact === 'guardian' &&
+    String(body.guardian_name || '').trim() === '') {
+    errors.push('Emri i kujdestarit ligjor është i detyrueshëm.');
+  }
+
+  if (body.guardian_birthday && !isValidDate(body.guardian_birthday)) {
+    errors.push('Datëlindja e kujdestarit nuk është datë e vlefshme.');
+  }
+
+  const PHONE_OWNER = {
+    mother_phone: 'nënës',
+    father_phone: 'babait',
+    guardian_phone: 'kujdestarit',
+  };
+  Object.keys(PHONE_OWNER).forEach((f) => {
+    const v = body[f];
+    if (v !== undefined && String(v).trim() !== '' && String(v).replace(/\D/g, '').length < 6) {
+      errors.push(`Numri i telefonit të ${PHONE_OWNER[f]} duket i pasaktë.`);
+    }
+  });
+
+  // Numri personal: shifra, gjatesi e arsyeshme
+  [['mother_personal_id', 'nënës'], ['father_personal_id', 'babait'],
+  ['guardian_personal_id', 'kujdestarit']].forEach(([f, kujt]) => {
+    const v = body[f];
+    if (v !== undefined && String(v).trim() !== '' && !/^\d{6,20}$/.test(String(v).trim())) {
+      errors.push(`Numri personal i ${kujt} duhet të jetë 6-20 shifra.`);
+    }
+  });
+
+  // ---- paralelja ----
+  // Ruhet vetem numri; viti (X/XI/XII) shtohet automatikisht ne shfaqje.
+  if (body.class_name !== undefined && String(body.class_name).trim() !== '') {
+    if (!/^\d{1,2}$/.test(String(body.class_name).trim())) {
+      errors.push('Paralelja duhet të jetë vetëm numër (p.sh. 1, 2, 3).');
+    }
+  }
+
   // ---- kontakti ----
   if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) {
     errors.push('E-maili i nxënësit nuk është i vlefshëm.');
-  }
-  if (body.guardian_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.guardian_email))) {
-    errors.push('E-maili i prindit nuk është i vlefshëm.');
   }
   if (body.phone && String(body.phone).replace(/\D/g, '').length < 6) {
     errors.push('Numri i telefonit duket i pasaktë.');

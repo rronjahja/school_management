@@ -4,22 +4,6 @@ const { httpError } = require('../middleware/errorHandler');
 const { isValidDate } = require('../utils/validateStudent');
 
 const FINAL_YEAR = 3; // viti i fundit i shkollimit
-const ROMAN = ['X', 'XI', 'XII'];
-
-/**
- * Ngre paralelen nje vit: X/1 -> XI/1 -> XII/1.
- * Numri i paraleles ruhet; ndryshon vetem shkalla (X, XI, XII).
- */
-function advanceClassName(className, newStudyYear) {
-  const roman = ROMAN[newStudyYear - 1];
-  if (!roman) return className;
-  if (!className) return null;
-
-  const m = String(className).match(/[-–_/\s]+(.+)$/);
-  const suffix = m ? m[1].trim() : '';
-  return suffix ? `${roman}/${suffix}` : roman;
-}
-
 /** '2024/2025' -> '2025/2026' */
 function nextGeneration(generation) {
   const m = String(generation || '').match(/(\d{4})\s*\/\s*(\d{2,4})/);
@@ -204,29 +188,64 @@ async function promote({
       // 2b. Kalon ne vitin pasues
       const contract = await newContractNumber(conn, s.category_id, to);
       const newQuota = round2(Number(s.yearly_quota) * (1 + increase / 100));
-      const newClass = advanceClassName(s.class_name, s.study_year + 1);
 
       await conn.query(
         `UPDATE students
             SET study_year = study_year + 1,
                 generation = ?,
                 contract_number = ?,
-                class_name = ?,
                 enrollment_date = ?,
                 yearly_quota = ?
           WHERE id = ?`,
-        [to, contract, newClass, startDate, create_new_year ? newQuota : s.yearly_quota, s.id]
+        [to, contract, startDate, create_new_year ? newQuota : s.yearly_quota, s.id]
       );
+
+      // 2c. Mbyllja e vitit te vjeter: kestet e paguara HIQEN; borxhi i mbetur
+      //     (nese ka) behet NJE rresht i vetem "Borxhi i vitit te kaluar" ne krye.
+      //
+      //     Llogaria mbetet e sakte sepse pjesa e pagesave qe mbuloi kestet e
+      //     hequra regjistrohet te students.settled_paid dhe nuk shperndahet me.
+      const [oldInsts] = await conn.query(
+        'SELECT amount FROM installments WHERE student_id = ?',
+        [s.id]
+      );
+      const [[pay]] = await conn.query(
+        'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE student_id = ?',
+        [s.id]
+      );
+
+      const oldDue = round2(oldInsts.reduce((a, i) => a + Number(i.amount), 0));
+      const effectivePaid = round2(
+        Math.max(Number(pay.total) - Number(s.settled_paid || 0), 0)
+      );
+      const consumed = round2(Math.min(effectivePaid, oldDue));
+      const remainder = round2(oldDue - consumed);
+
+      await conn.query('DELETE FROM installments WHERE student_id = ?', [s.id]);
+      await conn.query(
+        'UPDATE students SET settled_paid = round(settled_paid + ?, 2) WHERE id = ?',
+        [consumed, s.id]
+      );
+
+      // Borxhi i bartur merr seq 0: renditet i pari dhe paguhet i pari (FIFO),
+      // ndersa kestet e vitit te ri numerohen normalisht 1..n kudo
+      // (tabele, kontrate, rikujtese).
+      if (remainder > 0.005) {
+        await conn.query('INSERT INTO installments SET ?', [{
+          student_id: s.id,
+          generation: s.generation, // viti nga i cili vjen borxhi
+          is_carryover: 1,
+          seq: 0,
+          due_date: startDate,
+          amount: remainder,
+        }]);
+      }
 
       if (create_new_year) {
         const net = computeNetQuota(newQuota, s.discount_type, s.discount_value);
         const fresh = buildInstallments(net, s.payment_plan, startDate, to);
 
-        const [[mx]] = await conn.query(
-          'SELECT COALESCE(MAX(seq), 0) AS m FROM installments WHERE student_id = ?',
-          [s.id]
-        );
-        const values = fresh.map((i) => [s.id, to, Number(mx.m) + i.seq, i.due_date, i.amount]);
+        const values = fresh.map((i) => [s.id, to, i.seq, i.due_date, i.amount]);
         await conn.query(
           'INSERT INTO installments (student_id, generation, seq, due_date, amount) VALUES ?',
           [values]
@@ -258,7 +277,6 @@ async function promote({
 }
 
 module.exports = {
-  advanceClassName,
   nextGeneration,
   currentGeneration,
   listGenerations,

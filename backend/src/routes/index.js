@@ -37,6 +37,15 @@ router.post('/users/:id/reset-password', requireAdmin, userController.resetPassw
 router.get('/categories', metaController.categories);
 router.get('/banks', metaController.banks);
 
+// Konfigurimet — vetëm administratorët mund të ndryshojnë
+router.post('/banks', requireAdmin, metaController.createBank);
+router.put('/banks/:id', requireAdmin, metaController.updateBank);
+router.delete('/banks/:id', requireAdmin, metaController.removeBank);
+
+router.post('/categories', requireAdmin, metaController.createCategory);
+router.put('/categories/:id', requireAdmin, metaController.updateCategory);
+router.delete('/categories/:id', requireAdmin, metaController.removeCategory);
+
 // Paneli
 router.get('/dashboard', dashboardController.stats);
 

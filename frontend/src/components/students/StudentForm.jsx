@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import Field from '../ui/Field.jsx';
 import { fetchNextContractNumber } from '../../api/students';
 import FinancePreview from './FinancePreview.jsx';
-import { DISCOUNT_LABELS, PLAN_LABELS, YEAR_LABELS, defaultRegistrationGeneration } from '../../utils/format';
+import { DISCOUNT_LABELS, PLAN_LABELS, YEAR_LABELS, YEAR_ROMAN, defaultRegistrationGeneration } from '../../utils/format';
 
 const EMPTY = {
   first_name: '',
@@ -20,9 +20,17 @@ const EMPTY = {
   mother_birthday: '',
   father_name: '',
   father_last_name: '',
-  guardian_personal_id: '',
+  mother_phone: '',
+  mother_personal_id: '',
+  father_phone: '',
+  father_birthday: '',
+  father_personal_id: '',
+  guardian_name: '',
+  guardian_last_name: '',
   guardian_phone: '',
-  guardian_email: '',
+  guardian_birthday: '',
+  guardian_personal_id: '',
+  primary_contact: 'mother',
   category_id: '',
   contract_number: '',
   generation: defaultRegistrationGeneration(),
@@ -46,6 +54,10 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
   });
 
   const set = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
+
+  // Kujdestari ligjor nuk mbahet si fushe e vecante: 'guardian' te
+  // primary_contact eshte i vetmi burim i se vertetes.
+  const hasGuardian = form.primary_contact === 'guardian';
 
   // ---- Nr. i kontratës: mbushet vetvetiu sipas drejtimit + gjeneratës ----
   const isEdit = Boolean(initial && initial.id);
@@ -92,6 +104,35 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
   const discountActive = form.discount_type !== 'none';
   const categoryOptions = useMemo(() => categories || [], [categories]);
 
+  // Kuota vjetore vjen nga konfigurimi i drejtimit (Cilësimet), jo nga shkrimi me dorë.
+  const selectedCategory = categoryOptions.find(
+    (c) => String(c.id) === String(form.category_id)
+  );
+  const quotaLocked =
+    selectedCategory != null &&
+    selectedCategory.default_quota !== null &&
+    selectedCategory.default_quota !== undefined;
+
+  /**
+   * Kur ndryshon drejtimi, kuota merret nga konfigurimi i tij.
+   * E rendesishme: kjo ndodh VETEM me nje ndryshim te vertete nga perdoruesi —
+   * hapja e formularit per nje nxenes ekzistues nuk ia prek kuoten.
+   */
+  const setCategory = (e) => {
+    const id = e.target.value;
+    const cat = categoryOptions.find((c) => String(c.id) === String(id));
+    const hasQuota =
+      cat && cat.default_quota !== null && cat.default_quota !== undefined;
+
+    // Nese drejtimi i ri s'ka kuote te caktuar, fusha zbrazet — qe te mos
+    // mbetet aty vlera e drejtimit te meparshem dhe te ruhet pa u vene re.
+    setForm((f) => ({
+      ...f,
+      category_id: id,
+      yearly_quota: hasQuota ? String(cat.default_quota) : '',
+    }));
+  };
+
   return (
     <form className="student-form" onSubmit={handleSubmit}>
       <section className="form-section">
@@ -106,10 +147,10 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           <Field label="Datëlindja" required>
             <input type="date" value={form.birthday} onChange={set('birthday')} required />
           </Field>
-          <Field label="Qyteti" required>
+          <Field label="Komuna" required>
             <input value={form.city} onChange={set('city')} required maxLength={80} />
           </Field>
-          <Field label="Shtetësia">
+          <Field label="Shtetësia" required >
             <input
               value={form.citizenship ?? ''}
               onChange={set('citizenship')}
@@ -117,7 +158,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               placeholder="Kosovar"
             />
           </Field>
-          <Field label="Kombësia">
+          <Field label="Kombësia" required>
             <input
               value={form.nationality ?? ''}
               onChange={set('nationality')}
@@ -125,21 +166,14 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               placeholder="Shqiptar"
             />
           </Field>
-          <Field label="Adresa" required span>
+          <Field label="Adresa" required>
             <input value={form.address} onChange={set('address')} required maxLength={160} />
           </Field>
-        </div>
-      </section>
-
-      <section className="form-section">
-        <h2 className="form-section-title">Kontakti i nxënësit</h2>
-        <div className="form-grid">
-          <Field label="Numri i telefonit" required>
+          <Field label="Numri i telefonit">
             <input
               type="tel"
-              value={form.phone}
+              value={form.phone || ''}
               onChange={set('phone')}
-              required
               maxLength={30}
               placeholder="+383 4x xxx xxx"
             />
@@ -157,51 +191,161 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
       </section>
 
       <section className="form-section">
-        <h2 className="form-section-title">Prindërit / Kujdestari ligjor</h2>
-        <div className="form-grid">
-          <Field label="Emri i nënës" required>
-            <input value={form.mother_name} onChange={set('mother_name')} required maxLength={80} />
-          </Field>
-          <Field label="Mbiemri i nënës">
-            <input value={form.mother_last_name || ''} onChange={set('mother_last_name')} maxLength={80} />
-          </Field>
-          <Field label="Datëlindja e nënës">
-            <input type="date" value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
-          </Field>
-          <Field label="Emri i babait" required>
-            <input value={form.father_name} onChange={set('father_name')} required maxLength={80} />
-          </Field>
-          <Field label="Mbiemri i babait">
-            <input value={form.father_last_name || ''} onChange={set('father_last_name')} maxLength={80} />
-          </Field>
-          <Field label="Nr. personal i prindit">
-            <input value={form.guardian_personal_id || ''} onChange={set('guardian_personal_id')} maxLength={20} />
-          </Field>
-          <Field label="Telefoni i prindit">
+        <div className="section-head-row">
+          <h2 className="form-section-title">
+            {hasGuardian ? 'Kujdestari ligjor' : 'Prindërit'}
+          </h2>
+          <label className="mini-check">
             <input
-              type="tel"
-              value={form.guardian_phone || ''}
-              onChange={set('guardian_phone')}
-              maxLength={30}
-              placeholder="+383 4x xxx xxx"
+              type="checkbox"
+              checked={hasGuardian}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  primary_contact: e.target.checked ? 'guardian' : 'father',
+                }))
+              }
             />
-          </Field>
-          <Field label="E-maili i prindit">
-            <input
-              type="email"
-              value={form.guardian_email || ''}
-              onChange={set('guardian_email')}
-              maxLength={120}
-            />
-          </Field>
+            <span>Nxënësi ka kujdestar ligjor</span>
+          </label>
         </div>
+
+        {hasGuardian ? (
+          /* Kujdestari zevendeson prinderit dhe eshte kontakti i pare */
+          <div className="parents-split single">
+            <div className="parent-col">
+              <div className="parent-col-head">
+                <h3 className="parent-col-title">Kujdestari ligjor</h3>
+                <span className="pick-flag is-on" title="Kontakti i parë">
+                  ★ Kontakti i parë
+                </span>
+              </div>
+              <Field label="Emri" required>
+                <input
+                  value={form.guardian_name || ''}
+                  onChange={set('guardian_name')}
+                  maxLength={80}
+                  required
+                />
+              </Field>
+              <Field label="Mbiemri">
+                <input value={form.guardian_last_name || ''} onChange={set('guardian_last_name')} maxLength={80} />
+              </Field>
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.guardian_phone || ''}
+                  onChange={set('guardian_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
+              <Field label="Datëlindja">
+                <input type="date" value={form.guardian_birthday || ''} onChange={set('guardian_birthday')} />
+              </Field>
+              <Field label="Numri personal">
+                <input
+                  value={form.guardian_personal_id || ''}
+                  onChange={set('guardian_personal_id')}
+                  maxLength={20}
+                  inputMode="numeric"
+                />
+              </Field>
+            </div>
+          </div>
+        ) : (
+          <div className="parents-split">
+            <div className="parent-col">
+              <div className="parent-col-head">
+                <h3 className="parent-col-title">Nëna</h3>
+                <button
+                  type="button"
+                  className={`pick-flag${form.primary_contact === 'mother' ? ' is-on' : ''}`}
+                  onClick={() => setForm((f) => ({ ...f, primary_contact: 'mother' }))}
+                  title="Kontakti i parë — përdoret te mesazhet e rikujtesës"
+                  aria-pressed={form.primary_contact === 'mother'}
+                >
+                  ★ Kontakti i parë
+                </button>
+              </div>
+              <Field label="Emri">
+                <input value={form.mother_name || ''} onChange={set('mother_name')} maxLength={80} />
+              </Field>
+              <Field label="Mbiemri">
+                <input value={form.mother_last_name || ''} onChange={set('mother_last_name')} maxLength={80} />
+              </Field>
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.mother_phone || ''}
+                  onChange={set('mother_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
+              <Field label="Datëlindja">
+                <input type="date" value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
+              </Field>
+              <Field label="Numri personal">
+                <input
+                  value={form.mother_personal_id || ''}
+                  onChange={set('mother_personal_id')}
+                  maxLength={20}
+                  inputMode="numeric"
+                />
+              </Field>
+            </div>
+
+            <div className="parent-col">
+              <div className="parent-col-head">
+                <h3 className="parent-col-title">Babai</h3>
+                <button
+                  type="button"
+                  className={`pick-flag${form.primary_contact === 'father' ? ' is-on' : ''}`}
+                  onClick={() => setForm((f) => ({ ...f, primary_contact: 'father' }))}
+                  title="Kontakti i parë — përdoret te mesazhet e rikujtesës"
+                  aria-pressed={form.primary_contact === 'father'}
+                >
+                  ★ Kontakti i parë
+                </button>
+              </div>
+              <Field label="Emri">
+                <input value={form.father_name || ''} onChange={set('father_name')} maxLength={80} />
+              </Field>
+              <Field label="Mbiemri">
+                <input value={form.father_last_name || ''} onChange={set('father_last_name')} maxLength={80} />
+              </Field>
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.father_phone || ''}
+                  onChange={set('father_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
+              <Field label="Datëlindja">
+                <input type="date" value={form.father_birthday || ''} onChange={set('father_birthday')} />
+              </Field>
+              <Field label="Numri personal">
+                <input
+                  value={form.father_personal_id || ''}
+                  onChange={set('father_personal_id')}
+                  maxLength={20}
+                  inputMode="numeric"
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
       </section>
 
       <section className="form-section">
         <h2 className="form-section-title">Shkollimi</h2>
         <div className="form-grid">
           <Field label="Drejtimi" required>
-            <select value={form.category_id} onChange={set('category_id')} required>
+            <select value={form.category_id} onChange={setCategory} required>
               <option value="">Zgjidhni drejtimin…</option>
               {categoryOptions.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -223,7 +367,20 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
             </select>
           </Field>
           <Field label="Paralelja">
-            <input value={form.class_name || ''} onChange={set('class_name')} placeholder="p.sh. X/1" />
+            <span className="parallel-input">
+              <span className="parallel-prefix">
+                {YEAR_ROMAN[Number(form.study_year)] || '—'}/
+              </span>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                step="1"
+                value={form.class_name || ''}
+                onChange={set('class_name')}
+                placeholder="1"
+              />
+            </span>
           </Field>
           <Field label="Data e regjistrimit" required>
             <input type="date" value={form.enrollment_date} onChange={set('enrollment_date')} required />
@@ -255,7 +412,15 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
       <section className="form-section">
         <h2 className="form-section-title">Financat</h2>
         <div className="form-grid">
-          <Field label="Kuota vjetore (€)" required>
+          <Field
+            label="Kuota vjetore (€)"
+            required
+            hint={
+              quotaLocked
+                ? 'Merret nga drejtimi i zgjedhur. Ndryshohet te Cilësimet → Konfigurimet.'
+                : 'Ky drejtim s’ka kuotë të caktuar te Cilësimet — shkruajeni me dorë.'
+            }
+          >
             <input
               type="number"
               min="0"
@@ -263,7 +428,10 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               value={form.yearly_quota}
               onChange={set('yearly_quota')}
               required
+              readOnly={quotaLocked}
+              className={quotaLocked ? 'is-locked' : undefined}
               placeholder="p.sh. 1500"
+              title={quotaLocked ? 'Kuota përcaktohet nga drejtimi' : undefined}
             />
           </Field>
           <Field label="Zbritje">

@@ -1,29 +1,22 @@
 {
-  "name": "ispe-backend",
+  "name": "ispe-frontend",
   "version": "1.0.0",
-  "description": "API per sistemin e menaxhimit te shkolles se mesme ISPE",
-  "main": "server.js",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "create-admin": "node scripts/create-admin.js",
-    "test": "node --test tests/*.test.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
+    "axios": "^1.7.2",
     "dayjs": "^1.11.11",
-    "docxtemplater": "^3.47.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^8.6.0",
-    "helmet": "^8.3.0",
-    "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.10.0",
-    "pizzip": "^3.1.7"
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.1"
   }
 }

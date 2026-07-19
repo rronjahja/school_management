@@ -7,7 +7,11 @@ const STUDENT_FIELDS = [
   'phone', 'email', 'citizenship', 'nationality',
   'mother_name', 'mother_last_name', 'mother_birthday',
   'father_name', 'father_last_name',
-  'guardian_personal_id', 'guardian_phone', 'guardian_email',
+  'mother_phone', 'mother_personal_id',
+  'father_phone', 'father_birthday', 'father_personal_id',
+  'guardian_name', 'guardian_last_name', 'guardian_phone',
+  'guardian_birthday', 'guardian_personal_id',
+  'primary_contact',
   'category_id', 'contract_number', 'generation', 'class_name', 'study_year', 'enrollment_date',
   'yearly_quota', 'discount_type', 'discount_value', 'payment_plan',
 ];
@@ -91,8 +95,26 @@ async function insertInstallments(conn, studentId, student, seqOffset = 0) {
 }
 
 /** Krijon studentin dhe gjeneron kestet brenda nje transaksioni. */
+/**
+ * Kuota vjetore percaktohet nga DREJTIMI, jo nga formulari.
+ * Kjo e ben serverin burimin e vertete: edhe nese dikush dergon nje vlere
+ * tjeter direkt ne API, perdoret ajo e konfiguruar te Cilesimet.
+ * Nese drejtimi nuk ka kuote te caktuar, pranohet vlera e derguar.
+ */
+async function quotaForCategory(categoryId, fallback) {
+  const [[cat]] = await pool.query(
+    'SELECT default_quota FROM categories WHERE id = ?', [categoryId]
+  );
+  if (cat && cat.default_quota !== null && cat.default_quota !== undefined) {
+    return Number(cat.default_quota);
+  }
+  return fallback;
+}
+
 async function createStudent(body) {
   const data = pickStudentFields(body);
+  data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -147,6 +169,16 @@ async function updateStudent(id, body) {
   const existing = await getStudentRow(id);
   const data = pickStudentFields(body);
   const merged = { ...existing, ...data };
+
+  // Nese ndryshon drejtimi, kuota merret nga konfigurimi i drejtimit te ri.
+  // Nese drejtimi mbetet i njejti, kuota e studentit NUK preket — kontrata
+  // e nenshkruar nuk ndryshon kur dikush perditeson kuotat te Cilesimet.
+  if (data.category_id !== undefined &&
+      Number(data.category_id) !== Number(existing.category_id)) {
+    data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
+  } else {
+    data.yearly_quota = existing.yearly_quota;
+  }
 
   const financeChanged = FINANCE_KEYS.some(
     (k) => data[k] !== undefined && String(data[k]) !== String(existing[k])

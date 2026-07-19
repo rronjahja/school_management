@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   name       VARCHAR(100) NOT NULL UNIQUE,
   code       VARCHAR(6)   NOT NULL DEFAULT '',    -- perdoret te nr. i kontrates, p.sh. TF
+  default_quota DECIMAL(10,2) DEFAULT NULL,        -- kuota vjetore e paracaktuar
   color      VARCHAR(7)   NOT NULL DEFAULT '#2E6FB7',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE = InnoDB;
@@ -62,15 +63,27 @@ CREATE TABLE IF NOT EXISTS students (
   citizenship     VARCHAR(60)  DEFAULT NULL,      -- shtetesia
   nationality     VARCHAR(60)  DEFAULT NULL,      -- kombesia
 
-  mother_name     VARCHAR(80)  NOT NULL,
-  mother_last_name VARCHAR(80) DEFAULT NULL,
-  mother_birthday DATE         DEFAULT NULL,
-  father_name     VARCHAR(80)  NOT NULL,
-  father_last_name VARCHAR(80) DEFAULT NULL,
-  guardian_personal_id VARCHAR(20) DEFAULT NULL,  -- nr. personal i prindit
-  guardian_phone  VARCHAR(30)  DEFAULT NULL,
-  guardian_email  VARCHAR(120) DEFAULT NULL,
-  phone           VARCHAR(30)  NOT NULL,
+  -- Te dy prinderit kane te njejtat fusha
+  mother_name        VARCHAR(80)  DEFAULT NULL,
+  mother_last_name   VARCHAR(80)  DEFAULT NULL,
+  mother_phone       VARCHAR(40)  DEFAULT NULL,
+  mother_birthday    DATE         DEFAULT NULL,
+  mother_personal_id VARCHAR(20)  DEFAULT NULL,
+  father_name        VARCHAR(80)  DEFAULT NULL,
+  father_last_name   VARCHAR(80)  DEFAULT NULL,
+  father_phone       VARCHAR(40)  DEFAULT NULL,
+  father_birthday    DATE         DEFAULT NULL,
+  father_personal_id VARCHAR(20)  DEFAULT NULL,
+  -- Kujdestari ligjor: perdoret NE VEND te prinderve kur nxenesi ka kujdestar
+  guardian_name        VARCHAR(80) DEFAULT NULL,
+  guardian_last_name   VARCHAR(80) DEFAULT NULL,
+  guardian_phone       VARCHAR(40) DEFAULT NULL,
+  guardian_birthday    DATE        DEFAULT NULL,
+  guardian_personal_id VARCHAR(20) DEFAULT NULL,
+  -- Kush kontaktohet i pari. 'guardian' do te thote qe nxenesi ka kujdestar
+  -- ligjor dhe fushat e prinderve nuk perdoren.
+  primary_contact ENUM('mother','father','guardian') NOT NULL DEFAULT 'father',
+  phone           VARCHAR(30)  DEFAULT NULL,      -- opsional: kontakti kryesor eshte prindi
 
   category_id     INT NOT NULL,
   contract_number VARCHAR(30)  DEFAULT NULL,        -- p.sh. '22/2025/TF'
@@ -83,6 +96,7 @@ CREATE TABLE IF NOT EXISTS students (
   enrollment_date DATE NOT NULL,
 
   yearly_quota    DECIMAL(10,2) NOT NULL,
+  settled_paid    DECIMAL(10,2) NOT NULL DEFAULT 0,  -- pagesa te konsumuara nga keste te hequra (kalimi i vitit)
   discount_type   ENUM('none','percent','amount') NOT NULL DEFAULT 'none',
   discount_value  DECIMAL(10,2) NOT NULL DEFAULT 0,
   payment_plan    ENUM('immediate','two','four','six','monthly') NOT NULL DEFAULT 'monthly',
@@ -103,9 +117,10 @@ CREATE INDEX idx_students_status ON students (status);
 -- Kestet (gjenerohen automatikisht sipas planit te pageses)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS installments (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  student_id INT NOT NULL,
-  generation VARCHAR(20) DEFAULT NULL,          -- viti shkollor i kestit
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  student_id   INT NOT NULL,
+  generation   VARCHAR(20) DEFAULT NULL,
+  is_carryover TINYINT(1) NOT NULL DEFAULT 0,  -- 1 = rreshti 'Borxhi i vitit te kaluar'          -- viti shkollor i kestit
   seq        INT NOT NULL,
   due_date   DATE NOT NULL,
   amount     DECIMAL(10,2) NOT NULL,

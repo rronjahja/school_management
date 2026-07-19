@@ -319,7 +319,7 @@
   border-radius: var(--radius-small);
 }
 
-.finance-preview > div {
+.finance-preview>div {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -392,7 +392,7 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.view-toggle button + button {
+.view-toggle button+button {
   border-left: 1px solid var(--line-strong);
 }
 
@@ -893,4 +893,371 @@
 .sidebar-logout:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
+}
+
+/* ---------- Borxhi i vitit te kaluar ---------- */
+.row-carryover {
+  background: var(--red-bg);
+}
+
+.row-carryover td {
+  color: var(--red);
+  border-left: none;
+}
+
+.row-carryover td:first-child {
+  border-left: 3px solid var(--red);
+}
+
+.carryover-gen {
+  font-size: 13px;
+  opacity: 0.75;
+  font-weight: 400;
+}
+
+/* ---------- Historiku i pagesave ---------- */
+.payment-history tfoot td {
+  border-top: 2px solid var(--line-strong);
+  font-weight: 600;
+  background: var(--bg);
+}
+
+.pay-method {
+  display: inline-block;
+  font-size: 13.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+.pay-method.pay-bank {
+  color: var(--primary-dark);
+  background: rgba(18, 87, 166, 0.08);
+  border-color: rgba(18, 87, 166, 0.22);
+}
+
+.pay-method.pay-cash {
+  color: var(--green);
+  background: var(--green-bg);
+  border-color: rgba(30, 127, 88, 0.22);
+}
+
+.pay-note {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ---------- Konfigurimet (bankat, drejtimet) ---------- */
+.card-sub {
+  margin-top: -6px;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.cfg-block+.cfg-block {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.cfg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cfg-head h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cfg-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cfg-color i {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.color-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-row input[type='color'] {
+  width: 46px;
+  padding: 2px;
+  height: 40px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 14px;
+}
+
+.small {
+  font-size: 13px;
+}
+
+.field-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+/* ---------- Permbledhja e pagesave ---------- */
+.pay-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.pay-sum-item {
+  background: var(--surface);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pay-sum-label {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.pay-sum-value {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pay-sum-value.pay-sum-ok {
+  color: var(--green);
+}
+
+.pay-sum-value.pay-sum-due {
+  color: var(--red);
+}
+
+.pay-settled-note {
+  margin: -6px 0 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .pay-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Paralelja: prefiksi i vitit + numri ---------- */
+.parallel-input {
+  display: flex;
+  align-items: stretch;
+}
+
+.parallel-input .parallel-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-right: none;
+  border-radius: var(--radius-small) 0 0 var(--radius-small);
+  white-space: nowrap;
+}
+
+.parallel-input input {
+  border-radius: 0 var(--radius-small) var(--radius-small) 0;
+  min-width: 0;
+}
+
+
+/* ---------- Prindërit: dy kolona ---------- */
+.parents-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+
+.parent-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+}
+
+.parent-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* Flamur i vogel: shenon prindin qe kontaktohet i pari */
+.pick-flag {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--muted);
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+  transition: all 0.15s;
+}
+
+.pick-flag:hover:not(.is-on) {
+  color: var(--ink);
+  border-color: var(--primary);
+}
+
+.pick-flag.is-on {
+  color: var(--primary-dark);
+  background: rgba(216, 167, 44, 0.18);
+  border: 1px solid var(--gold);
+}
+
+.parent-col-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+}
+
+@media (max-width: 780px) {
+  .parents-split {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+
+/* ---------- Kokë seksioni me kuti të vogël zgjedhjeje ---------- */
+.section-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mini-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 10px 4px 8px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mini-check:hover {
+  border-color: var(--primary);
+  background: rgba(18, 87, 166, 0.05);
+}
+
+.mini-check input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.mini-check:has(input:checked) {
+  border: 1px solid var(--primary);
+  background: rgba(18, 87, 166, 0.08);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+/* Kujdestari: nje kolone e vetme, jo e shtrire ne gjithe gjeresine */
+.parents-split.single {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.parents-split.single .parent-col {
+  grid-column: 1;
+}
+
+/* Kur kujdestari eshte kontakti i vetem, flamuri nuk klikohet */
+span.pick-flag {
+  cursor: default;
+}
+
+/* ---------- Kontakti i parë te kartela e prindërve ---------- */
+.contact-note {
+  display: inline-block;
+  margin-left: 9px;
+  vertical-align: middle;
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: rgba(216, 167, 44, 0.16);
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+}
+
+.contact-note strong {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+/* Telefoni i kontaktit të parë theksohet */
+.info-item dd.is-primary {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+/* ---------- Fushë e mbyllur (vlera vjen nga konfigurimi) ---------- */
+input.is-locked {
+  background: var(--bg);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+input.is-locked:focus {
+  outline: none;
+  border-color: var(--line);
+  box-shadow: none;
 }

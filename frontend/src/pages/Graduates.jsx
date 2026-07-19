@@ -9,7 +9,7 @@ import ReminderButton from '../components/finance/ReminderButton.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, initials, shortGen, parallel } from '../utils/format';
+import { money, date, initials, shortGen, classLabel } from '../utils/format';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -195,7 +195,7 @@ export default function Graduates() {
                             <td>
                               <CategoryChip name={s.category_name} color={s.category_color} />
                             </td>
-                            <td>{parallel(s.class_name)}</td>
+                            <td>{classLabel(s.study_year, s.class_name)}</td>
                             <td>{date(s.graduated_at)}</td>
                             <td className="num">{money(s.finance.total_due)}</td>
                             <td className="num cell-paid">{money(s.finance.total_paid)}</td>

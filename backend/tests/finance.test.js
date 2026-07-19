@@ -173,3 +173,75 @@ test('ndarja e viteve: aktual + të kaluarit = totali, borxhi i trashëguar i sa
   assert.equal(r.current_year_paid, 500);
   assert.equal(r.balance, 700);
 });
+
+// ---------------------------------------------------------------
+// Borxhi i vitit të kaluar (kalimi i vitit)
+// ---------------------------------------------------------------
+
+test('carryover i papaguar është GJITHMONË i kuq, edhe me afat në të ardhmen', () => {
+  const insts = [
+    { seq: 1, due_date: '2026-09-01', amount: 400, generation: '2025/2026', is_carryover: 1 },
+    { seq: 2, due_date: '2026-09-06', amount: 500, generation: '2026/2027' },
+  ];
+  const r = summarizeFinance(
+    { generation: '2026/2027', yearly_quota: 1000, discount_type: 'none', discount_value: 0, settled_paid: 0 },
+    insts, 0, require('dayjs')('2026-07-19')
+  );
+  assert.equal(r.installments[0].status, 'overdue'); // afati 01.09 s'ka ardhur, por është borxh i bartur
+  assert.equal(r.installments[1].status, 'upcoming');
+});
+
+test('settled_paid: pagesat e konsumuara nga këstet e hequra nuk numërohen dy herë', () => {
+  // Historia: viti 1 kishte 1000 €, u paguan 600 €, u mbyll viti:
+  //   -> settled_paid = 600, carryover = 400, viti i ri = 1200
+  const insts = [
+    { seq: 1, due_date: '2026-09-01', amount: 400, generation: '2025/2026', is_carryover: 1 },
+    { seq: 2, due_date: '2026-09-06', amount: 600, generation: '2026/2027' },
+    { seq: 3, due_date: '2027-01-25', amount: 600, generation: '2026/2027' },
+  ];
+  const student = {
+    generation: '2026/2027', yearly_quota: 1200,
+    discount_type: 'none', discount_value: 0, settled_paid: 600,
+  };
+  const d = require('dayjs')('2026-07-19');
+
+  // pagesat gjithsej 600 — të gjitha të konsumuara nga viti i mbyllur
+  let r = summarizeFinance(student, insts, 600, d);
+  assert.equal(r.total_paid, 0);        // asgjë efektive mbi strukturën aktuale
+  assert.equal(r.lifetime_paid, 600);   // historiku i plotë ruhet
+  assert.equal(r.balance, 1600);        // 400 borxh i bartur + 1200 viti i ri
+  assert.equal(r.past_years_balance, 400);
+
+  // paguan edhe 400 -> mbulohet i pari borxhi i bartur (FIFO)
+  r = summarizeFinance(student, insts, 1000, d);
+  assert.equal(r.installments[0].paid, 400);
+  assert.equal(r.installments[0].status, 'paid'); // i shlyer -> jo më i kuq
+  assert.equal(r.past_years_balance, 0);
+  assert.equal(r.balance, 1200);
+});
+
+test('bilanci i pandryshuar nga mbyllja e vitit (invarianca e llogarisë)', () => {
+  const d = require('dayjs')('2026-07-19');
+  // PARA mbylljes: 2 vite me këste të plota
+  const before = summarizeFinance(
+    { generation: '2026/2027', yearly_quota: 1200, discount_type: 'none', discount_value: 0, settled_paid: 0 },
+    [
+      { seq: 1, due_date: '2025-09-06', amount: 500, generation: '2025/2026' },
+      { seq: 2, due_date: '2026-01-25', amount: 500, generation: '2025/2026' },
+      { seq: 3, due_date: '2026-09-06', amount: 600, generation: '2026/2027' },
+      { seq: 4, due_date: '2027-01-25', amount: 600, generation: '2026/2027' },
+    ], 600, d
+  );
+  // PAS mbylljes: e njëjta gjendje e shprehur me carryover + settled
+  const after = summarizeFinance(
+    { generation: '2026/2027', yearly_quota: 1200, discount_type: 'none', discount_value: 0, settled_paid: 600 },
+    [
+      { seq: 1, due_date: '2026-09-01', amount: 400, generation: '2025/2026', is_carryover: 1 },
+      { seq: 2, due_date: '2026-09-06', amount: 600, generation: '2026/2027' },
+      { seq: 3, due_date: '2027-01-25', amount: 600, generation: '2026/2027' },
+    ], 600, d
+  );
+  assert.equal(before.balance, after.balance);
+  assert.equal(before.past_years_balance, after.past_years_balance);
+  assert.equal(before.current_year_balance, after.current_year_balance);
+});

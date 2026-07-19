@@ -11,6 +11,42 @@ const { PLAN_CONFIG } = require('../config/finance');
 const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates');
 
 const formatDate = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '');
+/** '2025/2026' -> '2025/26' */
+const shortGen = (g) => {
+  const m = String(g || '').match(/(\d{4})\s*\/\s*(\d{2,4})/);
+  return m ? `${m[1]}/${m[2].slice(-2)}` : g || '';
+};
+
+const YEAR_LABELS = { 1: 'Viti I', 2: 'Viti II', 3: 'Viti III' };
+const ROMAN_YEAR = { 1: 'X', 2: 'XI', 3: 'XII' };
+
+/** Emri i plote i personit qe kontaktohet i pari (prind ose kujdestar). */
+function primaryName(s) {
+  const full = (a, b) => [a, b].filter(Boolean).join(' ').trim();
+  const mother = full(s.mother_name, s.mother_last_name);
+  const father = full(s.father_name, s.father_last_name);
+  const guardian = full(s.guardian_name, s.guardian_last_name);
+
+  if (s.primary_contact === 'guardian') return guardian || father || mother || '';
+  const first = s.primary_contact === 'mother' ? mother : father;
+  return first || mother || father || '';
+}
+
+/** Nje fushe e prindit qe kontaktohet i pari, me rezerve tjetrin. */
+function primaryField(s, suffix) {
+  if (s.primary_contact === 'guardian') {
+    return s[`guardian_${suffix}`] || s[`father_${suffix}`] || s[`mother_${suffix}`] || '';
+  }
+  const mine = s.primary_contact === 'mother' ? s[`mother_${suffix}`] : s[`father_${suffix}`];
+  const other = s.primary_contact === 'mother' ? s[`father_${suffix}`] : s[`mother_${suffix}`];
+  return mine || other || '';
+}
+
+/** Telefoni i prindit qe kontaktohet i pari (me rezerve tjetrin). */
+function primaryPhone(s) {
+  return primaryField(s, 'phone');
+}
+
 const formatMoney = (n) =>
   Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -47,6 +83,7 @@ function buildTemplateData(student) {
     mbiemri: student.last_name,
     datelindja: formatDate(student.birthday),
     qyteti: student.city,
+    komuna: student.city,   // alias i {qyteti} — perdorni cilindo ne shabllon
     adresa: student.address,
     telefoni: student.phone,
     email: student.email || '',
@@ -59,14 +96,36 @@ function buildTemplateData(student) {
     data_lindjes_nenes: formatDate(student.mother_birthday),
     emri_babait: student.father_name,
     mbiemri_babait: student.father_last_name || '',
-    numri_personal: student.guardian_personal_id || '',
-    telefoni_prindit: student.guardian_phone || '',
-    emaili_prindit: student.guardian_email || '',
+    // Numri personal: {numri_personal} i takon kontaktit te pare
+    numri_personal_nenes: student.mother_personal_id || '',
+    numri_personal_babait: student.father_personal_id || '',
+    numri_personal: primaryField(student, 'personal_id'),
+    data_lindjes_babait: formatDate(student.father_birthday),
+    // Telefonat e prinderve; {telefoni_prindit} i takon kontaktit te pare
+    telefoni_nenes: student.mother_phone || '',
+    telefoni_babait: student.father_phone || '',
+    telefoni_prindit: primaryPhone(student),
+    kontakti_i_pare: primaryName(student),
+    // Kujdestari ligjor (bosh kur nxenesi ka prinder te regjistruar)
+    emri_kujdestarit: student.guardian_name || '',
+    mbiemri_kujdestarit: student.guardian_last_name || '',
+    telefoni_kujdestarit: student.guardian_phone || '',
+    data_lindjes_kujdestarit: formatDate(student.guardian_birthday),
+    numri_personal_kujdestarit: student.guardian_personal_id || '',
 
     // Shkollimi
     drejtimi: student.category_name,
-    gjenerata: student.generation,
-    klasa: student.class_name || '',
+
+    // Viti shkollor — i njejti informacion, tri forma per t'u zgjedhur ne shabllon
+    gjenerata: student.generation,                    // 2025/2026
+    gjenerata_shkurt: shortGen(student.generation),   // 2025/26
+    viti_shkollor: student.generation,                // alias i {gjenerata}
+    viti_studimit: YEAR_LABELS[student.study_year] || '', // Viti I / II / III
+    // Paralelja: ne baze ruhet vetem numri, prefiksi vjen nga viti i studimit
+    klasa: student.class_name
+      ? `${ROMAN_YEAR[student.study_year] || ''}${ROMAN_YEAR[student.study_year] ? '/' : ''}${student.class_name}`
+      : '',
+    paralelja: student.class_name || '',   // vetem numri, p.sh. 1
     nr_kontrates: student.contract_number || '',
     data_regjistrimit: formatDate(student.enrollment_date),
     data_sotme: dayjs().format('DD.MM.YYYY'),
@@ -81,12 +140,16 @@ function buildTemplateData(student) {
     zbritje_fikse,
     plani_pageses: (PLAN_CONFIG[student.payment_plan] || {}).label || student.payment_plan,
 
-    // Pasqyra e kesteve — perdoret ne bllokun {#keste}...{/keste}
-    keste: f.installments.map((i) => ({
-      nr: `${i.seq}.`,
-      afati: formatDate(i.due_date),
-      shuma: formatMoney(i.amount),
-    })),
+    // Pasqyra e kesteve — perdoret ne bllokun {#keste}...{/keste}.
+    // Kontrata mbulon vitin e vet shkollor, prandaj rreshti
+    // "Borxhi i vitit te kaluar" nuk perfshihet ne aneks.
+    keste: f.installments
+      .filter((i) => !i.is_carryover)
+      .map((i) => ({
+        nr: `${i.seq}.`,
+        afati: formatDate(i.due_date),
+        shuma: formatMoney(i.amount),
+      })),
   };
 }
 
