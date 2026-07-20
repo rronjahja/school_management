@@ -115,7 +115,7 @@ function validateStudent(body) {
         errors.push('Zbritja në përqindje nuk mund të kalojë 100%.');
       }
       if (discountType === 'amount' && isFiniteNumber(body.yearly_quota) &&
-        dv > Number(body.yearly_quota)) {
+          dv > Number(body.yearly_quota)) {
         errors.push('Zbritja nuk mund të jetë më e madhe se kuota vjetore.');
       }
     }
@@ -129,17 +129,37 @@ function validateStudent(body) {
     errors.push('Viti i studimit duhet të jetë 1, 2 ose 3.');
   }
 
+  // ---- gjinia ----
+  ['gender', 'guardian_gender'].forEach((f) => {
+    const v = body[f];
+    if (v !== undefined && v !== null && String(v) !== '' && !['m', 'f'].includes(v)) {
+      errors.push('Gjinia duhet të jetë mashkull ose femër.');
+    }
+  });
+
+  // ---- e-mailet (opsionale, por te sakta kur jepen) ----
+  const EMAIL_OWNER = {
+    mother_email: 'nënës', father_email: 'babait', guardian_email: 'kujdestarit',
+  };
+  Object.keys(EMAIL_OWNER).forEach((f) => {
+    const v = body[f];
+    if (v !== undefined && String(v).trim() !== '' &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())) {
+      errors.push(`E-maili i ${EMAIL_OWNER[f]} nuk është i vlefshëm.`);
+    }
+  });
+
   // ---- prinderit ----
   // Emrat nuk jane te detyrueshem. Kontakti i pare duhet te jete i vlefshem.
   if (body.primary_contact !== undefined &&
-    !['mother', 'father', 'guardian'].includes(body.primary_contact)) {
+      !['mother', 'father', 'guardian'].includes(body.primary_contact)) {
     errors.push('Kontakti i parë duhet të jetë nëna, babai ose kujdestari ligjor.');
   }
 
   // Me kujdestar ligjor, emri i tij eshte i detyrueshem — pa te, mesazhet
   // e rikujteses nuk kane kujt t'i drejtohen.
   if (body.primary_contact === 'guardian' &&
-    String(body.guardian_name || '').trim() === '') {
+      String(body.guardian_name || '').trim() === '') {
     errors.push('Emri i kujdestarit ligjor është i detyrueshëm.');
   }
 
@@ -161,7 +181,7 @@ function validateStudent(body) {
 
   // Numri personal: shifra, gjatesi e arsyeshme
   [['mother_personal_id', 'nënës'], ['father_personal_id', 'babait'],
-  ['guardian_personal_id', 'kujdestarit']].forEach(([f, kujt]) => {
+   ['guardian_personal_id', 'kujdestarit']].forEach(([f, kujt]) => {
     const v = body[f];
     if (v !== undefined && String(v).trim() !== '' && !/^\d{6,20}$/.test(String(v).trim())) {
       errors.push(`Numri personal i ${kujt} duhet të jetë 6-20 shifra.`);

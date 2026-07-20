@@ -8,7 +8,8 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, PLAN_LABELS, initials, shortGen } from '../utils/format';
+import { money, PLAN_LABELS, shortGen } from '../utils/format';
+import Avatar from '../components/ui/Avatar.jsx';
 
 export default function Students() {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ export default function Students() {
 
   return (
     <>
-      <PageHeader title="Studentët" subtitle="Lista e plotë e studentëve të regjistruar">
+      <PageHeader title="Nxënësit" subtitle="Lista e plotë e nxënësve të regjistruar">
         <Link to="/studentet/regjistro" className="btn btn-primary">
           + Regjistro student
         </Link>
@@ -71,11 +72,11 @@ export default function Students() {
         <Loader />
       ) : isEmpty ? (
         <EmptyState
-          title="Ende nuk ka studentë"
-          hint="Regjistroni studentin e parë për të filluar."
+          title="Ende nuk ka nxënës"
+          hint="Regjistroni nxënësin e parë për të filluar."
           action={
             <Link to="/studentet/regjistro" className="btn btn-primary">
-              Regjistro studentin e parë
+              Regjistro nxënësin e parë
             </Link>
           }
         />
@@ -87,7 +88,7 @@ export default function Students() {
             <table className="table table-clickable">
               <thead>
                 <tr>
-                  <th>Studenti</th>
+                  <th>Nxënësi</th>
                   <th>Drejtimi</th>
                   <th>Gjenerata</th>
                   <th>Plani</th>
@@ -102,9 +103,7 @@ export default function Students() {
                   <tr key={s.id} onClick={() => navigate(`/studentet/${s.id}`)}>
                     <td>
                       <span className="cell-student">
-                        <span className="avatar" style={{ '--avatar-color': s.category_color }}>
-                          {initials(s.first_name, s.last_name)}
-                        </span>
+                        <Avatar student={s} />
                         <span>
                           <strong>
                             {s.first_name} {s.last_name}

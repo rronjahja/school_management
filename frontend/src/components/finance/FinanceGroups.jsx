@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import ReminderButton from './ReminderButton.jsx';
+import { canRemind } from '../../utils/reminder';
 import CategoryChip from '../ui/CategoryChip.jsx';
-import { money, date, PLAN_LABELS, YEAR_LABELS, initials, classLabel } from '../../utils/format';
+import { money, date, PLAN_LABELS, YEAR_LABELS, classLabel } from '../../utils/format';
+import Avatar from '../ui/Avatar.jsx';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
-/** Mbledh totalet per nje grup studentesh. */
+/** Mbledh totalet per nje grup nxënësesh. */
 function aggregate(list) {
   return list.reduce(
     (a, s) => ({
@@ -22,7 +24,7 @@ function aggregate(list) {
   );
 }
 
-/** Ndan studentet: viti i studimit -> drejtimi. */
+/** Ndan nxënëset: viti i studimit -> drejtimi. */
 function buildGroups(students) {
   const years = {};
   students.forEach((s) => {
@@ -110,7 +112,7 @@ export default function FinanceGroups({ students }) {
                           <table className="table table-clickable">
                             <thead>
                               <tr>
-                                <th>Studenti</th>
+                                <th>Nxënësi</th>
                                 <th>Paralelja</th>
                                 <th>Plani</th>
                                 <th className="num">Neto</th>
@@ -126,12 +128,7 @@ export default function FinanceGroups({ students }) {
                                 <tr key={s.id} onClick={() => navigate(`/studentet/${s.id}`)}>
                                   <td>
                                     <span className="cell-student">
-                                      <span
-                                        className="avatar"
-                                        style={{ '--avatar-color': s.category_color }}
-                                      >
-                                        {initials(s.first_name, s.last_name)}
-                                      </span>
+                                      <Avatar student={s} />
                                       <strong>
                                         {s.first_name} {s.last_name}
                                       </strong>
@@ -151,8 +148,7 @@ export default function FinanceGroups({ students }) {
                                     <StatusBadge status={s.finance.status} />
                                   </td>
                                   <td className="cell-tight">
-                                    {(s.finance.status === 'overdue' ||
-                                      s.finance.status === 'due-soon') && (
+                                    {canRemind(s.finance) && (
                                       <ReminderButton studentId={s.id} compact />
                                     )}
                                   </td>
@@ -178,7 +174,7 @@ function Totals({ t }) {
   return (
     <span className="fin-totals">
       <span className="fin-stat">
-        <em>{t.students}</em> studentë
+        <em>{t.students}</em> nxënës
       </span>
       <span className="fin-stat">
         Arkëtuar <em className="cell-paid">{money(t.paid)}</em>

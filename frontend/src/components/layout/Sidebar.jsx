@@ -6,7 +6,7 @@ import { shortGen, currentSchoolYear } from '../../utils/format';
 
 const NAV = [
   { to: '/', label: 'Paneli', icon: PanelIcon, end: true },
-  { to: '/studentet', label: 'Studentët', icon: StudentsIcon },
+  { to: '/studentet', label: 'Nxënësit', icon: StudentsIcon },
   { to: '/studentet/regjistro', label: 'Regjistrimi', icon: RegisterIcon },
   { to: '/financat', label: 'Financat', icon: FinanceIcon },
   { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon },

@@ -9,6 +9,7 @@ const EMPTY = {
   first_name: '',
   last_name: '',
   birthday: '',
+  gender: '',
   city: '',
   address: '',
   phone: '',
@@ -22,15 +23,19 @@ const EMPTY = {
   father_last_name: '',
   mother_phone: '',
   mother_personal_id: '',
+  mother_email: '',
   father_phone: '',
   father_birthday: '',
   father_personal_id: '',
+  father_email: '',
   guardian_name: '',
   guardian_last_name: '',
   guardian_phone: '',
   guardian_birthday: '',
   guardian_personal_id: '',
-  primary_contact: 'mother',
+  guardian_gender: '',
+  guardian_email: '',
+  primary_contact: 'father',
   category_id: '',
   contract_number: '',
   generation: defaultRegistrationGeneration(),
@@ -147,10 +152,32 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           <Field label="Datëlindja" required>
             <input type="date" value={form.birthday} onChange={set('birthday')} required />
           </Field>
+          <Field label="Gjinia">
+            <div className="seg" role="radiogroup" aria-label="Gjinia">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.gender === 'm'}
+                className={`seg-opt${form.gender === 'm' ? ' is-on' : ''}`}
+                onClick={() => setForm((f) => ({ ...f, gender: f.gender === 'm' ? '' : 'm' }))}
+              >
+                Mashkull
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={form.gender === 'f'}
+                className={`seg-opt${form.gender === 'f' ? ' is-on' : ''}`}
+                onClick={() => setForm((f) => ({ ...f, gender: f.gender === 'f' ? '' : 'f' }))}
+              >
+                Femër
+              </button>
+            </div>
+          </Field>
           <Field label="Komuna" required>
             <input value={form.city} onChange={set('city')} required maxLength={80} />
           </Field>
-          <Field label="Shtetësia" required >
+          <Field label="Shtetësia">
             <input
               value={form.citizenship ?? ''}
               onChange={set('citizenship')}
@@ -158,7 +185,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               placeholder="Kosovar"
             />
           </Field>
-          <Field label="Kombësia" required>
+          <Field label="Kombësia">
             <input
               value={form.nationality ?? ''}
               onChange={set('nationality')}
@@ -251,6 +278,37 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
                   inputMode="numeric"
                 />
               </Field>
+              <Field label="Gjinia" hint="Përcakton përshëndetjen: z. ose znj.">
+                <div className="seg" role="radiogroup" aria-label="Gjinia e kujdestarit">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={form.guardian_gender === 'm'}
+                    className={`seg-opt${form.guardian_gender === 'm' ? ' is-on' : ''}`}
+                    onClick={() => setForm((f) => ({ ...f, guardian_gender: f.guardian_gender === 'm' ? '' : 'm' }))}
+                  >
+                    Mashkull
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={form.guardian_gender === 'f'}
+                    className={`seg-opt${form.guardian_gender === 'f' ? ' is-on' : ''}`}
+                    onClick={() => setForm((f) => ({ ...f, guardian_gender: f.guardian_gender === 'f' ? '' : 'f' }))}
+                  >
+                    Femër
+                  </button>
+                </div>
+              </Field>
+              <Field label="E-mail">
+                <input
+                  type="email"
+                  value={form.guardian_email || ''}
+                  onChange={set('guardian_email')}
+                  maxLength={120}
+                  placeholder="emri@email.com"
+                />
+              </Field>
             </div>
           </div>
         ) : (
@@ -294,6 +352,15 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
                   inputMode="numeric"
                 />
               </Field>
+              <Field label="E-mail">
+                <input
+                  type="email"
+                  value={form.mother_email || ''}
+                  onChange={set('mother_email')}
+                  maxLength={120}
+                  placeholder="emri@email.com"
+                />
+              </Field>
             </div>
 
             <div className="parent-col">
@@ -333,6 +400,15 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
                   onChange={set('father_personal_id')}
                   maxLength={20}
                   inputMode="numeric"
+                />
+              </Field>
+              <Field label="E-mail">
+                <input
+                  type="email"
+                  value={form.father_email || ''}
+                  onChange={set('father_email')}
+                  maxLength={120}
+                  placeholder="emri@email.com"
                 />
               </Field>
             </div>

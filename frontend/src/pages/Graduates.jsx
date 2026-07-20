@@ -6,10 +6,12 @@ import PageHeader from '../components/ui/PageHeader.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
+import { canRemind } from '../utils/reminder';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, initials, shortGen, classLabel } from '../utils/format';
+import { money, date, shortGen, classLabel } from '../utils/format';
+import Avatar from '../components/ui/Avatar.jsx';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -80,7 +82,7 @@ export default function Graduates() {
     <>
       <PageHeader
         title="Të diplomuarit"
-        subtitle="Studentët që kanë përfunduar Vitin III — borxhi i mbetur mbetet i ndjekshëm"
+        subtitle="Nxënësit që kanë përfunduar Vitin III — borxhi i mbetur mbetet i ndjekshëm"
       />
 
       <div className="stat-grid">
@@ -162,7 +164,7 @@ export default function Graduates() {
                     <table className="table table-clickable">
                       <thead>
                         <tr>
-                          <th>Studenti</th>
+                          <th>Nxënësi</th>
                           <th>Drejtimi</th>
                           <th>Paralelja</th>
                           <th>Data e diplomimit</th>
@@ -178,12 +180,7 @@ export default function Graduates() {
                           <tr key={s.id} onClick={() => navigate(`/studentet/${s.id}`)}>
                             <td>
                               <span className="cell-student">
-                                <span
-                                  className="avatar"
-                                  style={{ '--avatar-color': s.category_color }}
-                                >
-                                  {initials(s.first_name, s.last_name)}
-                                </span>
+                                <Avatar student={s} />
                                 <span>
                                   <strong>
                                     {s.first_name} {s.last_name}
@@ -204,7 +201,7 @@ export default function Graduates() {
                               <StatusBadge status={s.finance.status} />
                             </td>
                             <td className="cell-tight">
-                              {s.finance.balance > 0.005 && (
+                              {canRemind(s.finance) && (
                                 <ReminderButton studentId={s.id} compact />
                               )}
                             </td>

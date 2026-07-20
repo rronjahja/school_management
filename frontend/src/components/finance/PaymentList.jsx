@@ -7,7 +7,7 @@ function methodLabel(p) {
 }
 
 /**
- * Historiku i plote i pagesave te studentit + permbledhja financiare.
+ * Historiku i plote i pagesave te nxënësit + permbledhja financiare.
  *
  * SHENIM PER LLOGARINE: `finance.total_paid` eshte pjesa e pagesave qe mbulon
  * kestet AKTUALE. Pas mbylljes se nje viti, pagesat qe shlyen kestet e hequra

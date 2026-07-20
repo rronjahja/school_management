@@ -42,8 +42,16 @@ async function removeCategory(req, res, next) {
   } catch (err) { next(err); }
 }
 
+async function reminderTemplate(req, res, next) {
+  try { res.json(await settingsService.getReminderTemplate()); } catch (err) { next(err); }
+}
+
+async function saveReminderTemplate(req, res, next) {
+  try { res.json(await settingsService.setReminderTemplate(req.body.template)); } catch (err) { next(err); }
+}
+
 module.exports = {
-  categories, banks,
+  categories, banks, reminderTemplate, saveReminderTemplate,
   createBank, updateBank, removeBank,
   createCategory, updateCategory, removeCategory,
 };

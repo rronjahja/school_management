@@ -13,6 +13,7 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import { money, date, YEAR_LABELS, shortGen } from '../utils/format';
 import UserManager from '../components/settings/UserManager.jsx';
 import DataManager from '../components/settings/DataManager.jsx';
+import ReminderTemplateEditor from '../components/settings/ReminderTemplateEditor.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -69,7 +70,7 @@ export default function Settings() {
         force: Boolean(preview && preview.already_done),
       });
       setNotice(
-        `U krye: ${res.promoted} studentë kaluan në ${shortGen(res.to_generation)}, ` +
+        `U krye: ${res.promoted} nxënës kaluan në ${shortGen(res.to_generation)}, ` +
           `${res.graduated} u diplomuan.`
       );
       setConfirmOpen(false);
@@ -99,10 +100,10 @@ export default function Settings() {
       <section className="card">
         <h2 className="card-title">Kalimi i vitit shkollor</h2>
         <p className="settings-intro">
-          Kalon të gjithë studentët e një gjenerate një vit përpara:
+          Kalon të gjithë nxënësit e një gjenerate një vit përpara:
           <strong> Viti I → Viti II</strong>, <strong>Viti II → Viti III</strong>, ndërsa
           <strong> Viti III diplomohet</strong>. Këstet dhe pagesat ekzistuese nuk fshihen
-          kurrë — borxhi i mbetur i ndjek studentët edhe pas diplomimit.
+          kurrë — borxhi i mbetur i ndjek nxënësit edhe pas diplomimit.
         </p>
 
         <p className="settings-current">
@@ -110,7 +111,7 @@ export default function Settings() {
         </p>
 
         {data.generations.length === 0 ? (
-          <p className="muted">Nuk ka studentë aktivë.</p>
+          <p className="muted">Nuk ka nxënës aktivë.</p>
         ) : (
           <div className="table-wrap">
             <table className="table">
@@ -173,8 +174,8 @@ export default function Settings() {
             {preview.already_done && (
               <p className="promo-repeat">
                 Kjo gjeneratë është promovuar një herë më parë. Kjo është normale nëse
-                studentë të tjerë kanë hyrë në të pas kalimit të mëparshëm — do të preken
-                vetëm {preview.promote_total + preview.graduate_total} studentët aktualë.
+                nxënës të tjerë kanë hyrë në të pas kalimit të mëparshëm — do të preken
+                vetëm {preview.promote_total + preview.graduate_total} nxënësit aktualë.
               </p>
             )}
 
@@ -186,7 +187,7 @@ export default function Settings() {
                   {preview.promote.map((y) => (
                     <li key={y.study_year}>
                       {YEAR_LABELS[y.study_year]} → {YEAR_LABELS[y.study_year + 1]}:{' '}
-                      <strong>{y.students}</strong> studentë
+                      <strong>{y.students}</strong> nxënës
                     </li>
                   ))}
                   {preview.promote.length === 0 && <li className="muted">Asnjë</li>}
@@ -235,7 +236,7 @@ export default function Settings() {
                 <span>
                   Gjenero këstet e vitit të ri
                   <em>
-                    Nëse çkyçet, studentët kalojnë vitin por nuk u krijohen detyrime të reja.
+                    Nëse çkyçet, nxënësit kalojnë vitin por nuk u krijohen detyrime të reja.
                   </em>
                 </span>
               </label>
@@ -293,13 +294,15 @@ export default function Settings() {
 
       <DataManager />
 
+      <ReminderTemplateEditor />
+
       <UserManager />
 
       {confirmOpen && preview && (
         <Modal title="Konfirmo kalimin e vitit" onClose={() => setConfirmOpen(false)}>
           <p className="modal-hint">
             Do të preken <strong>{preview.promote_total + preview.graduate_total}</strong>{' '}
-            studentë të gjeneratës <strong>{shortGen(preview.from_generation)}</strong>:
+            nxënës të gjeneratës <strong>{shortGen(preview.from_generation)}</strong>:
           </p>
           <ul className="confirm-list">
             <li>

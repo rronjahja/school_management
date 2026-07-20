@@ -319,7 +319,7 @@
   border-radius: var(--radius-small);
 }
 
-.finance-preview>div {
+.finance-preview > div {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -392,7 +392,7 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.view-toggle button+button {
+.view-toggle button + button {
   border-left: 1px solid var(--line-strong);
 }
 
@@ -894,7 +894,6 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
-
 /* ---------- Borxhi i vitit te kaluar ---------- */
 .row-carryover {
   background: var(--red-bg);
@@ -955,7 +954,7 @@
   font-size: 14px;
 }
 
-.cfg-block+.cfg-block {
+.cfg-block + .cfg-block {
   margin-top: 26px;
   padding-top: 22px;
   border-top: 1px solid var(--line);
@@ -1260,4 +1259,110 @@ input.is-locked:focus {
   outline: none;
   border-color: var(--line);
   box-shadow: none;
+}
+
+/* ---------- Zgjedhes i vogel me dy opsione (gjinia) ---------- */
+.seg {
+  display: inline-flex;
+  align-self: flex-start;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  padding: 2px;
+  height: 38px;
+}
+
+.seg-opt {
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+
+.seg-opt:hover:not(.is-on) {
+  color: var(--ink);
+}
+
+.seg-opt.is-on {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ---------- Editori i mesazhit te rikujteses ---------- */
+.tpl-editor {
+  width: 100%;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.55;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+
+.tpl-editor:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(18, 87, 166, 0.12);
+}
+
+.tpl-legend {
+  margin-top: 12px;
+  font-size: 13.5px;
+}
+
+.tpl-legend summary {
+  cursor: pointer;
+  color: var(--primary-dark);
+  font-weight: 600;
+  user-select: none;
+}
+
+.tpl-legend dl {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 6px 22px;
+}
+
+.tpl-legend dl > div {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.tpl-legend dt {
+  color: var(--primary-dark);
+  white-space: nowrap;
+}
+
+.tpl-legend dd {
+  color: var(--muted);
+}
+
+.tpl-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* ---------- Prindërit te profili: fakte brenda kolonës ---------- */
+.parent-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin: 0;
+}
+
+.parent-facts .info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

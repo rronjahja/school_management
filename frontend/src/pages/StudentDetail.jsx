@@ -20,14 +20,8 @@ import InstallmentTable from '../components/finance/InstallmentTable.jsx';
 import PaymentList from '../components/finance/PaymentList.jsx';
 import PaymentModal from '../components/finance/PaymentModal.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
+import { canRemind } from '../utils/reminder';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortGen } from '../utils/format';
-
-/** Kush kontaktohet i pari — shfaqet te kartela e prindërve. */
-const CONTACT_LABELS = {
-  mother: 'Nëna',
-  father: 'Babai',
-  guardian: 'Kujdestari ligjor',
-};
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -48,13 +42,13 @@ export default function StudentDetail() {
     fetchStudent(id)
       .then(setStudent)
       .catch((err) => setError(errorMessage(err)));
-    fetchBanks().then(setBanks).catch(() => { });
+    fetchBanks().then(setBanks).catch(() => {});
     fetchTemplates()
       .then((t) => {
         setTemplates(t);
         if (t.length) setTemplateFile(t[0].file);
       })
-      .catch(() => { });
+      .catch(() => {});
   }, [id]);
 
   const handlePayment = async (data) => {
@@ -83,7 +77,7 @@ export default function StudentDetail() {
 
   const handleDeleteStudent = async () => {
     const name = `${student.first_name} ${student.last_name}`;
-    if (!window.confirm(`Të fshihet studenti ${name}? Ky veprim nuk kthehet.`)) return;
+    if (!window.confirm(`Të fshihet nxënësi ${name}? Ky veprim nuk kthehet.`)) return;
     try {
       await deleteStudent(id);
       navigate('/studentet');
@@ -121,9 +115,7 @@ export default function StudentDetail() {
           </span>
         }
       >
-        {(f.status === 'overdue' || f.status === 'due-soon') && (
-          <ReminderButton studentId={id} />
-        )}
+        {canRemind(f) && <ReminderButton studentId={id} />}
         <span className="doc-generate">
           {templates.length > 1 && (
             <select
@@ -184,6 +176,10 @@ export default function StudentDetail() {
           <h2 className="card-title">Të dhënat personale</h2>
           <dl className="info-grid">
             <Info label="Datëlindja" value={date(student.birthday)} />
+            <Info
+              label="Gjinia"
+              value={student.gender === 'm' ? 'Mashkull' : student.gender === 'f' ? 'Femër' : null}
+            />
             <Info label="Komuna" value={student.city} />
             <Info label="Adresa" value={student.address} span />
             <Info label="Shtetësia" value={student.citizenship} />
@@ -200,43 +196,69 @@ export default function StudentDetail() {
           <h2 className="card-title">
             {student.primary_contact === 'guardian' ? 'Kujdestari ligjor' : 'Prindërit'}
           </h2>
-          <div className="info-grid">
-            {student.primary_contact === 'guardian' ? (
-              <>
-                <Info label="Emri" value={student.guardian_name} />
-                <Info label="Mbiemri" value={student.guardian_last_name} />
-                <Info
-                  label="Telefoni"
-                  value={student.guardian_phone}
-                  strong
-                  contactTag={CONTACT_LABELS.guardian}
-                />
-                <Info label="Datëlindja" value={date(student.guardian_birthday)} />
-                <Info label="Nr. personal" value={student.guardian_personal_id} />
-              </>
-            ) : (
-              <>
-                <Info label="Nëna" value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')} />
-                <Info
-                  label="Telefoni i nënës"
-                  value={student.mother_phone}
-                  strong={student.primary_contact === 'mother'}
-                  contactTag={student.primary_contact === 'mother' ? CONTACT_LABELS.mother : null}
-                />
-                <Info label="Datëlindja e nënës" value={date(student.mother_birthday)} />
-                <Info label="Nr. personal i nënës" value={student.mother_personal_id} />
-                <Info label="Babai" value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')} />
-                <Info
-                  label="Telefoni i babait"
-                  value={student.father_phone}
-                  strong={student.primary_contact === 'father'}
-                  contactTag={student.primary_contact === 'father' ? CONTACT_LABELS.father : null}
-                />
-                <Info label="Datëlindja e babait" value={date(student.father_birthday)} />
-                <Info label="Nr. personal i babait" value={student.father_personal_id} />
-              </>
-            )}
-          </div>
+
+          {student.primary_contact === 'guardian' ? (
+            /* Kujdestari zevendeson prinderit: nje kolone e vetme */
+            <div className="parents-split single">
+              <div className="parent-col">
+                <div className="parent-col-head">
+                  <h3 className="parent-col-title">Kujdestari ligjor</h3>
+                  <span className="pick-flag is-on">★ Kontakti i parë</span>
+                </div>
+                <dl className="parent-facts">
+                  <Info label="Emri" value={[student.guardian_name, student.guardian_last_name].filter(Boolean).join(' ')} />
+                  <Info label="Telefoni" value={student.guardian_phone} strong />
+                  <Info label="Datëlindja" value={date(student.guardian_birthday)} />
+                  <Info label="Nr. personal" value={student.guardian_personal_id} />
+                  <Info label="E-mail" value={student.guardian_email} />
+                </dl>
+              </div>
+            </div>
+          ) : (
+            /* Majtas nena, djathtas babai — si te formulari, qe te mos
+               perzihen te dhenat e dy prinderve ne te njejtin rresht */
+            <div className="parents-split">
+              <div className="parent-col">
+                <div className="parent-col-head">
+                  <h3 className="parent-col-title">Nëna</h3>
+                  {student.primary_contact === 'mother' && (
+                    <span className="pick-flag is-on">★ Kontakti i parë</span>
+                  )}
+                </div>
+                <dl className="parent-facts">
+                  <Info label="Emri" value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')} />
+                  <Info
+                    label="Telefoni"
+                    value={student.mother_phone}
+                    strong={student.primary_contact === 'mother'}
+                  />
+                  <Info label="Datëlindja" value={date(student.mother_birthday)} />
+                  <Info label="Nr. personal" value={student.mother_personal_id} />
+                  <Info label="E-mail" value={student.mother_email} />
+                </dl>
+              </div>
+
+              <div className="parent-col">
+                <div className="parent-col-head">
+                  <h3 className="parent-col-title">Babai</h3>
+                  {student.primary_contact === 'father' && (
+                    <span className="pick-flag is-on">★ Kontakti i parë</span>
+                  )}
+                </div>
+                <dl className="parent-facts">
+                  <Info label="Emri" value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')} />
+                  <Info
+                    label="Telefoni"
+                    value={student.father_phone}
+                    strong={student.primary_contact === 'father'}
+                  />
+                  <Info label="Datëlindja" value={date(student.father_birthday)} />
+                  <Info label="Nr. personal" value={student.father_personal_id} />
+                  <Info label="E-mail" value={student.father_email} />
+                </dl>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="card">
@@ -280,18 +302,11 @@ export default function StudentDetail() {
   );
 }
 
-function Info({ label, value, span, strong, contactTag }) {
+function Info({ label, value, span, strong }) {
   return (
     <div className={`info-item${span ? ' info-span' : ''}`}>
       <dt>{label}</dt>
-      <dd className={strong ? 'is-primary' : undefined}>
-        {value || '—'}
-        {contactTag && (
-          <span className="contact-note">
-            ★ Kontakti i parë: <strong>{contactTag}</strong>
-          </span>
-        )}
-      </dd>
+      <dd className={strong ? 'is-primary' : undefined}>{value || '—'}</dd>
     </div>
   );
 }

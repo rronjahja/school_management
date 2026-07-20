@@ -105,6 +105,10 @@ function buildTemplateData(student) {
     telefoni_nenes: student.mother_phone || '',
     telefoni_babait: student.father_phone || '',
     telefoni_prindit: primaryPhone(student),
+    emaili_nenes: student.mother_email || '',
+    emaili_babait: student.father_email || '',
+    emaili_kujdestarit: student.guardian_email || '',
+    emaili_prindit: primaryField(student, 'email'),
     kontakti_i_pare: primaryName(student),
     // Kujdestari ligjor (bosh kur nxenesi ka prinder te regjistruar)
     emri_kujdestarit: student.guardian_name || '',
@@ -171,7 +175,13 @@ async function generateDocument(studentId, templateFile) {
   const student = await financeService.getStudentDetail(studentId);
 
   const zip = new PizZip(fs.readFileSync(path.join(TEMPLATES_DIR, chosen.file), 'binary'));
-  const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+  const doc = new Docxtemplater(zip, {
+    paragraphLoop: true,
+    linebreaks: true,
+    // Etiketat qe mungojne ne te dhena mbeten BOSH ne dokument.
+    // Pa kete, docxtemplater shkruan fjalen "undefined" ne vend te tyre.
+    nullGetter: () => '',
+  });
   doc.render(buildTemplateData(student));
 
   const base = path.basename(chosen.file, path.extname(chosen.file));

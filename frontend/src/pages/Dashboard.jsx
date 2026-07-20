@@ -8,7 +8,8 @@ import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, initials, shortGen } from '../utils/format';
+import { money, date, shortGen } from '../utils/format';
+import Avatar from '../components/ui/Avatar.jsx';
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
@@ -29,7 +30,7 @@ export default function Dashboard() {
       <HomeHero studentCount={totals.students} />
 
       <div className="stat-grid">
-        <StatCard label="Studentë gjithsej" value={totals.students} />
+        <StatCard label="Nxënës gjithsej" value={totals.students} />
         <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" />
         <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" />
         <StatCard
@@ -52,14 +53,14 @@ export default function Dashboard() {
         <section className="card">
           <h2 className="card-title">Drejtimet</h2>
           {categories.length === 0 ? (
-            <p className="muted">Ende nuk ka studentë të regjistruar.</p>
+            <p className="muted">Ende nuk ka nxënës të regjistruar.</p>
           ) : (
             <ul className="category-bars">
               {categories.map((c) => (
                 <li key={c.category_id}>
                   <div className="bar-head">
                     <CategoryChip name={c.name} color={c.color} />
-                    <span className="bar-count">{c.students} studentë</span>
+                    <span className="bar-count">{c.students} nxënës</span>
                   </div>
                   <div className="bar-track">
                     <div
@@ -89,9 +90,7 @@ export default function Dashboard() {
               {alerts.map((s) => (
                 <li key={s.id}>
                   <Link to={`/studentet/${s.id}`} className="alert-item">
-                    <span className="avatar" style={{ '--avatar-color': s.category_color }}>
-                      {initials(s.first_name, s.last_name)}
-                    </span>
+                    <Avatar student={s} />
                     <span className="alert-body">
                       <strong>
                         {s.first_name} {s.last_name}
@@ -115,11 +114,11 @@ export default function Dashboard() {
         <h2 className="card-title">Regjistrimet e fundit</h2>
         {recent.length === 0 ? (
           <EmptyState
-            title="Ende nuk ka studentë"
-            hint="Filloni duke regjistruar studentin e parë."
+            title="Ende nuk ka nxënës"
+            hint="Filloni duke regjistruar nxënësin e parë."
             action={
               <Link to="/studentet/regjistro" className="btn btn-primary">
-                Regjistro studentin e parë
+                Regjistro nxënësin e parë
               </Link>
             }
           />
@@ -128,9 +127,7 @@ export default function Dashboard() {
             {recent.map((s) => (
               <li key={s.id}>
                 <Link to={`/studentet/${s.id}`} className="recent-item">
-                  <span className="avatar" style={{ '--avatar-color': s.category_color }}>
-                    {initials(s.first_name, s.last_name)}
-                  </span>
+                  <Avatar student={s} />
                   <span className="recent-body">
                     <strong>
                       {s.first_name} {s.last_name}

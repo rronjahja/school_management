@@ -16,3 +16,11 @@ export const createCategory = (data) => client.post('/categories', data).then((r
 export const updateCategory = (id, data) =>
   client.put(`/categories/${id}`, data).then((r) => r.data);
 export const deleteCategory = (id) => client.delete(`/categories/${id}`).then((r) => r.data);
+
+// ---- Mesazhi i rikujtesës ----
+
+export const fetchReminderTemplate = () =>
+  client.get('/settings/reminder-template').then((r) => r.data);
+
+export const saveReminderTemplate = (template) =>
+  client.put('/settings/reminder-template', { template }).then((r) => r.data);

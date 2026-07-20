@@ -42,6 +42,11 @@ router.post('/banks', requireAdmin, metaController.createBank);
 router.put('/banks/:id', requireAdmin, metaController.updateBank);
 router.delete('/banks/:id', requireAdmin, metaController.removeBank);
 
+// Mesazhi i rikujteses: lexohet nga te gjithe (nevojitet per ta derguar),
+// ndryshohet vetem nga administratoret
+router.get('/settings/reminder-template', metaController.reminderTemplate);
+router.put('/settings/reminder-template', requireAdmin, metaController.saveReminderTemplate);
+
 router.post('/categories', requireAdmin, metaController.createCategory);
 router.put('/categories/:id', requireAdmin, metaController.updateCategory);
 router.delete('/categories/:id', requireAdmin, metaController.removeCategory);

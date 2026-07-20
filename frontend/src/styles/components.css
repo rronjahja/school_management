@@ -441,3 +441,16 @@
 .empty-state .btn {
   margin-top: 8px;
 }
+/* Avatar me ikone profili (sipas gjinise) ne vend te inicialeve */
+.avatar-icon {
+  /* ikona mbush rrethin, prandaj s'ka nevoje per tekst */
+  padding: 0;
+  overflow: hidden;
+}
+
+.avatar-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  color: #fff;
+}

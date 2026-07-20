@@ -151,7 +151,67 @@ async function deleteCategory(id) {
   if (!res.affectedRows) throw httpError(404, 'Drejtimi nuk u gjet.');
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  Mesazhi i rikujteses (shabllon i ndryshueshem nga Cilesimet)
+// ═══════════════════════════════════════════════════════════════
+
+const REMINDER_TEMPLATE_KEY = 'reminder_template';
+
+// Parazgjedhja riprodhon mesazhin e deritanishem, me mbajtes vendi.
+// {pershendetja} dhe {te_nxenesit} lakohen sipas gjinise automatikisht.
+const DEFAULT_REMINDER_TEMPLATE = [
+  'Përshëndetje {pershendetja} {emri_kontaktit},',
+  '',
+  'Ky është një rikujtesë nga {shkolla} për obligimet financiare {te_nxenesit} ' +
+    '{emri_nxenesit}, drejtimi {drejtimi}{viti_fraza}{klasa_fraza}.',
+  '',
+  '{detyrimet}',
+  '',
+  '{llogarite_bankare}',
+  '',
+  'Nëse pagesa është kryer tashmë, ju lutemi na dërgoni konfirmimin dhe ' +
+    'konsiderojeni këtë mesazh të pavlefshëm.',
+  '',
+  'Faleminderit për bashkëpunimin,',
+  '{shkolla}',
+  '{telefoni_shkolles}',
+  'Datë: {data}',
+].join('\n');
+
+async function getReminderTemplate() {
+  const [[row]] = await pool.query(
+    'SELECT value FROM app_settings WHERE setting_key = ?', [REMINDER_TEMPLATE_KEY]
+  );
+  return {
+    template: row ? row.value : DEFAULT_REMINDER_TEMPLATE,
+    is_default: !row,
+    default_template: DEFAULT_REMINDER_TEMPLATE,
+  };
+}
+
+async function setReminderTemplate(raw) {
+  const value = String(raw ?? '');
+
+  // Tekst bosh = rikthim ne parazgjedhje
+  if (value.trim() === '') {
+    await pool.query('DELETE FROM app_settings WHERE setting_key = ?', [REMINDER_TEMPLATE_KEY]);
+    return getReminderTemplate();
+  }
+
+  if (value.length > 5000) {
+    throw httpError(400, 'Mesazhi është shumë i gjatë (deri 5000 karaktere).');
+  }
+
+  await pool.query(
+    'INSERT INTO app_settings (setting_key, value) VALUES (?, ?) ' +
+      'ON DUPLICATE KEY UPDATE value = VALUES(value)',
+    [REMINDER_TEMPLATE_KEY, value]
+  );
+  return getReminderTemplate();
+}
+
 module.exports = {
   listBanks, createBank, updateBank, deleteBank,
   listCategories, createCategory, updateCategory, deleteCategory,
+  getReminderTemplate, setReminderTemplate,
 };

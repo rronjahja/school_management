@@ -11,7 +11,9 @@ import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import FinanceGroups from '../components/finance/FinanceGroups.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
-import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, initials } from '../utils/format';
+import { canRemind } from '../utils/reminder';
+import { money, date, PLAN_LABELS, YEAR_LABELS, discountText } from '../utils/format';
+import Avatar from '../components/ui/Avatar.jsx';
 
 const STATUS_FILTERS = [
   ['', 'Të gjitha statuset'],
@@ -79,7 +81,7 @@ export default function Finance() {
     <>
       <PageHeader
         title="Financat"
-        subtitle="Pasqyra e pagesave për çdo student — kush ka paguar, kush ka mbetur"
+        subtitle="Pasqyra e pagesave për çdo nxënës — kush ka paguar, kush ka mbetur"
       />
 
       <div className="filter-bar">
@@ -145,7 +147,7 @@ export default function Finance() {
       ) : (
         <>
           <div className="stat-grid">
-            <StatCard label="Studentë (sipas filtrave)" value={filtered.length} />
+            <StatCard label="Nxënës (sipas filtrave)" value={filtered.length} />
             <StatCard label="Kuota totale neto" value={money(totals.net)} />
             <StatCard label="Të arkëtuara" value={money(totals.paid)} tone="green" />
             <StatCard
@@ -156,7 +158,7 @@ export default function Finance() {
           </div>
 
           {filtered.length === 0 ? (
-            <EmptyState title="Asnjë rezultat" hint="Ndryshoni filtrat për të parë studentët." />
+            <EmptyState title="Asnjë rezultat" hint="Ndryshoni filtrat për të parë nxënësit." />
           ) : view === 'grouped' ? (
             <FinanceGroups students={filtered} />
           ) : (
@@ -165,7 +167,7 @@ export default function Finance() {
                 <table className="table table-clickable">
                   <thead>
                     <tr>
-                      <th>Studenti</th>
+                      <th>Nxënësi</th>
                       <th>Drejtimi</th>
                       <th>Plani</th>
                       <th className="num">Kuota</th>
@@ -183,9 +185,7 @@ export default function Finance() {
                       <tr key={s.id} onClick={() => navigate(`/studentet/${s.id}`)}>
                         <td>
                           <span className="cell-student">
-                            <span className="avatar" style={{ '--avatar-color': s.category_color }}>
-                              {initials(s.first_name, s.last_name)}
-                            </span>
+                            <Avatar student={s} />
                             <strong>
                               {s.first_name} {s.last_name}
                             </strong>
@@ -214,8 +214,7 @@ export default function Finance() {
                           <StatusBadge status={s.finance.status} />
                         </td>
                         <td className="cell-tight">
-                          {(s.finance.status === 'overdue' ||
-                            s.finance.status === 'due-soon') && (
+                          {canRemind(s.finance) && (
                             <ReminderButton studentId={s.id} compact />
                           )}
                         </td>

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { fetchStudent } from '../../api/students';
-import { fetchBanks } from '../../api/meta';
+import { fetchBanks, fetchReminderTemplate } from '../../api/meta';
 import { errorMessage } from '../../api/client';
 import { buildReminder, copyToClipboard } from '../../utils/reminder';
 import Modal from '../ui/Modal.jsx';
 
 /**
- * Gjeneron mesazhin e rikujtesës për një student, e kopjon menjëherë
+ * Gjeneron mesazhin e rikujtesës për një nxënës, e kopjon menjëherë
  * në clipboard dhe e shfaq për shikim/redaktim para dërgimit.
  */
 export default function ReminderButton({ studentId, compact = false, label = 'Rikujtesë' }) {
@@ -17,12 +17,16 @@ export default function ReminderButton({ studentId, compact = false, label = 'Ri
   const [error, setError] = useState('');
 
   const generate = async (e) => {
-    e.stopPropagation(); // rreshti eshte i klikueshem — mos hap studentin
+    e.stopPropagation(); // rreshti eshte i klikueshem — mos hap nxenesin
     setBusy(true);
     setError('');
     try {
-      const [student, banks] = await Promise.all([fetchStudent(studentId), fetchBanks()]);
-      const msg = buildReminder(student, banks);
+      const [student, banks, tpl] = await Promise.all([
+        fetchStudent(studentId),
+        fetchBanks(),
+        fetchReminderTemplate().catch(() => null), // rrjeti deshton -> parazgjedhja lokale
+      ]);
+      const msg = buildReminder(student, banks, tpl ? tpl.template : null);
       setText(msg);
       setOpen(true);
       setCopied(await copyToClipboard(msg));

@@ -22,7 +22,7 @@ export default function HomeHero({ generation, studentCount }) {
           <h1 className="hero-title">Paneli i menaxhimit</h1>
           <p className="hero-sub">
             Viti shkollor {shown}
-            {typeof studentCount === 'number' && ` · ${studentCount} studentë`}
+            {typeof studentCount === 'number' && ` · ${studentCount} nxënës`}
           </p>
         </div>
       </div>

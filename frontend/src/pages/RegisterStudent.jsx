@@ -36,7 +36,7 @@ export default function RegisterStudent() {
   return (
     <>
       <PageHeader
-        title="Regjistrimi i studentit"
+        title="Regjistrimi i nxënësit"
         subtitle="Plotësoni të dhënat — këstet gjenerohen automatikisht sipas planit të pagesës"
       />
 
@@ -50,7 +50,7 @@ export default function RegisterStudent() {
             categories={categories}
             onSubmit={handleSubmit}
             busy={busy}
-            submitLabel="Regjistro studentin"
+            submitLabel="Regjistro nxënësin"
           />
         </div>
       )}

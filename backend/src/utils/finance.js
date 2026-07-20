@@ -135,11 +135,19 @@ function summarizeFinance(student, installments, totalPaid, today = dayjs()) {
   const settled = round2(Number(student.settled_paid) || 0);
   const effectivePaid = round2(Math.max(lifetimePaid - settled, 0));
 
+  // Nje nxenes i diplomuar nuk ka me vit shkollor perpara: cdo kest i papaguar
+  // eshte borxh i kerkueshem TANI, edhe nese afati i tij bie ne te ardhmen
+  // (kestet e vitit te fundit shpesh kane afate pas dates se diplomimit).
+  // Ndryshe, dikush me 1.400 € borxh do te dukej "Ne rregull".
+  const graduated = student.status === 'graduated';
+
   const allocated = allocatePayments(installments, effectivePaid).map((inst) => {
     const st = installmentStatus(inst, today);
-    // Borxhi i bartur i papaguar eshte GJITHMONE i vonuar (i kuq)
-    const overdue = inst.is_carryover && Number(inst.amount) - Number(inst.paid || 0) > EPSILON;
-    return { ...inst, status: overdue ? 'overdue' : st };
+    const unpaid = Number(inst.amount) - Number(inst.paid || 0) > EPSILON;
+    // Borxhi i bartur i papaguar eshte GJITHMONE i vonuar (i kuq),
+    // po ashtu cdo kest i papaguar i nje te diplomuari.
+    const forceOverdue = unpaid && (inst.is_carryover || graduated);
+    return { ...inst, status: forceOverdue ? 'overdue' : st };
   });
 
   const paid = effectivePaid;

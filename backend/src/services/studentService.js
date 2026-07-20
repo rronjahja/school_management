@@ -7,10 +7,11 @@ const STUDENT_FIELDS = [
   'phone', 'email', 'citizenship', 'nationality',
   'mother_name', 'mother_last_name', 'mother_birthday',
   'father_name', 'father_last_name',
-  'mother_phone', 'mother_personal_id',
-  'father_phone', 'father_birthday', 'father_personal_id',
+  'gender',
+  'mother_phone', 'mother_personal_id', 'mother_email',
+  'father_phone', 'father_birthday', 'father_personal_id', 'father_email',
   'guardian_name', 'guardian_last_name', 'guardian_phone',
-  'guardian_birthday', 'guardian_personal_id',
+  'guardian_birthday', 'guardian_personal_id', 'guardian_gender', 'guardian_email',
   'primary_contact',
   'category_id', 'contract_number', 'generation', 'class_name', 'study_year', 'enrollment_date',
   'yearly_quota', 'discount_type', 'discount_value', 'payment_plan',
@@ -19,7 +20,7 @@ const STUDENT_FIELDS = [
 /**
  * Nr. i kontrates: NN/VITI/KODI  (p.sh. 06/2026/TD)
  *
- * NN = numri rendor i studentit BRENDA atij drejtimi per ate vit shkollor,
+ * NN = numri rendor i nxenesit BRENDA atij drejtimi per ate vit shkollor,
  *      me dy shifra. Nese ka 5 studente ne Teknik Dentar per 2026,
  *      i gjashti merr "06".
  * VITI = viti i fillimit te vitit shkollor (nga gjenerata, p.sh. "2026/2027" -> 2026).
@@ -236,13 +237,13 @@ async function getStudentRow(id) {
       WHERE s.id = ?`,
     [id]
   );
-  if (!rows.length) throw httpError(404, 'Studenti nuk u gjet.');
+  if (!rows.length) throw httpError(404, 'Nxënësi nuk u gjet.');
   return rows[0];
 }
 
 async function deleteStudent(id) {
   const [result] = await pool.query('DELETE FROM students WHERE id = ?', [id]);
-  if (!result.affectedRows) throw httpError(404, 'Studenti nuk u gjet.');
+  if (!result.affectedRows) throw httpError(404, 'Nxënësi nuk u gjet.');
 }
 
 /** Lista e studenteve me filtra opsionale (kerkim + drejtim + plan). */

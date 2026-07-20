@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS students (
   first_name      VARCHAR(80)  NOT NULL,
   last_name       VARCHAR(80)  NOT NULL,
   birthday        DATE         NOT NULL,
+  gender          ENUM('m','f') DEFAULT NULL,      -- per drejtshkrimin e mesazheve
   city            VARCHAR(80)  NOT NULL,
   address         VARCHAR(160) NOT NULL,
   email           VARCHAR(120) DEFAULT NULL,
@@ -69,17 +70,21 @@ CREATE TABLE IF NOT EXISTS students (
   mother_phone       VARCHAR(40)  DEFAULT NULL,
   mother_birthday    DATE         DEFAULT NULL,
   mother_personal_id VARCHAR(20)  DEFAULT NULL,
+  mother_email       VARCHAR(120) DEFAULT NULL,
   father_name        VARCHAR(80)  DEFAULT NULL,
   father_last_name   VARCHAR(80)  DEFAULT NULL,
   father_phone       VARCHAR(40)  DEFAULT NULL,
   father_birthday    DATE         DEFAULT NULL,
   father_personal_id VARCHAR(20)  DEFAULT NULL,
+  father_email       VARCHAR(120) DEFAULT NULL,
   -- Kujdestari ligjor: perdoret NE VEND te prinderve kur nxenesi ka kujdestar
   guardian_name        VARCHAR(80) DEFAULT NULL,
   guardian_last_name   VARCHAR(80) DEFAULT NULL,
   guardian_phone       VARCHAR(40) DEFAULT NULL,
   guardian_birthday    DATE        DEFAULT NULL,
   guardian_personal_id VARCHAR(20) DEFAULT NULL,
+  guardian_gender      ENUM('m','f') DEFAULT NULL,
+  guardian_email       VARCHAR(120) DEFAULT NULL,
   -- Kush kontaktohet i pari. 'guardian' do te thote qe nxenesi ka kujdestar
   -- ligjor dhe fushat e prinderve nuk perdoren.
   primary_contact ENUM('mother','father','guardian') NOT NULL DEFAULT 'father',
@@ -218,3 +223,11 @@ CREATE TABLE IF NOT EXISTS login_log (
 ) ENGINE = InnoDB;
 
 CREATE INDEX idx_login_log_time ON login_log (created_at);
+-- ----------------------------------------------------------------
+-- Cilesime te pergjithshme (celes -> vlere), p.sh. teksti i rikujteses
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(60) PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
