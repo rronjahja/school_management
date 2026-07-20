@@ -28,7 +28,7 @@ export default function HomeHero({ generation, studentCount }) {
       </div>
 
       <Link to="/studentet/regjistro" className="btn btn-on-dark">
-        + Regjistro student
+        + Regjistro nxënës
       </Link>
     </section>
   );
