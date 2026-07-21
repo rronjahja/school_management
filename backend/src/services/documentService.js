@@ -5,6 +5,7 @@ const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
 const { httpError } = require('../middleware/errorHandler');
 const financeService = require('./financeService');
+const pool = require('../config/db');
 const { PLAN_CONFIG } = require('../config/finance');
 
 // Te gjitha shabllonet Word qendrojne ketu (kontrata, vertetime, etj.)
@@ -51,11 +52,16 @@ const formatMoney = (n) =>
   Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Lista e shablloneve te disponueshme (skedaret .docx ne templates/). */
+// Fletepagesa gjenerohet nga butoni i vet te faqja e nxenesit, prandaj
+// nuk duhet te dale mes shablloneve te kontratave.
+const RESERVED_TEMPLATES = ['fletepagesa.docx'];
+
 function listTemplates() {
   if (!fs.existsSync(TEMPLATES_DIR)) return [];
   return fs
     .readdirSync(TEMPLATES_DIR)
     .filter((f) => f.toLowerCase().endsWith('.docx') && !f.startsWith('~$'))
+    .filter((f) => !RESERVED_TEMPLATES.includes(f.toLowerCase()))
     .map((f) => ({
       file: f,
       label: path.basename(f, path.extname(f)).replace(/[_-]+/g, ' '),
@@ -191,4 +197,175 @@ async function generateDocument(studentId, templateFile) {
   };
 }
 
-module.exports = { listTemplates, generateDocument };
+
+// ═══════════════════════════════════════════════════════════════
+//  Fletëpagesa — fleta bankare me dy gjysma (klienti + arkivi)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Cilat këste i mbuloi NJË pagesë e caktuar? Pagesat derdhen mbi këstet
+ * në rendin kohor (FIFO) — njësoj si llogaritja e bilancit — dhe mbahet
+ * shënim cilat këste preku pagesa e kërkuar.
+ */
+function installmentsCoveredBy(paymentId, installments, payments, settled) {
+  const slots = installments
+    .map((i) => ({
+      seq: i.is_carryover ? 0 : i.seq,
+      carry: Boolean(i.is_carryover),
+      amount: Number(i.amount),
+      paid: 0,
+    }))
+    .sort((a, b) => a.seq - b.seq);
+
+  const ordered = [...payments].sort(
+    (a, b) => String(a.payment_date).localeCompare(String(b.payment_date)) || a.id - b.id
+  );
+
+  let burn = Math.max(Number(settled) || 0, 0);
+  let idx = 0;
+  const covered = [];
+
+  for (const p of ordered) {
+    let left = Number(p.amount);
+    if (burn > 0) {
+      const b = Math.min(burn, left);
+      burn -= b; left -= b;
+    }
+    while (left > 0.004 && idx < slots.length) {
+      const sl = slots[idx];
+      const room = sl.amount - sl.paid;
+      if (room <= 0.004) { idx += 1; continue; }
+      const take = Math.min(room, left);
+      sl.paid = Math.round((sl.paid + take) * 100) / 100;
+      left = Math.round((left - take) * 100) / 100;
+      if (p.id === paymentId) covered.push(sl);
+    }
+  }
+  return covered;
+}
+
+/** ['Kësti 1','Kësti 2','Kësti 3'] -> "Kësti 1, 2 dhe 3" (me borxhin veç). */
+function describeSlots(slots) {
+  const parts = [];
+  if (slots.some((s) => s.carry)) parts.push('Borxhi i vitit të kaluar');
+  const seqs = slots.filter((s) => !s.carry).map((s) => s.seq);
+  if (seqs.length === 1) parts.push(`Kësti ${seqs[0]}`);
+  else if (seqs.length === 2) parts.push(`Kësti ${seqs[0]} dhe ${seqs[1]}`);
+  else if (seqs.length > 2) {
+    parts.push(`Kësti ${seqs.slice(0, -1).join(', ')} dhe ${seqs[seqs.length - 1]}`);
+  }
+  return parts.join(' dhe ');
+}
+
+/** Mbush shabllonin Fletepagesa.docx për një nxënës + përshkrim + shumë. */
+function buildFletepagesa(student, description, amount) {
+  const f = student.finance || {};
+  const file = path.join(TEMPLATES_DIR, 'Fletepagesa.docx');
+  if (!fs.existsSync(file)) {
+    throw httpError(500, 'Shablloni Fletepagesa.docx mungon në templates/.');
+  }
+  const zip = new PizZip(fs.readFileSync(file, 'binary'));
+  const doc = new Docxtemplater(zip, {
+    paragraphLoop: true,
+    linebreaks: true,
+    nullGetter: () => '',
+  });
+  doc.render({
+    emri_nxenesit: student.first_name,
+    mbiemri_nxenesit: student.last_name,
+    // "(emri i prindit)" — babai, ose kush ka emer i pari
+    emri_babait:
+      student.father_name || student.mother_name || student.guardian_name || '',
+    nr_kontrates: student.contract_number || '',
+    data_sotme: dayjs().format('DD.MM.YYYY'),
+    pershkrimi_pageses: description,
+    shuma: formatMoney(amount),
+    // Gjendja financiare — total_due i perfshin edhe kestet e bartura,
+    // keshtu qe Totali - Paguar = Mbetur del gjithmone i sakte
+    totali: formatMoney(f.total_due),
+    paguar: formatMoney(f.total_paid),
+    mbetur: formatMoney(f.balance),
+  });
+  return {
+    buffer: doc.getZip().generate({ type: 'nodebuffer' }),
+    filename: `Fletepagesa_${student.first_name}_${student.last_name}.docx`,
+  };
+}
+
+/** Fletëpagesa e NJË pagese të bërë (nga butoni te modali i pagesës). */
+async function paymentSlip(paymentId) {
+  const [[payment]] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+  if (!payment) throw httpError(404, 'Pagesa nuk u gjet.');
+
+  const student = await financeService.getStudentDetail(payment.student_id);
+  const covered = installmentsCoveredBy(
+    payment.id,
+    student.finance.installments,
+    student.payments,
+    student.settled_paid
+  );
+  const what = describeSlots(covered) || 'Pagesë shkollimi';
+  const auto =
+    `${what} — ${student.category_name}, viti shkollor ${student.generation}`;
+
+  // Shenimi i shkruar nga perdoruesi ka perparesi: te modali ai mbushet
+  // vetvetiu me pikerisht kete tekst, keshtu qe nese eshte ndryshuar, do
+  // te thote qe eshte ndryshuar me qellim dhe fletepagesa duhet ta pasqyroje.
+  const description = (payment.note && payment.note.trim()) || auto;
+
+  return buildFletepagesa(student, description, payment.amount);
+}
+
+/** Fletëpagesa e detyrimeve të pashlyera (nga rikujtesa). */
+/**
+ * Fletepagesa per kestet e PAZGJEDHURA nga perdoruesi, ose — kur nuk
+ * zgjidhet asnje — per detyrimet e vonuara/afer afatit.
+ *
+ * @param {number[]|null} seqs numrat e kesteve (0 = borxhi i bartur)
+ */
+async function reminderSlip(studentId, seqs = null) {
+  const student = await financeService.getStudentDetail(studentId);
+  const insts = student.finance.installments;
+
+  const remainingOf = (i) => Number(i.amount) - Number(i.paid || 0);
+
+  if (Array.isArray(seqs) && seqs.length) {
+    const wanted = new Set(seqs.map(Number));
+    const picked = insts.filter(
+      (i) => wanted.has(i.is_carryover ? 0 : Number(i.seq)) && remainingOf(i) > 0.004
+    );
+    if (!picked.length) {
+      throw httpError(400, 'Këstet e zgjedhura janë të shlyera ose nuk ekzistojnë.');
+    }
+    const sum = picked.reduce((a, i) => a + remainingOf(i), 0);
+    const what = describeSlots(
+      picked.map((i) => ({ seq: i.is_carryover ? 0 : i.seq, carry: Boolean(i.is_carryover) }))
+    );
+    return buildFletepagesa(
+      student,
+      `${what} — ${student.category_name}, viti shkollor ${student.generation}`,
+      Math.round(sum * 100) / 100
+    );
+  }
+
+  const overdue = insts.filter((i) => i.status === 'overdue');
+  const soon = insts.filter((i) => i.status === 'due-soon');
+  const targets = overdue.length ? overdue : soon;
+
+  const remaining = (i) => Number(i.amount) - Number(i.paid || 0);
+  const amount = targets.length
+    ? targets.reduce((a, i) => a + remaining(i), 0)
+    : Number(student.finance.balance);
+
+  const slots = targets.map((i) => ({
+    seq: i.is_carryover ? 0 : i.seq,
+    carry: Boolean(i.is_carryover),
+  }));
+  const what = describeSlots(slots) || 'Detyrimi i mbetur';
+  const description =
+    `${what} — ${student.category_name}, viti shkollor ${student.generation}`;
+  return buildFletepagesa(student, Math.round(amount * 100) / 100 > 0 ? description : 'Pagesë shkollimi', amount);
+}
+
+module.exports = {
+  paymentSlip, reminderSlip, installmentsCoveredBy, describeSlots, listTemplates, generateDocument };

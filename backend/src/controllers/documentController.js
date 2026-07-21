@@ -22,4 +22,32 @@ async function generate(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listTemplates, generate };
+const DOCX_MIME =
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+function sendDocx(res, { buffer, filename }) {
+  res.setHeader('Content-Type', DOCX_MIME);
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+  res.send(buffer);
+}
+
+/** GET /payments/:id/fletepagesa — fleta e një pagese të bërë */
+async function paymentSlip(req, res, next) {
+  try { sendDocx(res, await documentService.paymentSlip(Number(req.params.id))); }
+  catch (err) { next(err); }
+}
+
+/** GET /students/:id/fletepagesa — fleta e detyrimeve (për rikujtesën) */
+async function reminderSlip(req, res, next) {
+  try {
+    // ?keste=0,1,2 — bosh do te thote "detyrimet e vonuara"
+    const raw = String(req.query.keste || '').trim();
+    const seqs = raw
+      ? raw.split(',').map((n) => Number(n)).filter((n) => Number.isInteger(n) && n >= 0)
+      : null;
+    sendDocx(res, await documentService.reminderSlip(Number(req.params.id), seqs));
+  } catch (err) { next(err); }
+}
+
+module.exports = {
+  paymentSlip, reminderSlip, listTemplates, generate };

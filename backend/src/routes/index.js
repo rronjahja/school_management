@@ -47,6 +47,10 @@ router.delete('/banks/:id', requireAdmin, metaController.removeBank);
 
 // Mesazhi i rikujteses: lexohet nga te gjithe (nevojitet per ta derguar),
 // ndryshohet vetem nga administratoret
+// Fletëpagesa: e nje pagese te caktuar, ose e detyrimeve (rikujtesa)
+router.get('/payments/:id/fletepagesa', documentController.paymentSlip);
+router.get('/students/:id/fletepagesa', documentController.reminderSlip);
+
 // Migrimi i kontratave (vetem admin): trupi i kerkeses eshte skedari .docx
 router.post(
   '/import/contract',

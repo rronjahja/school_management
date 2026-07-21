@@ -37,8 +37,21 @@ const DATE_FMT = 'dd.mm.yyyy';
  * akronimi nga shkronjat e para të fjalëve origjinale — kështu
  * "Banka për Biznes" bëhet "BpB" dhe "Banka Kombëtare Tregtare" "BKT".
  */
+// Shkurtesat tregtare qe NUK nxirren dot nga emri: banka njihet ne treg
+// me nje kod te vetin. Cdo banke tjeter e mbulon rregulli i meposhtem.
+const BANK_ALIASES = {
+  raiffeisen: 'RBKO',
+  'raiffeisen bank': 'RBKO',
+  'banka per biznes': 'BpB',
+  'banka për biznes': 'BpB',
+};
+
 function bankShortName(name) {
   const original = String(name || '').trim();
+
+  const alias = BANK_ALIASES[original.toLowerCase()];
+  if (alias) return alias;
+
   const stripped = original
     .replace(/\b(banka|bankë|banke|bank)\b/gi, '')
     .replace(/\s+/g, ' ')

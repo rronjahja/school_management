@@ -168,6 +168,7 @@ const DEFAULT_REMINDER_TEMPLATE = [
   '{detyrimet}',
   '',
   '{llogarite_bankare}',
+  '{pagesa_kesh}',
   '',
   'Nëse pagesa është kryer tashmë, ju lutemi na dërgoni konfirmimin dhe ' +
     'konsiderojeni këtë mesazh të pavlefshëm.',
