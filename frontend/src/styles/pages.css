@@ -319,7 +319,7 @@
   border-radius: var(--radius-small);
 }
 
-.finance-preview > div {
+.finance-preview>div {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -392,7 +392,7 @@
   transition: background 0.15s, color 0.15s;
 }
 
-.view-toggle button + button {
+.view-toggle button+button {
   border-left: 1px solid var(--line-strong);
 }
 
@@ -894,6 +894,7 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
+
 /* ---------- Borxhi i vitit te kaluar ---------- */
 .row-carryover {
   background: var(--red-bg);
@@ -954,7 +955,7 @@
   font-size: 14px;
 }
 
-.cfg-block + .cfg-block {
+.cfg-block+.cfg-block {
   margin-top: 26px;
   padding-top: 22px;
   border-top: 1px solid var(--line);
@@ -1331,7 +1332,7 @@ input.is-locked:focus {
   gap: 6px 22px;
 }
 
-.tpl-legend dl > div {
+.tpl-legend dl>div {
   display: flex;
   gap: 10px;
   align-items: baseline;
@@ -1366,6 +1367,7 @@ input.is-locked:focus {
   flex-direction: column;
   gap: 2px;
 }
+
 /* ---------- Butoni i eksportit në Excel ---------- */
 .excel-export {
   display: flex;
@@ -1442,7 +1444,7 @@ input.is-locked:focus {
   margin-top: 16px;
 }
 
-.import-list td .btn + .btn {
+.import-list td .btn+.btn {
   margin-left: 6px;
 }
 
@@ -1472,4 +1474,59 @@ input.is-locked:focus {
 .import-banner ul {
   margin: 8px 0 0 18px;
   color: #9a6b00;
+}
+
+/* ---------- Pamja pas ruajtjes së pagesës ---------- */
+.pay-saved-line {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.reminder-actions {
+  flex-wrap: wrap;
+}
+
+/* ---------- Shënimi i pagesës me buton rikthimi ---------- */
+.note-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.note-row input {
+  flex: 1;
+}
+
+/* ---------- Fletëpagesa mbi tabelën e kësteve ---------- */
+.slip-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.slip-sum {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pick-col {
+  width: 34px;
+  text-align: center;
+  padding-right: 0 !important;
+}
+
+.pick-col input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.doc-generate .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }

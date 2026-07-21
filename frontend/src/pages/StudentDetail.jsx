@@ -21,6 +21,7 @@ import PaymentList from '../components/finance/PaymentList.jsx';
 import PaymentModal from '../components/finance/PaymentModal.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
 import { canRemind } from '../utils/reminder';
+import { downloadSlipPdf, printSlip, reminderSlipUrl } from '../utils/slip';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortGen } from '../utils/format';
 
 export default function StudentDetail() {
@@ -51,15 +52,79 @@ export default function StudentDetail() {
       .catch(() => {});
   }, [id]);
 
+  // ---- Fletëpagesa për këstet e zgjedhura ----
+  // Si parazgjedhje zgjidhen këstet e vonuara; nëse s'ka, ato afër afatit.
+  const [picked, setPicked] = useState(null);
+  const [slipBusy, setSlipBusy] = useState('');
+  const [slipError, setSlipError] = useState('');
+
+  const unpaid = (student?.finance?.installments || []).filter(
+    (i) => Number(i.amount) - Number(i.paid || 0) > 0.004
+  );
+  const keyOf = (i) => (i.is_carryover ? 0 : Number(i.seq));
+
+  // Rivlerësohet sa herë ndryshojnë të dhënat e nxënësit — pra edhe pas
+  // një pagese të re. Këstet e shlyera heqin kutizën e tyre, prandaj
+  // zgjedhja e vjetër duhet pastruar; përndryshe mbetej e zgjedhur diçka
+  // që s'ekziston më dhe butonat dilnin të çaktivizuar.
+  useEffect(() => {
+    if (!student) return;
+    const open = new Set(unpaid.map(keyOf));
+    setPicked((prev) => {
+      const kept = new Set([...(prev || [])].filter((k) => open.has(k)));
+      if (kept.size) return kept;   // zgjedhja e përdoruesit ruhet nëse vlen ende
+      // Përndryshe: kësti i radhës — më i vjetri i papaguar (bartja e para).
+      const next = [...unpaid].sort((a, b) => keyOf(a) - keyOf(b))[0];
+      return new Set(next ? [keyOf(next)] : []);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student]);
+
+  const selected = picked || new Set();
+  const togglePick = (key) => {
+    setPicked((prev) => {
+      const next = new Set(prev || []);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const pickedList = unpaid.filter((i) => selected.has(keyOf(i)));
+  const pickedTotal = pickedList.reduce(
+    (a, i) => a + (Number(i.amount) - Number(i.paid || 0)),
+    0
+  );
+
+  const runSlip = async (kind, fn) => {
+    setSlipBusy(kind);
+    setSlipError('');
+    try {
+      await fn();
+    } catch {
+      setSlipError('Gjenerimi i fletëpagesës dështoi. Provoni përsëri.');
+    } finally {
+      setSlipBusy('');
+    }
+  };
+
+  const slipUrl = () => {
+    const keste = pickedList.map(keyOf).sort((a, b) => a - b).join(',');
+    return `${reminderSlipUrl(id)}${keste ? `?keste=${keste}` : ''}`;
+  };
+
   const handlePayment = async (data) => {
     setPaymentBusy(true);
     setPaymentError('');
     try {
       const updated = await createPayment(data);
       setStudent(updated);
-      setShowPayment(false);
+      // Modali NUK mbyllet: kalon te pamja e suksesit me butonat e
+      // fletëpagesës. Id-ja i duhet asaj për ta gjeneruar fletën.
+      return updated.last_payment_id || null;
     } catch (err) {
       setPaymentError(errorMessage(err));
+      return null;
     } finally {
       setPaymentBusy(false);
     }
@@ -132,7 +197,8 @@ export default function StudentDetail() {
             </select>
           )}
           <button type="button" className="btn btn-ghost" onClick={handleDocument}>
-            ⬇ {templates.length === 1 ? 'Krijo Kontratën' : 'Krijo dokumentin'}
+            <ContractIcon />
+            {templates.length === 1 ? 'Kontrata' : 'Krijo dokumentin'}
           </button>
         </span>
         <Link to={`/studentet/${id}/ndrysho`} className="btn btn-ghost">
@@ -281,8 +347,44 @@ export default function StudentDetail() {
       </div>
 
       <section className="card">
-        <h2 className="card-title">Këstet</h2>
-        <InstallmentTable installments={f.installments} />
+        <div className="card-title-row">
+          <h2 className="card-title">Këstet</h2>
+          {unpaid.length > 0 && (
+            <div className="slip-bar">
+              <span className="slip-sum">
+                {pickedList.length
+                  ? `${pickedList.length} këste · ${money(pickedTotal)}`
+                  : 'Zgjidhni këstet'}
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                disabled={!pickedList.length || Boolean(slipBusy)}
+                onClick={() => runSlip('pdf', () =>
+                  downloadSlipPdf(
+                    slipUrl(),
+                    `Fletepagesa_${student.first_name}_${student.last_name}.pdf`
+                  ))}
+              >
+                {slipBusy === 'pdf' ? 'Duke përgatitur…' : 'Fletëpagesa (PDF)'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-small"
+                disabled={!pickedList.length || Boolean(slipBusy)}
+                onClick={() => runSlip('print', () => printSlip(slipUrl()))}
+              >
+                {slipBusy === 'print' ? 'Duke hapur…' : '🖨 Printo'}
+              </button>
+            </div>
+          )}
+        </div>
+        {slipError && <p className="form-error">{slipError}</p>}
+        <InstallmentTable
+          installments={f.installments}
+          selected={selected}
+          onToggle={unpaid.length ? togglePick : undefined}
+        />
       </section>
 
       {showPayment && (
@@ -308,5 +410,26 @@ function Info({ label, value, span, strong }) {
       <dt>{label}</dt>
       <dd className={strong ? 'is-primary' : undefined}>{value || '—'}</dd>
     </div>
+  );
+}
+
+/** Dokument me faqe të palosur — ikona e kontratës. */
+function ContractIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M6 2.75h7.2L19 8.5v12.75H6V2.75Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M13 2.9V9h5.9" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path
+        d="M9 13h7M9 16.5h7"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

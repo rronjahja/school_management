@@ -130,6 +130,10 @@ export function buildReminder(student, banks = [], template = null) {
        ...withAccounts.map((b) => `  ${b.name}: ${b.account_number}`)].join('\n')
     : '';
 
+  // Pagesa me para te gatshme — e pavarur nga bankat: shfaqet edhe kur
+  // asnje banke s'ka numer llogarie te konfiguruar.
+  const cashBlock = 'Pagesa mund të kryhet edhe me para të gatshme, në objektin e shkollës.';
+
   // ---- mbajtesit e vendit ----
   const contact = primaryContactInfo(student);
   const forms = studentForms(student.gender);
@@ -149,6 +153,7 @@ export function buildReminder(student, banks = [], template = null) {
     detyrimet: dLines.join('\n'),
     detyrimi_total: money(f.balance),
     llogarite_bankare: bankBlock,
+    pagesa_kesh: cashBlock,
     shkolla: SCHOOL.name,
     telefoni_shkolles: SCHOOL.phone,
     data: dayjs().format('DD.MM.YYYY'),
@@ -178,6 +183,7 @@ const DEFAULT_TEMPLATE = [
   '{detyrimet}',
   '',
   '{llogarite_bankare}',
+  '{pagesa_kesh}',
   '',
   'Nëse pagesa është kryer tashmë, ju lutemi na dërgoni konfirmimin dhe ' +
     'konsiderojeni këtë mesazh të pavlefshëm.',

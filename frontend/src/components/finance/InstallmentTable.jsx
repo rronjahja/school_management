@@ -1,8 +1,15 @@
 import StatusBadge from '../ui/StatusBadge.jsx';
 import { money, date, shortGen } from '../../utils/format';
 
-export default function InstallmentTable({ installments }) {
+/**
+ * @param selected  Set me numrat e kësteve të zgjedhura (0 = bartja)
+ * @param onToggle  thirret me numrin e këstit; nëse mungon, tabela s'ka zgjedhje
+ */
+export default function InstallmentTable({ installments, selected, onToggle }) {
   if (!installments?.length) return null;
+
+  const selectable = typeof onToggle === 'function';
+  const keyOf = (i) => (i.is_carryover ? 0 : Number(i.seq));
 
   // Borxhi i bartur eshte i kuq vetem derisa te shlyhet; pasi paguhet
   // trajtohet si cdo kest tjeter i mbyllur.
@@ -13,6 +20,7 @@ export default function InstallmentTable({ installments }) {
       <table className="table">
         <thead>
           <tr>
+            {selectable && <th className="pick-col" aria-label="Zgjidh" />}
             <th>Kësti</th>
             <th>Afati</th>
             <th className="num">Shuma</th>
@@ -28,6 +36,18 @@ export default function InstallmentTable({ installments }) {
                 key={inst.seq}
                 className={isSettled(inst) ? `row-${inst.status}` : 'row-carryover'}
               >
+                {selectable && (
+                  <td className="pick-col">
+                    {!isSettled(inst) && (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(0)}
+                        onChange={() => onToggle(0)}
+                        aria-label="Zgjidh borxhin e vitit të kaluar"
+                      />
+                    )}
+                  </td>
+                )}
                 <td colSpan={2}>
                   <strong>Borxhi i vitit të kaluar</strong>
                   {inst.generation && (
@@ -45,6 +65,18 @@ export default function InstallmentTable({ installments }) {
               </tr>
             ) : (
               <tr key={inst.seq} className={`row-${inst.status}`}>
+                {selectable && (
+                  <td className="pick-col">
+                    {!isSettled(inst) && (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(keyOf(inst))}
+                        onChange={() => onToggle(keyOf(inst))}
+                        aria-label={`Zgjidh kestin ${inst.seq}`}
+                      />
+                    )}
+                  </td>
+                )}
                 <td>Kësti {inst.seq}</td>
                 <td>{date(inst.due_date)}</td>
                 <td className="num">{money(inst.amount)}</td>

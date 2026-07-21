@@ -20,6 +20,7 @@ const PLACEHOLDERS = [
   ['{detyrimet}', 'lista e detyrimeve (këstet, borxhi, totali)'],
   ['{detyrimi_total}', 'shuma e mbetur gjithsej'],
   ['{llogarite_bankare}', 'bankat me numër llogarie'],
+  ['{pagesa_kesh}', 'mundësia e pagesës me para të gatshme në shkollë'],
   ['{shkolla}', 'emri i shkollës'],
   ['{telefoni_shkolles}', 'telefoni i shkollës'],
   ['{data}', 'data e sotme'],

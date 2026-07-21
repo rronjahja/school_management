@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { fetchStudent } from '../../api/students';
 import { fetchBanks, fetchReminderTemplate } from '../../api/meta';
+import { downloadSlipPdf, shareSlipWithText, reminderSlipUrl } from '../../utils/slip';
 import { errorMessage } from '../../api/client';
 import { buildReminder, copyToClipboard } from '../../utils/reminder';
 import Modal from '../ui/Modal.jsx';
@@ -14,6 +15,26 @@ export default function ReminderButton({ studentId, compact = false, label = 'Ri
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState('');
   const [copied, setCopied] = useState(false);
+  const [combined, setCombined] = useState(null);
+  const [slipBusy, setSlipBusy] = useState('');
+  const [slipError, setSlipError] = useState('');
+
+  const runSlip = async (kind, fn) => {
+    setSlipBusy(kind);
+    setSlipError('');
+    setCombined(null);
+    try {
+      await fn();
+    } catch {
+      setSlipError(
+        kind === 'copy'
+          ? 'Dërgimi dështoi — shfletuesi e lejon vetëm në lidhje të sigurt (https ose localhost).'
+          : 'Gjenerimi i fletëpagesës dështoi. Provoni përsëri.'
+      );
+    } finally {
+      setSlipBusy('');
+    }
+  };
   const [error, setError] = useState('');
 
   const generate = async (e) => {
@@ -76,9 +97,50 @@ export default function ReminderButton({ studentId, compact = false, label = 'Ri
                   spellCheck={false}
                 />
 
-                <div className="modal-actions">
+                {slipError && <p className="form-error">{slipError}</p>}
+                {combined === 'shared' && (
+                  <p className="copy-note ok">
+                    ✓ U hap dritarja e ndarjes — zgjidhni Viber ose WhatsApp dhe
+                    do të dërgohen bashkë fletëpagesa dhe teksti.
+                  </p>
+                )}
+                {combined === 'copied' && (
+                  <p className="copy-note ok">
+                    ✓ U kopjua fletëpagesa si foto. Ngjiteni te biseda, pastaj
+                    shtypni <strong>Kopjo tekstin</strong> dhe ngjiteni si koment —
+                    Viber/WhatsApp marrin vetëm fotografinë nga një ngjitje e vetme.
+                  </p>
+                )}
+
+                <div className="modal-actions reminder-actions">
                   <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
                     Mbyll
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={Boolean(slipBusy)}
+                    onClick={() => runSlip('pdf', () =>
+                      downloadSlipPdf(reminderSlipUrl(studentId), 'Fletepagesa.pdf'))}
+                    title="Shkarkon fletëpagesën si PDF për ta bashkëngjitur si skedar"
+                  >
+                    {slipBusy === 'pdf' ? '…' : 'Fletëpagesa (PDF)'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={Boolean(slipBusy)}
+                    onClick={() => runSlip('copy', async () => {
+                      const how = await shareSlipWithText(
+                        reminderSlipUrl(studentId),
+                        text,
+                        'Fletepagesa.pdf'
+                      );
+                      setCombined(how);
+                    })}
+                    title="Dërgon fletëpagesën bashkë me tekstin te Viber/WhatsApp"
+                  >
+                    {slipBusy === 'copy' ? '…' : 'Dërgo me tekst'}
                   </button>
                   <button type="button" className="btn btn-primary" onClick={copyAgain}>
                     {copied ? '✓ U kopjua' : 'Kopjo tekstin'}
