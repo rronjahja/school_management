@@ -1,9 +1,11 @@
 const { Router } = require('express');
+const express = require('express');
 
 const studentController = require('../controllers/studentController');
 const paymentController = require('../controllers/paymentController');
 const metaController = require('../controllers/metaController');
 const exportController = require('../controllers/exportController');
+const importController = require('../controllers/importController');
 const dashboardController = require('../controllers/dashboardController');
 const documentController = require('../controllers/documentController');
 const promotionController = require('../controllers/promotionController');
@@ -45,6 +47,15 @@ router.delete('/banks/:id', requireAdmin, metaController.removeBank);
 
 // Mesazhi i rikujteses: lexohet nga te gjithe (nevojitet per ta derguar),
 // ndryshohet vetem nga administratoret
+// Migrimi i kontratave (vetem admin): trupi i kerkeses eshte skedari .docx
+router.post(
+  '/import/contract',
+  requireAdmin,
+  express.raw({ type: () => true, limit: '10mb' }),
+  importController.contract
+);
+router.post('/import/check-existing', requireAdmin, importController.existing);
+
 // Eksporti ne Excel i pagesave te nje gjenerate (te gjitha drejtimet)
 router.get('/export/finance-excel', exportController.financeExcel);
 

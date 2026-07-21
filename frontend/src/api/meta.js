@@ -39,3 +39,18 @@ export const downloadFinanceExcel = (generation) =>
       a.remove();
       URL.revokeObjectURL(url);
     });
+
+// ---- Migrimi i kontratave ----
+
+export const parseContractFile = (file) =>
+  client
+    .post('/import/contract', file, {
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'X-Filename': encodeURIComponent(file.name),
+      },
+    })
+    .then((r) => r.data);
+
+export const checkExistingContracts = (numbers) =>
+  client.post('/import/check-existing', { numbers }).then((r) => r.data);

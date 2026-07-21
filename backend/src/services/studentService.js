@@ -112,9 +112,15 @@ async function quotaForCategory(categoryId, fallback) {
   return fallback;
 }
 
-async function createStudent(body) {
+async function createStudent(body, opts = {}) {
   const data = pickStudentFields(body);
-  data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
+
+  // Kuota merret nga konfigurimi i drejtimit — pervec migrimit te kontratave,
+  // ku cmimi i kontrates se nenshkruar (edhe i nje viti te vjeter) ka perparesi.
+  const keepContractQuota = opts.allowQuotaOverride === true && body.quota_override === true;
+  if (!keepContractQuota) {
+    data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
+  }
 
   const conn = await pool.getConnection();
   try {

@@ -14,6 +14,7 @@ import { money, date, YEAR_LABELS, shortGen } from '../utils/format';
 import UserManager from '../components/settings/UserManager.jsx';
 import DataManager from '../components/settings/DataManager.jsx';
 import ReminderTemplateEditor from '../components/settings/ReminderTemplateEditor.jsx';
+import ContractImport from '../components/settings/ContractImport.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -295,6 +296,8 @@ export default function Settings() {
       <DataManager />
 
       <ReminderTemplateEditor />
+
+      <ContractImport />
 
       <UserManager />
 

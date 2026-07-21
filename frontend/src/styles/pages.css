@@ -1408,3 +1408,68 @@ input.is-locked:focus {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ---------- Migrimi i kontratave ---------- */
+.import-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-small);
+  padding: 26px 16px;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.import-drop:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: rgba(18, 87, 166, 0.04);
+}
+
+.import-drop.is-busy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.import-drop input {
+  display: none;
+}
+
+.import-list {
+  margin-top: 16px;
+}
+
+.import-list td .btn + .btn {
+  margin-left: 6px;
+}
+
+.import-warnings summary {
+  cursor: pointer;
+  color: #9a6b00;
+  font-weight: 700;
+  user-select: none;
+}
+
+.import-warnings ul {
+  margin: 6px 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 300px;
+}
+
+.import-banner {
+  background: #f0f7ff;
+  border: 1px solid rgba(18, 87, 166, 0.25);
+  border-radius: var(--radius-small);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14.5px;
+}
+
+.import-banner ul {
+  margin: 8px 0 0 18px;
+  color: #9a6b00;
+}

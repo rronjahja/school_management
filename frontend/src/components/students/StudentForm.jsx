@@ -66,6 +66,8 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
 
   // ---- Nr. i kontratës: mbushet vetvetiu sipas drejtimit + gjeneratës ----
   const isEdit = Boolean(initial && initial.id);
+  // Kontrata e migruar sjell numrin e VET — gjenerimi automatik nuk e prek
+  const isImported = Boolean(initial && !initial.id && initial.contract_number);
   const [contractBusy, setContractBusy] = useState(false);
   const reqId = useRef(0);
 
@@ -87,14 +89,14 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
   // Në regjistrim: rifreskohet sa herë ndryshon drejtimi ose gjenerata.
   // Në ndryshim: numri i lëshuar nuk preket — përdoret butoni ↻.
   useEffect(() => {
-    if (isEdit) return undefined;
+    if (isEdit || isImported) return undefined;
     const t = setTimeout(
       () => loadContractNumber(form.category_id, form.generation, form.enrollment_date),
       250
     );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.category_id, form.generation, isEdit]);
+  }, [form.category_id, form.generation, isEdit, isImported]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -113,7 +115,9 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
   const selectedCategory = categoryOptions.find(
     (c) => String(c.id) === String(form.category_id)
   );
+  const importedQuota = Boolean(initial && initial.quota_override);
   const quotaLocked =
+    !importedQuota &&
     selectedCategory != null &&
     selectedCategory.default_quota !== null &&
     selectedCategory.default_quota !== undefined;
@@ -494,7 +498,9 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
             hint={
               quotaLocked
                 ? 'Merret nga drejtimi i zgjedhur. Ndryshohet te Cilësimet → Konfigurimet.'
-                : 'Ky drejtim s’ka kuotë të caktuar te Cilësimet — shkruajeni me dorë.'
+                : importedQuota
+                  ? 'Çmimi i kontratës së migruar — ka përparësi ndaj kuotës së drejtimit.'
+                  : 'Ky drejtim s’ka kuotë të caktuar te Cilësimet — shkruajeni me dorë.'
             }
           >
             <input

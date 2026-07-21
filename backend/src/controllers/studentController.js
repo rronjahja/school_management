@@ -36,7 +36,11 @@ async function create(req, res, next) {
     const errors = validateStudent(req.body);
     if (errors.length) return res.status(400).json({ error: errors.join(' ') });
 
-    const id = await studentService.createStudent(req.body);
+    const id = await studentService.createStudent(req.body, {
+      // vetem administratoret (p.sh. migrimi i kontratave) mund ta mbajne
+      // kuoten e kontrates edhe kur drejtimi ka kuote te konfiguruar
+      allowQuotaOverride: req.user && req.user.role === 'admin',
+    });
     res.status(201).json(await financeService.getStudentDetail(id));
   } catch (err) { next(err); }
 }
