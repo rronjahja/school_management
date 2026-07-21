@@ -12,6 +12,7 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import FinanceGroups from '../components/finance/FinanceGroups.jsx';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
 import { canRemind } from '../utils/reminder';
+import { downloadFinanceExcel } from '../api/meta';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
 
@@ -53,6 +54,37 @@ export default function Finance() {
     return () => clearTimeout(timer);
   }, [categoryId, plan, studyYear, search]);
 
+  // ---- Eksporti në Excel: gjeneratat e nxënësve aktivë, më e reja e para ----
+  const generations = useMemo(() => {
+    // Rendit sipas numrit të nxënësve: viti në vazhdim (me shumicën e
+    // nxënësve) del i pari dhe bëhet parazgjedhja — jo viti i ardhshëm
+    // ku sapo kanë nisur regjistrimet e para.
+    const counts = new Map();
+    (students || []).forEach((s) => {
+      if (s.generation) counts.set(s.generation, (counts.get(s.generation) || 0) + 1);
+    });
+    return [...counts.keys()].sort(
+      (a, b) => counts.get(b) - counts.get(a) || b.localeCompare(a)
+    );
+  }, [students]);
+  const [exportGen, setExportGen] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const chosenGen = exportGen || generations[0] || '';
+
+  const exportExcel = async () => {
+    if (!chosenGen) return;
+    setExporting(true);
+    setExportError('');
+    try {
+      await downloadFinanceExcel(chosenGen);
+    } catch {
+      setExportError('Eksporti dështoi. Provoni përsëri.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     if (!students) return null;
     if (!status) return students;
@@ -82,7 +114,32 @@ export default function Finance() {
       <PageHeader
         title="Financat"
         subtitle="Pasqyra e pagesave për çdo nxënës — kush ka paguar, kush ka mbetur"
-      />
+      >
+        <div className="excel-export">
+          {generations.length > 1 && (
+            <select
+              value={chosenGen}
+              onChange={(e) => setExportGen(e.target.value)}
+              title="Gjenerata që eksportohet"
+            >
+              {generations.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          )}
+          <button
+            type="button"
+            className="btn btn-excel"
+            onClick={exportExcel}
+            disabled={exporting || !chosenGen}
+            title={chosenGen ? `Shkarko pagesat e gjeneratës ${chosenGen} në Excel` : ''}
+          >
+            <ExcelIcon />
+            {exporting ? 'Duke përgatitur…' : 'Excel'}
+          </button>
+        </div>
+      </PageHeader>
+      {exportError && <p className="form-error">{exportError}</p>}
 
       <div className="filter-bar">
         <input
@@ -228,5 +285,19 @@ export default function Finance() {
         </>
       )}
     </>
+  );
+}
+
+/** Fletë llogaritëse jeshile me rrjetë — ikona e eksportit. */
+function ExcelIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="2.5" width="14" height="19" rx="2" fill="#1D6F42" />
+      <path d="M14 2.5h3a2 2 0 0 1 2 2v3h-5v-5Z" fill="#2E8B57" />
+      <path
+        d="M6.6 8.6h2l1.4 2.5 1.4-2.5h2l-2.4 3.9 2.5 4h-2l-1.5-2.6-1.5 2.6h-2l2.5-4-2.4-3.9Z"
+        fill="#fff"
+      />
+    </svg>
   );
 }

@@ -46,7 +46,7 @@ export default function Students() {
     <>
       <PageHeader title="Nxënësit" subtitle="Lista e plotë e nxënësve të regjistruar">
         <Link to="/studentet/regjistro" className="btn btn-primary">
-          + Regjistro student
+          + Regjistro nxënës
         </Link>
       </PageHeader>
 

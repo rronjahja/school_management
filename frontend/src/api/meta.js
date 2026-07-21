@@ -24,3 +24,18 @@ export const fetchReminderTemplate = () =>
 
 export const saveReminderTemplate = (template) =>
   client.put('/settings/reminder-template', { template }).then((r) => r.data);
+// ---- Eksporti në Excel ----
+
+export const downloadFinanceExcel = (generation) =>
+  client
+    .get('/export/finance-excel', { params: { generation }, responseType: 'blob' })
+    .then((r) => {
+      const url = URL.createObjectURL(r.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ISPE_Pagesat_${generation.replace('/', '-')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });

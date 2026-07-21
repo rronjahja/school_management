@@ -3,6 +3,7 @@ const { Router } = require('express');
 const studentController = require('../controllers/studentController');
 const paymentController = require('../controllers/paymentController');
 const metaController = require('../controllers/metaController');
+const exportController = require('../controllers/exportController');
 const dashboardController = require('../controllers/dashboardController');
 const documentController = require('../controllers/documentController');
 const promotionController = require('../controllers/promotionController');
@@ -44,6 +45,9 @@ router.delete('/banks/:id', requireAdmin, metaController.removeBank);
 
 // Mesazhi i rikujteses: lexohet nga te gjithe (nevojitet per ta derguar),
 // ndryshohet vetem nga administratoret
+// Eksporti ne Excel i pagesave te nje gjenerate (te gjitha drejtimet)
+router.get('/export/finance-excel', exportController.financeExcel);
+
 router.get('/settings/reminder-template', metaController.reminderTemplate);
 router.put('/settings/reminder-template', requireAdmin, metaController.saveReminderTemplate);
 

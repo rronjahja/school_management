@@ -1366,3 +1366,45 @@ input.is-locked:focus {
   flex-direction: column;
   gap: 2px;
 }
+/* ---------- Butoni i eksportit në Excel ---------- */
+.excel-export {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.excel-export select {
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  padding: 0 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.btn-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1d6f42;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 18px;
+  height: 40px;
+  border-radius: var(--radius-small);
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-excel:hover:not(:disabled) {
+  background: #175935;
+}
+
+.btn-excel:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-excel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

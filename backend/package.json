@@ -16,6 +16,7 @@
     "dayjs": "^1.11.11",
     "docxtemplater": "^3.47.0",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-rate-limit": "^8.6.0",
     "helmet": "^8.3.0",
