@@ -10,6 +10,12 @@ import Field from '../ui/Field.jsx';
 
 const EMPTY = { username: '', full_name: '', role: 'staff', password: '' };
 
+const ROLE_LABELS = {
+  admin: 'Administrator',
+  finance: 'Financa',
+  staff: 'Staf',
+};
+
 /** Menaxhimi i perdoruesve + ndryshimi i fjalekalimit tuaj (vetem admin). */
 export default function UserManager() {
   const { user } = useAuth();
@@ -108,7 +114,7 @@ export default function UserManager() {
                 <tr key={u.id}>
                   <td><strong>{u.username}</strong>{u.id === user.id && <span className="muted"> (ju)</span>}</td>
                   <td>{u.full_name}</td>
-                  <td>{u.role === 'admin' ? 'Administrator' : 'Staf'}</td>
+                  <td>{ROLE_LABELS[u.role] || u.role}</td>
                   <td>{u.last_login_at ? date(u.last_login_at) : '—'}</td>
                   <td>
                     <span className={`badge badge-${u.is_active ? 'green' : 'neutral'}`}>
@@ -152,8 +158,9 @@ export default function UserManager() {
               </Field>
               <Field label="Roli" required>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                  <option value="staff">Staf</option>
-                  <option value="admin">Administrator</option>
+                  <option value="staff">Staf — vetëm nxënësit</option>
+                  <option value="finance">Financa — nxënësit + financat</option>
+                  <option value="admin">Administrator — gjithçka</option>
                 </select>
               </Field>
               <Field label="Fjalëkalimi" required>

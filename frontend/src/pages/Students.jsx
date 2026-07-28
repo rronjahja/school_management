@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchStudents } from '../api/students';
 import { fetchCategories } from '../api/meta';
@@ -12,6 +13,7 @@ import { money, PLAN_LABELS, shortGen } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
 
 export default function Students() {
+  const { isFinance } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -92,10 +94,10 @@ export default function Students() {
                   <th>Drejtimi</th>
                   <th>Gjenerata</th>
                   <th>Plani</th>
-                  <th className="num">Kuota neto</th>
-                  <th className="num">Paguar</th>
-                  <th className="num">Borxhi</th>
-                  <th>Statusi</th>
+                  <th className="num">{isFinance ? 'Kuota neto' : 'Kuota'}</th>
+                  {isFinance && <th className="num">Paguar</th>}
+                  {isFinance && <th className="num">Borxhi</th>}
+                  {isFinance && <th>Statusi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -117,12 +119,14 @@ export default function Students() {
                     </td>
                     <td>{shortGen(s.generation)}</td>
                     <td>{PLAN_LABELS[s.payment_plan]}</td>
-                    <td className="num">{money(s.finance.net_quota)}</td>
-                    <td className="num">{money(s.finance.total_paid)}</td>
-                    <td className="num">{money(s.finance.balance)}</td>
-                    <td>
-                      <StatusBadge status={s.finance.status} />
-                    </td>
+                    <td className="num">{money(isFinance ? s.finance.net_quota : s.yearly_quota)}</td>
+                    {isFinance && <td className="num">{money(s.finance.total_paid)}</td>}
+                    {isFinance && <td className="num">{money(s.finance.balance)}</td>}
+                    {isFinance && (
+                      <td>
+                        <StatusBadge status={s.finance.status} />
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

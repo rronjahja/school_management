@@ -21,8 +21,22 @@ function AppRoutes() {
         <Route path="/studentet/regjistro" element={<RegisterStudent />} />
         <Route path="/studentet/:id" element={<StudentDetail />} />
         <Route path="/studentet/:id/ndrysho" element={<EditStudent />} />
-        <Route path="/financat" element={<Finance />} />
-        <Route path="/te-diplomuarit" element={<Graduates />} />
+        <Route
+          path="/financat"
+          element={
+            <ProtectedRoute financeOnly>
+              <Finance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/te-diplomuarit"
+          element={
+            <ProtectedRoute financeOnly>
+              <Graduates />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/cilesimet"
           element={

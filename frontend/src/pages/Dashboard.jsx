@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 import { Link } from 'react-router-dom';
 import { fetchDashboard } from '../api/dashboard';
 import { errorMessage } from '../api/client';
@@ -12,6 +13,7 @@ import { money, date, shortGen } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
 
 export default function Dashboard() {
+  const { isFinance } = useAuth();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -31,15 +33,21 @@ export default function Dashboard() {
 
       <div className="stat-grid">
         <StatCard label="Nxënës gjithsej" value={totals.students} />
-        <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" />
-        <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" />
-        <StatCard
-          label="Vonesa në pagesa"
-          value={totals.overdue}
-          hint={`${totals.dueSoon} afër afatit`}
-          tone={totals.overdue > 0 ? 'red' : 'default'}
-        />
-        {totals.graduatesInDebt > 0 && (
+        {isFinance && (
+          <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" />
+        )}
+        {isFinance && (
+          <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" />
+        )}
+        {isFinance && (
+          <StatCard
+            label="Vonesa në pagesa"
+            value={totals.overdue}
+            hint={`${totals.dueSoon} afër afatit`}
+            tone={totals.overdue > 0 ? 'red' : 'default'}
+          />
+        )}
+        {isFinance && totals.graduatesInDebt > 0 && (
           <StatCard
             label="Të diplomuar me borxh"
             value={totals.graduatesInDebt}
@@ -72,8 +80,8 @@ export default function Dashboard() {
                     />
                   </div>
                   <div className="bar-meta">
-                    <span>Arkëtuar: {money(c.collected)}</span>
-                    <span>Borxh: {money(c.outstanding)}</span>
+                    {isFinance && <span>Arkëtuar: {money(c.collected)}</span>}
+                    {isFinance && <span>Borxh: {money(c.outstanding)}</span>}
                   </div>
                 </li>
               ))}
@@ -81,6 +89,7 @@ export default function Dashboard() {
           )}
         </section>
 
+        {isFinance && (
         <section className="card">
           <h2 className="card-title">Paralajmërime pagesash</h2>
           {alerts.length === 0 ? (
@@ -108,6 +117,7 @@ export default function Dashboard() {
             </ul>
           )}
         </section>
+        )}
       </div>
 
       <section className="card">
@@ -134,7 +144,7 @@ export default function Dashboard() {
                     </strong>
                     <span className="muted">{s.category_name} · {shortGen(s.generation)}</span>
                   </span>
-                  <StatusBadge status={s.finance.status} />
+                  {isFinance && <StatusBadge status={s.finance.status} />}
                 </Link>
               </li>
             ))}

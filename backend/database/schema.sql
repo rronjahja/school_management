@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS users (
   username      VARCHAR(60)  NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name     VARCHAR(120) NOT NULL,
-  role          ENUM('admin','staff') NOT NULL DEFAULT 'staff',
+  role          ENUM('admin','finance','staff') NOT NULL DEFAULT 'staff',
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   failed_attempts INT       NOT NULL DEFAULT 0,
   locked_until    DATETIME  DEFAULT NULL,

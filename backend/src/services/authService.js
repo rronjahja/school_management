@@ -2,6 +2,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { httpError } = require('../middleware/errorHandler');
+
+/** Rolet e lejuara, nga me i gjeri te me i ngushti. */
+const ROLES = ['admin', 'finance', 'staff'];
 const {
   JWT_SECRET,
   TOKEN_TTL,
@@ -161,7 +164,7 @@ async function createUser({ username, password, full_name, role }) {
     throw httpError(400, 'Emri i përdoruesit: 3-60 karaktere, vetëm shkronja, numra, . _ -');
   }
   if (!String(full_name || '').trim()) throw httpError(400, 'Emri i plotë është i detyrueshëm.');
-  if (!['admin', 'staff'].includes(role)) throw httpError(400, 'Roli nuk është i vlefshëm.');
+  if (!ROLES.includes(role)) throw httpError(400, 'Roli nuk është i vlefshëm.');
   validatePassword(password);
 
   const [[dup]] = await pool.query('SELECT COUNT(*) AS c FROM users WHERE username = ?', [name]);
@@ -180,18 +183,19 @@ async function updateUser(id, { full_name, role, is_active }, actingUserId) {
   const data = {};
   if (full_name !== undefined) data.full_name = String(full_name).trim();
   if (role !== undefined) {
-    if (!['admin', 'staff'].includes(role)) throw httpError(400, 'Roli nuk është i vlefshëm.');
+    if (!ROLES.includes(role)) throw httpError(400, 'Roli nuk është i vlefshëm.');
     data.role = role;
   }
   if (is_active !== undefined) data.is_active = is_active ? 1 : 0;
 
   // Mos e lejo administratorin te c'aktivizoje ose te zbrese veten
-  if (Number(id) === Number(actingUserId) && (data.is_active === 0 || data.role === 'staff')) {
+  const losesAdmin = data.role !== undefined && data.role !== 'admin';
+  if (Number(id) === Number(actingUserId) && (data.is_active === 0 || losesAdmin)) {
     throw httpError(400, 'Nuk mund të çaktivizoni ose të zbrisni llogarinë tuaj.');
   }
 
   // Duhet te mbetet te pakten nje administrator aktiv
-  if (data.is_active === 0 || data.role === 'staff') {
+  if (data.is_active === 0 || losesAdmin) {
     const [[r]] = await pool.query(
       "SELECT COUNT(*) AS c FROM users WHERE role = 'admin' AND is_active = 1 AND id <> ?",
       [id]
@@ -214,6 +218,7 @@ async function resetPassword(id, newPassword) {
 }
 
 module.exports = {
+  ROLES,
   login,
   verifyToken,
   signToken,

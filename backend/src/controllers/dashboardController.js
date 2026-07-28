@@ -1,5 +1,7 @@
 const financeService = require('../services/financeService');
 const { round2 } = require('../utils/finance');
+const { canSeeFinance } = require('../middleware/auth');
+const { stripDashboard } = require('../utils/redactFinance');
 
 /**
  * Statistikat e panelit:
@@ -55,7 +57,8 @@ async function stats(req, res, next) {
 
     const recent = students.slice(0, 6);
 
-    res.json({ totals, categories: Object.values(byCategory), alerts, recent });
+    const payload = { totals, categories: Object.values(byCategory), alerts, recent };
+    res.json(canSeeFinance(req.user) ? payload : stripDashboard(payload));
   } catch (err) { next(err); }
 }
 

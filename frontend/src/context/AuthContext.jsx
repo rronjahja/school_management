@@ -38,7 +38,15 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, ready, signIn, signOut, isAdmin: user?.role === 'admin' }}
+      value={{
+        user,
+        ready,
+        signIn,
+        signOut,
+        isAdmin: user?.role === 'admin',
+        // Financat i sheh edhe roli 'finance'; stafi jo
+        isFinance: user?.role === 'admin' || user?.role === 'finance',
+      }}
     >
       {children}
     </AuthContext.Provider>

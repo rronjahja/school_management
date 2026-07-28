@@ -1,5 +1,7 @@
 const studentService = require('../services/studentService');
 const financeService = require('../services/financeService');
+const { canSeeFinance } = require('../middleware/auth');
+const { stripStudentFinance, stripListFinance } = require('../utils/redactFinance');
 const { validateStudent } = require('../utils/validateStudent');
 
 async function list(req, res, next) {
@@ -8,13 +10,15 @@ async function list(req, res, next) {
     const students = await financeService.listStudentsWithFinance({
       search, category_id, payment_plan, study_year, status,
     });
-    res.json(students);
+    // Stafi i sheh nxenesit, jo shifrat e tyre
+    res.json(canSeeFinance(req.user) ? students : stripListFinance(students));
   } catch (err) { next(err); }
 }
 
 async function detail(req, res, next) {
   try {
-    res.json(await financeService.getStudentDetail(req.params.id));
+    const student = await financeService.getStudentDetail(req.params.id);
+    res.json(canSeeFinance(req.user) ? student : stripStudentFinance(student));
   } catch (err) { next(err); }
 }
 
@@ -51,7 +55,8 @@ async function update(req, res, next) {
     if (errors.length) return res.status(400).json({ error: errors.join(' ') });
 
     await studentService.updateStudent(req.params.id, req.body);
-    res.json(await financeService.getStudentDetail(req.params.id));
+    const student = await financeService.getStudentDetail(req.params.id);
+    res.json(canSeeFinance(req.user) ? student : stripStudentFinance(student));
   } catch (err) { next(err); }
 }
 

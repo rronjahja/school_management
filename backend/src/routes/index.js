@@ -11,7 +11,7 @@ const documentController = require('../controllers/documentController');
 const promotionController = require('../controllers/promotionController');
 const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireFinance } = require('../middleware/auth');
 
 const router = Router();
 
@@ -38,7 +38,7 @@ router.post('/users/:id/reset-password', requireAdmin, userController.resetPassw
 
 // Meta
 router.get('/categories', metaController.categories);
-router.get('/banks', metaController.banks);
+router.get('/banks', requireFinance, metaController.banks);
 
 // Konfigurimet — vetëm administratorët mund të ndryshojnë
 router.post('/banks', requireAdmin, metaController.createBank);
@@ -48,8 +48,8 @@ router.delete('/banks/:id', requireAdmin, metaController.removeBank);
 // Mesazhi i rikujteses: lexohet nga te gjithe (nevojitet per ta derguar),
 // ndryshohet vetem nga administratoret
 // Fletëpagesa: e nje pagese te caktuar, ose e detyrimeve (rikujtesa)
-router.get('/payments/:id/fletepagesa', documentController.paymentSlip);
-router.get('/students/:id/fletepagesa', documentController.reminderSlip);
+router.get('/payments/:id/fletepagesa', requireFinance, documentController.paymentSlip);
+router.get('/students/:id/fletepagesa', requireFinance, documentController.reminderSlip);
 
 // Migrimi i kontratave (vetem admin): trupi i kerkeses eshte skedari .docx
 router.post(
@@ -61,9 +61,9 @@ router.post(
 router.post('/import/check-existing', requireAdmin, importController.existing);
 
 // Eksporti ne Excel i pagesave te nje gjenerate (te gjitha drejtimet)
-router.get('/export/finance-excel', exportController.financeExcel);
+router.get('/export/finance-excel', requireFinance, exportController.financeExcel);
 
-router.get('/settings/reminder-template', metaController.reminderTemplate);
+router.get('/settings/reminder-template', requireFinance, metaController.reminderTemplate);
 router.put('/settings/reminder-template', requireAdmin, metaController.saveReminderTemplate);
 
 router.post('/categories', requireAdmin, metaController.createCategory);
@@ -93,7 +93,7 @@ router.get('/promotion/preview', requireAdmin, promotionController.preview);
 router.post('/promotion/run', requireAdmin, promotionController.run);
 
 // Pagesat
-router.post('/payments', paymentController.create);
+router.post('/payments', requireFinance, paymentController.create);
 router.delete('/payments/:id', requireAdmin, paymentController.remove);
 
 module.exports = router;

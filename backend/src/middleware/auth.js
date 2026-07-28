@@ -34,6 +34,23 @@ function requireAdmin(req, res, next) {
 }
 
 /**
+ * Qasje te te dhenat financiare: roli 'finance' dhe 'admin'.
+ *
+ * Stafi menaxhon vetem nxenesit — pagesat, fletepagesat, rikujtesat dhe
+ * eksporti i mbeten te mbyllura. Kontrolli behet KETU, ne server: fshehja
+ * e butonave te nderfaqja eshte vetem lehtesi, jo mbrojtje.
+ */
+function requireFinance(req, res, next) {
+  if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
+    return next(httpError(403, 'Ky veprim kërkon të drejta për financat.'));
+  }
+  next();
+}
+
+/** A i sheh ky perdorues shifrat financiare? */
+const canSeeFinance = (user) => Boolean(user) && ['admin', 'finance'].includes(user.role);
+
+/**
  * Mbrojtje shtese nga CSRF.
  * Cookie eshte SameSite=strict, por kerkojme edhe nje header te posacem:
  * shfletuesi nuk e lejon nje faqe te huaj ta shtoje ate pa leje CORS.
@@ -48,4 +65,6 @@ function requireXhrHeader(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, requireAdmin, requireXhrHeader };
+module.exports = {
+  requireAuth, requireAdmin, requireFinance, canSeeFinance, requireXhrHeader,
+};

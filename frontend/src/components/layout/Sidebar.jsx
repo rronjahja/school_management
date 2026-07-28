@@ -8,14 +8,14 @@ const NAV = [
   { to: '/', label: 'Paneli', icon: PanelIcon, end: true },
   { to: '/studentet', label: 'Nxënësit', icon: StudentsIcon },
   { to: '/studentet/regjistro', label: 'Regjistrimi', icon: RegisterIcon },
-  { to: '/financat', label: 'Financat', icon: FinanceIcon },
-  { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon },
+  { to: '/financat', label: 'Financat', icon: FinanceIcon, financeOnly: true },
+  { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon, financeOnly: true },
 ];
 
 const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, adminOnly: true }];
 
 export default function Sidebar() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isFinance, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -33,7 +33,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {NAV.filter((n) => !n.financeOnly || isFinance).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}

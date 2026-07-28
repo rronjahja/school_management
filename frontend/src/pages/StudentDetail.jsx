@@ -26,7 +26,7 @@ import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortG
 
 export default function StudentDetail() {
   const { id } = useParams();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isFinance } = useAuth();
   const navigate = useNavigate();
 
   const [student, setStudent] = useState(null);
@@ -43,7 +43,8 @@ export default function StudentDetail() {
     fetchStudent(id)
       .then(setStudent)
       .catch((err) => setError(errorMessage(err)));
-    fetchBanks().then(setBanks).catch(() => {});
+    // Bankat i duhen vetëm modalit të pagesës — stafi do të merrte 403
+    if (isFinance) fetchBanks().then(setBanks).catch(() => {});
     fetchTemplates()
       .then((t) => {
         setTemplates(t);
@@ -163,7 +164,10 @@ export default function StudentDetail() {
   if (error) return <EmptyState title="Gabim" hint={error} />;
   if (!student) return <Loader />;
 
+  // Serveri s'ia dergon fare financat stafit — prandaj `f` mund te mungoje
+  // dhe cdo bllok financiar duhet mbrojtur, jo vetem fshehur.
   const f = student.finance;
+  const showFinance = isFinance && Boolean(f);
 
   return (
     <>
@@ -176,11 +180,11 @@ export default function StudentDetail() {
               {shortGen(student.generation)} · {YEAR_LABELS[student.study_year] || 'Viti I'}
               {student.class_name ? ` · Paralelja ${classLabel(student.study_year, student.class_name)}` : ''}
             </span>
-            <StatusBadge status={f.status} />
+            {showFinance && <StatusBadge status={f.status} />}
           </span>
         }
       >
-        {canRemind(f) && <ReminderButton studentId={id} />}
+        {showFinance && canRemind(f) && <ReminderButton studentId={id} />}
         <span className="doc-generate">
           {templates.length > 1 && (
             <select
@@ -213,6 +217,7 @@ export default function StudentDetail() {
 
       {notice && <p className="form-error form-error-page">{notice}</p>}
 
+      {showFinance && (
       <div className="stat-grid">
         <StatCard
           label="Kuota neto"
@@ -236,6 +241,7 @@ export default function StudentDetail() {
           tone={f.status === 'overdue' ? 'red' : f.status === 'due-soon' ? 'amber' : 'default'}
         />
       </div>
+      )}
 
       <div className="detail-columns">
         <section className="card">
@@ -327,6 +333,7 @@ export default function StudentDetail() {
           )}
         </section>
 
+        {showFinance && (
         <section className="card">
           <div className="card-title-row">
             <h2 className="card-title">Pagesat</h2>
@@ -344,8 +351,10 @@ export default function StudentDetail() {
             onDelete={isAdmin ? handleDeletePayment : null}
           />
         </section>
+        )}
       </div>
 
+      {showFinance && (
       <section className="card">
         <div className="card-title-row">
           <h2 className="card-title">Këstet</h2>
@@ -386,8 +395,9 @@ export default function StudentDetail() {
           onToggle={unpaid.length ? togglePick : undefined}
         />
       </section>
+      )}
 
-      {showPayment && (
+      {showPayment && showFinance && (
         <PaymentModal
           student={student}
           banks={banks}

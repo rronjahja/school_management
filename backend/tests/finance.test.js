@@ -245,3 +245,43 @@ test('bilanci i pandryshuar nga mbyllja e vitit (invarianca e llogarisë)', () =
   assert.equal(before.past_years_balance, after.past_years_balance);
   assert.equal(before.current_year_balance, after.current_year_balance);
 });
+
+
+// ---------------------------------------------------------------
+// Të diplomuarit me borxh
+// ---------------------------------------------------------------
+
+test('i diplomuar me borxh është "Vonesë", jo "Në rregull"', () => {
+  const d = require('dayjs')('2026-07-20');
+  // Kestet e vitit te fundit kane afate PAS dates se diplomimit
+  const insts = [
+    { seq: 1, due_date: '2026-09-06', amount: 765, generation: '2025/2026' },
+    { seq: 2, due_date: '2027-01-25', amount: 765, generation: '2025/2026' },
+  ];
+  const base = {
+    generation: '2025/2026', yearly_quota: 1530,
+    discount_type: 'none', discount_value: 0, settled_paid: 0,
+  };
+
+  const grad = summarizeFinance({ ...base, status: 'graduated' }, insts, 127.5, d);
+  assert.equal(grad.status, 'overdue');
+  assert.equal(grad.balance, 1402.5);
+  // edhe rreshtat e kesteve shfaqen te vonuar, qe tabela te mos e kundershtoje shenjen
+  assert.ok(grad.installments.every((i) => i.status === 'overdue'));
+
+  // i shlyer plotesisht mbetet 'paid'
+  assert.equal(summarizeFinance({ ...base, status: 'graduated' }, insts, 1530, d).status, 'paid');
+
+  // nxenesi AKTIV me te njejtat keste nuk preket
+  assert.equal(summarizeFinance({ ...base, status: 'active' }, insts, 127.5, d).status, 'ok');
+});
+
+test('rikujtesa lejohet vetëm për Vonesë dhe Afër afatit', () => {
+  // e njejta logjike si canRemind() te frontend/src/utils/reminder.js
+  const canRemind = (f) => f && (f.status === 'overdue' || f.status === 'due-soon');
+  assert.equal(canRemind({ status: 'overdue' }), true);
+  assert.equal(canRemind({ status: 'due-soon' }), true);
+  assert.equal(canRemind({ status: 'ok' }), false);
+  assert.equal(canRemind({ status: 'paid' }), false);
+  assert.equal(canRemind(null), null);
+});
