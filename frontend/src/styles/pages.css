@@ -1530,3 +1530,86 @@ input.is-locked:focus {
   align-items: center;
   gap: 7px;
 }
+/* ---------- Ditari i veprimeve ---------- */
+.log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.log-filters .filter-search {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.log-filters select,
+.log-filters input[type="date"] {
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  padding: 0 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.log-count {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.log-table td {
+  vertical-align: top;
+}
+
+.log-time {
+  white-space: nowrap;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.log-danger { color: #b42318; font-weight: 600; }
+.log-ok { color: #1d6f42; font-weight: 600; }
+.log-muted { color: var(--muted); }
+
+.log-details {
+  margin-top: 8px;
+  text-align: left;
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}
+
+.log-details dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.log-json {
+  word-break: break-all;
+  white-space: pre-wrap;
+  max-width: 420px;
+}
+
+.log-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+  font-size: 14px;
+}
+
+.table-wrap.is-busy {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+/* ---------- Ora e regjistrimit te historiku i pagesave ---------- */
+.pay-time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 13.5px;
+}

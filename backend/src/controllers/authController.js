@@ -1,17 +1,58 @@
 const authService = require('../services/authService');
+const activityLog = require('../services/activityLogService');
 const { COOKIE_NAME, cookieOptions } = require('../config/auth');
 
+const clientIp = (req) => req.ip || (req.socket && req.socket.remoteAddress) || null;
+
 async function login(req, res, next) {
+  const { username, password } = req.body;
   try {
-    const { username, password } = req.body;
     const { token, user } = await authService.login(username, password, req);
+
+    // Hyrja regjistrohet KETU: middleware-i i ditarit vepron pas requireAuth,
+    // ndersa hyrja ndodh perpara saj — perndryshe s'do te shihej fare.
+    activityLog.record({
+      user,
+      action: 'login',
+      entity: 'auth',
+      entity_id: String(user.id),
+      summary: `${user.full_name || user.username} hyri në sistem`,
+      method: req.method,
+      path: req.originalUrl,
+      status_code: 200,
+      ip: clientIp(req),
+    });
 
     res.cookie(COOKIE_NAME, token, cookieOptions);
     res.json({ user });
-  } catch (err) { next(err); }
+  } catch (err) {
+    // Perpjekjet e deshtuara kane vlere sigurie — ruhen edhe pse s'ndryshuan asgje
+    activityLog.record({
+      username: String(username || '').slice(0, 60) || 'i panjohur',
+      action: 'login-failed',
+      entity: 'auth',
+      summary: `Përpjekje e dështuar për hyrje: ${String(username || '—').slice(0, 40)}`,
+      method: req.method,
+      path: req.originalUrl,
+      status_code: err.status || 401,
+      ip: clientIp(req),
+    });
+    next(err);
+  }
 }
 
 function logout(req, res) {
+  activityLog.record({
+    user: req.user,
+    action: 'logout',
+    entity: 'auth',
+    entity_id: req.user ? String(req.user.id) : null,
+    summary: `${(req.user && (req.user.full_name || req.user.username)) || 'Përdoruesi'} doli nga sistemi`,
+    method: req.method,
+    path: req.originalUrl,
+    status_code: 200,
+    ip: clientIp(req),
+  });
   res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: undefined });
   res.json({ ok: true });
 }

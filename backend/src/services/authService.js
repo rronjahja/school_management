@@ -3,8 +3,14 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 const { httpError } = require('../middleware/errorHandler');
 
-/** Rolet e lejuara, nga me i gjeri te me i ngushti. */
-const ROLES = ['admin', 'finance', 'staff'];
+/**
+ * Rolet e lejuara, nga me i gjeri te me i ngushti.
+ *
+ * 'kujdestar' per momentin ka te njejtat te drejta si 'staff': asnje
+ * qasje financiare dhe asnje te drejte administrimi. Te drejtat e veta
+ * shtohen kur te percaktohet cfare duhet te shohe kujdestari.
+ */
+const ROLES = ['admin', 'finance', 'kujdestar', 'staff'];
 const {
   JWT_SECRET,
   TOKEN_TTL,

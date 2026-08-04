@@ -1,4 +1,4 @@
-import { money, date } from '../../utils/format';
+import { money, date, time, dateTime } from '../../utils/format';
 
 /** Metoda e pageses: "Kesh" ose emri i bankes ashtu si eshte ne baze. */
 function methodLabel(p) {
@@ -64,6 +64,7 @@ export default function PaymentList({ payments, finance, onDelete }) {
             <thead>
               <tr>
                 <th>Data</th>
+                <th>Koha</th>
                 <th className="num">Shuma</th>
                 <th>Mënyra</th>
                 <th>Shënim</th>
@@ -74,6 +75,12 @@ export default function PaymentList({ payments, finance, onDelete }) {
               {payments.map((p) => (
                 <tr key={p.id}>
                   <td>{date(p.payment_date)}</td>
+                  <td
+                    className="pay-time"
+                    title={p.created_at ? `Regjistruar më ${dateTime(p.created_at)}` : undefined}
+                  >
+                    {time(p.created_at)}
+                  </td>
                   <td className="num">
                     <strong>{money(p.amount)}</strong>
                   </td>

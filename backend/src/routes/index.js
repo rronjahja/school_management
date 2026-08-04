@@ -11,7 +11,9 @@ const documentController = require('../controllers/documentController');
 const promotionController = require('../controllers/promotionController');
 const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
+const activityLogController = require('../controllers/activityLogController');
 const { requireAuth, requireAdmin, requireFinance } = require('../middleware/auth');
+const { activityLogger } = require('../middleware/activityLogger');
 
 const router = Router();
 
@@ -26,9 +28,17 @@ router.get('/auth/status', authController.status);
 // ---------------------------------------------------------------
 router.use(requireAuth);
 
+// Ditari: kap cdo kerkese qe ndryshon te dhena (POST/PUT/PATCH/DELETE).
+// Vendoset ketu, jo ne cdo kontroller, qe asnje veprim te mos harrohet.
+router.use(activityLogger);
+
 router.get('/auth/me', authController.me);
 router.post('/auth/logout', authController.logout);
 router.post('/auth/change-password', authController.changePassword);
+
+// Ditari i veprimeve — vetëm administratorët
+router.get('/logs', requireAdmin, activityLogController.list);
+router.get('/logs/facets', requireAdmin, activityLogController.facets);
 
 // Menaxhimi i përdoruesve — vetëm administratorët
 router.get('/users', requireAdmin, userController.list);

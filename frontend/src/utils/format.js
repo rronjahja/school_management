@@ -9,6 +9,18 @@ export const money = (n) => euro.format(Number(n) || 0);
 
 export const date = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '—');
 
+/**
+ * Ora e regjistrimit, p.sh. "14:32".
+ *
+ * KUJDES ME BURIMIN: `payment_date` eshte DATE — data kur u krye pagesa,
+ * qe mund te jete edhe e djeshme. Ora vjen nga `created_at`, momenti kur
+ * u shenua ne sistem. Prandaj nuk jane e njejta gje dhe nuk perzihen.
+ */
+export const time = (d) => (d ? dayjs(d).format('HH:mm') : '—');
+
+/** Data dhe ora bashke, per titujt e ndihmes. */
+export const dateTime = (d) => (d ? dayjs(d).format('DD.MM.YYYY HH:mm') : '—');
+
 export const PLAN_LABELS = {
   immediate: 'E menjëhershme',
   two: '2 Këste',

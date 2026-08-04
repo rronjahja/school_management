@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS users (
   username      VARCHAR(60)  NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name     VARCHAR(120) NOT NULL,
-  role          ENUM('admin','finance','staff') NOT NULL DEFAULT 'staff',
+  role          ENUM('admin','finance','kujdestar','staff') NOT NULL DEFAULT 'staff',
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   failed_attempts INT       NOT NULL DEFAULT 0,
   locked_until    DATETIME  DEFAULT NULL,
@@ -226,6 +226,33 @@ CREATE INDEX idx_login_log_time ON login_log (created_at);
 -- ----------------------------------------------------------------
 -- Cilesime te pergjithshme (celes -> vlere), p.sh. teksti i rikujteses
 -- ----------------------------------------------------------------
+-- ----------------------------------------------------------------
+-- Ditari i veprimeve: kush, cfare, mbi cfare, kur
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS activity_log (
+  id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id      INT          DEFAULT NULL,
+  username     VARCHAR(60)  NOT NULL,
+  full_name    VARCHAR(120) DEFAULT NULL,
+  role         VARCHAR(20)  DEFAULT NULL,
+  action       VARCHAR(40)  NOT NULL,
+  entity       VARCHAR(30)  NOT NULL,
+  entity_id    VARCHAR(40)  DEFAULT NULL,
+  summary      VARCHAR(255) DEFAULT NULL,
+  details      TEXT         DEFAULT NULL,
+  method       VARCHAR(8)   DEFAULT NULL,
+  path         VARCHAR(255) DEFAULT NULL,
+  status_code  SMALLINT     DEFAULT NULL,
+  ip           VARCHAR(60)  DEFAULT NULL,
+  created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE = InnoDB;
+
+CREATE INDEX idx_log_time   ON activity_log (created_at);
+CREATE INDEX idx_log_user   ON activity_log (username, created_at);
+CREATE INDEX idx_log_entity ON activity_log (entity, entity_id);
+CREATE INDEX idx_log_action ON activity_log (action, created_at);
+
 CREATE TABLE IF NOT EXISTS app_settings (
   setting_key VARCHAR(60) PRIMARY KEY,
   value       TEXT NOT NULL,

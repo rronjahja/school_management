@@ -4,7 +4,7 @@ import {
 } from '../../api/auth';
 import { errorMessage } from '../../api/client';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { date } from '../../utils/format';
+import { date, dateTime } from '../../utils/format';
 import Modal from '../ui/Modal.jsx';
 import Field from '../ui/Field.jsx';
 
@@ -13,6 +13,7 @@ const EMPTY = { username: '', full_name: '', role: 'staff', password: '' };
 const ROLE_LABELS = {
   admin: 'Administrator',
   finance: 'Financa',
+  kujdestar: 'Kujdestar',
   staff: 'Staf',
 };
 
@@ -115,7 +116,7 @@ export default function UserManager() {
                   <td><strong>{u.username}</strong>{u.id === user.id && <span className="muted"> (ju)</span>}</td>
                   <td>{u.full_name}</td>
                   <td>{ROLE_LABELS[u.role] || u.role}</td>
-                  <td>{u.last_login_at ? date(u.last_login_at) : '—'}</td>
+                  <td>{u.last_login_at ? dateTime(u.last_login_at) : '—'}</td>
                   <td>
                     <span className={`badge badge-${u.is_active ? 'green' : 'neutral'}`}>
                       <span className="badge-dot" />
@@ -159,6 +160,7 @@ export default function UserManager() {
               <Field label="Roli" required>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                   <option value="staff">Staf — vetëm nxënësit</option>
+                  <option value="kujdestar">Kujdestar — vetëm nxënësit</option>
                   <option value="finance">Financa — nxënësit + financat</option>
                   <option value="admin">Administrator — gjithçka</option>
                 </select>

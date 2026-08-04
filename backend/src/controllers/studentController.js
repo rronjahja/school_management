@@ -45,7 +45,10 @@ async function create(req, res, next) {
       // kuoten e kontrates edhe kur drejtimi ka kuote te konfiguruar
       allowQuotaOverride: req.user && req.user.role === 'admin',
     });
-    res.status(201).json(await financeService.getStudentDetail(id));
+    const created = await financeService.getStudentDetail(id);
+    res.locals.logEntityId = id;
+    res.locals.logSummary = `Nxënësi u regjistrua: ${created.first_name} ${created.last_name}`;
+    res.status(201).json(created);
   } catch (err) { next(err); }
 }
 
@@ -56,13 +59,22 @@ async function update(req, res, next) {
 
     await studentService.updateStudent(req.params.id, req.body);
     const student = await financeService.getStudentDetail(req.params.id);
+    res.locals.logSummary = `Nxënësi u përditësua: ${student.first_name} ${student.last_name}`;
     res.json(canSeeFinance(req.user) ? student : stripStudentFinance(student));
   } catch (err) { next(err); }
 }
 
 async function remove(req, res, next) {
   try {
+    // Emri lexohet PARA fshirjes — pas saj s'ka me cfare te shkruhet ne ditar
+    let who = '';
+    try {
+      const s = await financeService.getStudentDetail(req.params.id);
+      who = `: ${s.first_name} ${s.last_name}`;
+    } catch { /* nese s'gjendet, vazhdojme pa emer */ }
+
     await studentService.deleteStudent(req.params.id);
+    res.locals.logSummary = `Nxënësi u fshi${who}`;
     res.json({ ok: true });
   } catch (err) { next(err); }
 }

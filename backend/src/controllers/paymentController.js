@@ -7,6 +7,9 @@ async function create(req, res, next) {
     // Kthejme detajet e freskuara qe UI te perditesohet menjehere;
     // last_payment_id i duhet fletepageses se pageses qe sapo u ruajt
     const detail = await financeService.getStudentDetail(req.body.student_id);
+    res.locals.logEntityId = paymentId;
+    res.locals.logSummary =
+      `Pagesë ${Number(req.body.amount).toFixed(2)} € për ${detail.first_name} ${detail.last_name}`;
     res.status(201).json({ ...detail, last_payment_id: paymentId });
   } catch (err) { next(err); }
 }

@@ -54,3 +54,10 @@ export const parseContractFile = (file) =>
 
 export const checkExistingContracts = (numbers) =>
   client.post('/import/check-existing', { numbers }).then((r) => r.data);
+// ---- Ditari i veprimeve (vetëm administratorët) ----
+
+export const fetchLogs = (params) =>
+  client.get('/logs', { params }).then((r) => r.data);
+
+export const fetchLogFacets = () =>
+  client.get('/logs/facets').then((r) => r.data);

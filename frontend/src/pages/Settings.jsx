@@ -10,11 +10,12 @@ import Loader from '../components/ui/Loader.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import Field from '../components/ui/Field.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
-import { money, date, YEAR_LABELS, shortGen } from '../utils/format';
+import { money, date, dateTime, YEAR_LABELS, shortGen } from '../utils/format';
 import UserManager from '../components/settings/UserManager.jsx';
 import DataManager from '../components/settings/DataManager.jsx';
 import ReminderTemplateEditor from '../components/settings/ReminderTemplateEditor.jsx';
 import ContractImport from '../components/settings/ContractImport.jsx';
+import ActivityLog from '../components/settings/ActivityLog.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -284,7 +285,7 @@ export default function Settings() {
                     <td className="num">{h.promoted_count}</td>
                     <td className="num">{h.graduated_count}</td>
                     <td className="num">{Number(h.quota_increase)}%</td>
-                    <td>{date(h.run_at)}</td>
+                    <td>{dateTime(h.run_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -300,6 +301,8 @@ export default function Settings() {
       <ContractImport />
 
       <UserManager />
+
+      <ActivityLog />
 
       {confirmOpen && preview && (
         <Modal title="Konfirmo kalimin e vitit" onClose={() => setConfirmOpen(false)}>
