@@ -26,7 +26,7 @@ import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortG
 
 export default function StudentDetail() {
   const { id } = useParams();
-  const { isAdmin, isFinance } = useAuth();
+  const { isManager, isFinance } = useAuth();
   const navigate = useNavigate();
 
   const [student, setStudent] = useState(null);
@@ -44,13 +44,16 @@ export default function StudentDetail() {
       .then(setStudent)
       .catch((err) => setError(errorMessage(err)));
     // Bankat i duhen vetëm modalit të pagesës — stafi do të merrte 403
-    if (isFinance) fetchBanks().then(setBanks).catch(() => {});
+    if (isFinance) fetchBanks().then(setBanks).catch(() => { });
     fetchTemplates()
       .then((t) => {
         setTemplates(t);
-        if (t.length) setTemplateFile(t[0].file);
+        const rest = t.filter(
+          (x) => !/^(kontrata|vertetim)/i.test(x.file)
+        );
+        if (rest.length) setTemplateFile(rest[0].file);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [id]);
 
   // ---- Fletëpagesa për këstet e zgjedhura ----
@@ -152,14 +155,24 @@ export default function StudentDetail() {
     }
   };
 
-  const handleDocument = async () => {
+  /** file = shablloni i kerkuar; pa te merret ai i zgjedhur ne liste. */
+  const handleDocument = async (file) => {
     setNotice('');
     try {
-      await downloadDocument(id, `${student.first_name} ${student.last_name}`, templateFile);
+      await downloadDocument(id, `${student.first_name} ${student.last_name}`, file || templateFile);
     } catch (err) {
       setNotice(errorMessage(err));
     }
   };
+
+  // Kontrata dhe Vërtetimi kanë butonat e vet, me emër të lexueshëm.
+  // Çdo shabllon tjetër i shtuar te backend/templates mbetet te lista.
+  const findTemplate = (name) =>
+    templates.find((t) => t.file.toLowerCase().startsWith(name));
+  const kontrata = findTemplate('kontrata');
+  const vertetim = findTemplate('vertetim');
+  const namedFiles = new Set([kontrata?.file, vertetim?.file].filter(Boolean));
+  const otherTemplates = templates.filter((t) => !namedFiles.has(t.file));
 
   if (error) return <EmptyState title="Gabim" hint={error} />;
   if (!student) return <Loader />;
@@ -185,30 +198,58 @@ export default function StudentDetail() {
         }
       >
         {showFinance && canRemind(f) && <ReminderButton studentId={id} />}
-        <span className="doc-generate">
-          {templates.length > 1 && (
-            <select
-              className="doc-select"
-              value={templateFile}
-              onChange={(e) => setTemplateFile(e.target.value)}
-              aria-label="Zgjidh dokumentin"
-            >
-              {templates.map((t) => (
-                <option key={t.file} value={t.file}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          )}
-          <button type="button" className="btn btn-ghost" onClick={handleDocument}>
+        {kontrata && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => handleDocument(kontrata.file)}
+          >
             <ContractIcon />
-            {templates.length === 1 ? 'Kontrata' : 'Krijo dokumentin'}
+            Kontrata
           </button>
-        </span>
+        )}
+        {vertetim && (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => handleDocument(vertetim.file)}
+          >
+            <CertificateIcon />
+            Vërtetimi i nxënësit
+          </button>
+        )}
+        {otherTemplates.length > 0 && (
+          <span className="doc-generate">
+            {otherTemplates.length > 1 && (
+              <select
+                className="doc-select"
+                value={templateFile}
+                onChange={(e) => setTemplateFile(e.target.value)}
+                aria-label="Zgjidh dokumentin"
+              >
+                {otherTemplates.map((t) => (
+                  <option key={t.file} value={t.file}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => handleDocument(
+                otherTemplates.length === 1 ? otherTemplates[0].file : templateFile
+              )}
+            >
+              <ContractIcon />
+              {otherTemplates.length === 1 ? otherTemplates[0].label : 'Krijo dokumentin'}
+            </button>
+          </span>
+        )}
         <Link to={`/studentet/${id}/ndrysho`} className="btn btn-ghost">
           Ndrysho
         </Link>
-        {isAdmin && (
+        {isManager && (
           <button type="button" className="btn btn-danger-ghost" onClick={handleDeleteStudent}>
             Fshi
           </button>
@@ -218,29 +259,29 @@ export default function StudentDetail() {
       {notice && <p className="form-error form-error-page">{notice}</p>}
 
       {showFinance && (
-      <div className="stat-grid">
-        <StatCard
-          label="Kuota neto"
-          value={money(f.net_quota)}
-          hint={
-            student.discount_type !== 'none'
-              ? `${money(student.yearly_quota)} − zbritje ${discountText(student.discount_type, student.discount_value)}`
-              : `Plani: ${PLAN_LABELS[student.payment_plan]}`
-          }
-        />
-        <StatCard label="Paguar deri tani" value={money(f.total_paid)} tone="green" />
-        <StatCard
-          label="Borxhi i mbetur"
-          value={money(f.balance)}
-          tone={f.balance > 0 ? 'amber' : 'green'}
-        />
-        <StatCard
-          label="Kësti i ardhshëm"
-          value={f.next_due ? money(f.next_due.amount) : '—'}
-          hint={f.next_due ? `Afati: ${date(f.next_due.due_date)}` : 'Të gjitha të paguara'}
-          tone={f.status === 'overdue' ? 'red' : f.status === 'due-soon' ? 'amber' : 'default'}
-        />
-      </div>
+        <div className="stat-grid">
+          <StatCard
+            label="Kuota neto"
+            value={money(f.net_quota)}
+            hint={
+              student.discount_type !== 'none'
+                ? `${money(student.yearly_quota)} − zbritje ${discountText(student.discount_type, student.discount_value)}`
+                : `Plani: ${PLAN_LABELS[student.payment_plan]}`
+            }
+          />
+          <StatCard label="Paguar deri tani" value={money(f.total_paid)} tone="green" />
+          <StatCard
+            label="Borxhi i mbetur"
+            value={money(f.balance)}
+            tone={f.balance > 0 ? 'amber' : 'green'}
+          />
+          <StatCard
+            label="Kësti i ardhshëm"
+            value={f.next_due ? money(f.next_due.amount) : '—'}
+            hint={f.next_due ? `Afati: ${date(f.next_due.due_date)}` : 'Të gjitha të paguara'}
+            tone={f.status === 'overdue' ? 'red' : f.status === 'due-soon' ? 'amber' : 'default'}
+          />
+        </div>
       )}
 
       <div className="detail-columns">
@@ -334,67 +375,67 @@ export default function StudentDetail() {
         </section>
 
         {showFinance && (
-        <section className="card">
-          <div className="card-title-row">
-            <h2 className="card-title">Pagesat</h2>
-            <button
-              type="button"
-              className="btn btn-primary btn-small"
-              onClick={() => setShowPayment(true)}
-            >
-              + Shto pagesë
-            </button>
-          </div>
-          <PaymentList
-            payments={student.payments}
-            finance={f}
-            onDelete={isAdmin ? handleDeletePayment : null}
-          />
-        </section>
+          <section className="card">
+            <div className="card-title-row">
+              <h2 className="card-title">Pagesat</h2>
+              <button
+                type="button"
+                className="btn btn-primary btn-small"
+                onClick={() => setShowPayment(true)}
+              >
+                + Shto pagesë
+              </button>
+            </div>
+            <PaymentList
+              payments={student.payments}
+              finance={f}
+              onDelete={isManager ? handleDeletePayment : null}
+            />
+          </section>
         )}
       </div>
 
       {showFinance && (
-      <section className="card">
-        <div className="card-title-row">
-          <h2 className="card-title">Këstet</h2>
-          {unpaid.length > 0 && (
-            <div className="slip-bar">
-              <span className="slip-sum">
-                {pickedList.length
-                  ? `${pickedList.length} këste · ${money(pickedTotal)}`
-                  : 'Zgjidhni këstet'}
-              </span>
-              <button
-                type="button"
-                className="btn btn-ghost btn-small"
-                disabled={!pickedList.length || Boolean(slipBusy)}
-                onClick={() => runSlip('pdf', () =>
-                  downloadSlipPdf(
-                    slipUrl(),
-                    `Fletepagesa_${student.first_name}_${student.last_name}.pdf`
-                  ))}
-              >
-                {slipBusy === 'pdf' ? 'Duke përgatitur…' : 'Fletëpagesa (PDF)'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-small"
-                disabled={!pickedList.length || Boolean(slipBusy)}
-                onClick={() => runSlip('print', () => printSlip(slipUrl()))}
-              >
-                {slipBusy === 'print' ? 'Duke hapur…' : '🖨 Printo'}
-              </button>
-            </div>
-          )}
-        </div>
-        {slipError && <p className="form-error">{slipError}</p>}
-        <InstallmentTable
-          installments={f.installments}
-          selected={selected}
-          onToggle={unpaid.length ? togglePick : undefined}
-        />
-      </section>
+        <section className="card">
+          <div className="card-title-row">
+            <h2 className="card-title">Këstet</h2>
+            {unpaid.length > 0 && (
+              <div className="slip-bar">
+                <span className="slip-sum">
+                  {pickedList.length
+                    ? `${pickedList.length} këste · ${money(pickedTotal)}`
+                    : 'Zgjidhni këstet'}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  disabled={!pickedList.length || Boolean(slipBusy)}
+                  onClick={() => runSlip('pdf', () =>
+                    downloadSlipPdf(
+                      slipUrl(),
+                      `Fletepagesa_${student.first_name}_${student.last_name}.pdf`
+                    ))}
+                >
+                  {slipBusy === 'pdf' ? 'Duke përgatitur…' : 'Fletëpagesa (PDF)'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-small"
+                  disabled={!pickedList.length || Boolean(slipBusy)}
+                  onClick={() => runSlip('print', () => printSlip(slipUrl()))}
+                >
+                  {slipBusy === 'print' ? 'Duke hapur…' : '🖨 Printo'}
+                </button>
+              </div>
+            )}
+          </div>
+          {slipError && <p className="form-error">{slipError}</p>}
+          <InstallmentTable
+            installments={f.installments}
+            selected={selected}
+            onToggle={unpaid.length ? togglePick : undefined}
+          />
+        </section>
       )}
 
       {showPayment && showFinance && (
@@ -424,6 +465,28 @@ function Info({ label, value, span, strong }) {
 }
 
 /** Dokument me faqe të palosur — ikona e kontratës. */
+/** Vërtetimi — fletë me vulë, që të dallohet nga kontrata. */
+function CertificateIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M5 2.75h14v12.5H5V2.75Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M8 6.5h8M8 9.5h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="12" cy="17.5" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M10.4 20.1 9.5 23l2.5-1.3 2.5 1.3-.9-2.9"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function ContractIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">

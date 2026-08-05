@@ -1,22 +1,52 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import IspeLogo from '../ui/IspeLogo.jsx';
 import InvasoftLogo from '../ui/InvasoftLogo.jsx';
 import { shortGen, currentSchoolYear } from '../../utils/format';
+import { fetchEditRequestCount, fetchGradeIssueCount } from '../../api/ditari';
+import { ROLE_LABELS } from '../../config/roles';
 
+// Cdo zë i menusë mban ZONEN e vet; kush e sheh vendoset te config/roles.js
 const NAV = [
-  { to: '/', label: 'Paneli', icon: PanelIcon, end: true },
-  { to: '/studentet', label: 'Nxënësit', icon: StudentsIcon },
-  { to: '/studentet/regjistro', label: 'Regjistrimi', icon: RegisterIcon },
-  { to: '/financat', label: 'Financat', icon: FinanceIcon, financeOnly: true },
-  { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon, financeOnly: true },
+  { to: '/', label: 'Paneli', icon: PanelIcon, end: true, area: 'dashboard' },
+  { to: '/studentet', label: 'Nxënësit', icon: StudentsIcon, area: 'students' },
+  { to: '/studentet/regjistro', label: 'Regjistrimi', icon: RegisterIcon, area: 'register' },
+  { to: '/administrata', label: 'Administrata', icon: AdminIcon, area: 'administrata' },
+  { to: '/ditari', label: 'Ditari i notave', icon: DiaryIcon, area: 'ditari' },
+  { to: '/oret', label: 'Orët e mësimit', icon: ClockIcon, area: 'mesimi' },
+  { to: '/gabimet', label: 'Gabimet e ditarit', icon: IssueIcon, area: 'issues', badge: 'issues' },
+  { to: '/kerkesat', label: 'Kërkesat për nota', icon: RequestIcon, area: 'requests', badge: 'requests' },
+  { to: '/financat', label: 'Financat', icon: FinanceIcon, area: 'finance' },
+  { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon, area: 'graduates' },
 ];
 
-const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, adminOnly: true }];
+const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, area: 'settings' }];
 
 export default function Sidebar() {
-  const { user, isAdmin, isFinance, signOut } = useAuth();
+  const { user, can, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [pending, setPending] = useState(0);
+  const [issues, setIssues] = useState(0);
+
+  // Sa kërkesa presin. Rilexohet sa herë ndërrohet faqja, që administratori
+  // ta shohë numrin e ri sapo vendos për njërën — pa e rifreskuar shfletuesin.
+  useEffect(() => {
+    let alive = true;
+    if (can('requests')) {
+      fetchEditRequestCount()
+        .then((d) => { if (alive) setPending(d.pending || 0); })
+        .catch(() => { /* shenja është ndihmëse; heshtja është e mjaftueshme */ });
+    }
+    if (can('issues')) {
+      fetchGradeIssueCount()
+        .then((d) => { if (alive) setIssues(d.open || 0); })
+        .catch(() => { });
+    }
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.role, location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -33,7 +63,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV.filter((n) => !n.financeOnly || isFinance).map(({ to, label, icon: Icon, end }) => (
+        {NAV.filter((n) => can(n.area)).map(({ to, label, icon: Icon, end, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -42,12 +72,20 @@ export default function Sidebar() {
           >
             <Icon />
             <span>{label}</span>
+            {badge === 'requests' && pending > 0 && (
+              <span className="nav-badge" title={`${pending} kërkesa në pritje`}>{pending}</span>
+            )}
+            {badge === 'issues' && issues > 0 && (
+              <span className="nav-badge nav-badge-red" title={`${issues} gabime të hapura`}>
+                {issues}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
 
       <nav className="sidebar-nav sidebar-nav-bottom">
-        {NAV_BOTTOM.filter((n) => !n.adminOnly || isAdmin).map(({ to, label, icon: Icon }) => (
+        {NAV_BOTTOM.filter((n) => can(n.area)).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -66,7 +104,7 @@ export default function Sidebar() {
           </span>
           <span className="sidebar-user-body">
             <strong>{user.full_name}</strong>
-            <em>{user.role === 'admin' ? 'Administrator' : 'Staf'}</em>
+            <em>{ROLE_LABELS[user.role] || 'Staf'}</em>
           </span>
           <button
             type="button"
@@ -125,6 +163,95 @@ function RegisterIcon() {
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
       <path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path d="M10 8v5M7.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Oret e mesimit — nje ore me akrepa. */
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M10 6v4.2l2.8 1.7" fill="none" stroke="currentColor"
+        strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Gabimet e ditarit — nje shenje pasthirrmeje mbi nje flete. */
+function IssueIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M5 2.75h7L15 6v11.25H5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M10 8v3.6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="10" cy="14.2" r="0.95" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Administrata — ndertesa e shkolles, organizimi i paraleleve. */
+function AdminIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M3 17h14M4.5 17V8l5.5-3.5L15.5 8v9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <path d="M8 17v-4h4v4" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="10" cy="9.2" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function DiaryIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M10 4.5C8.6 3.4 6.6 3 4 3v12.5c2.6 0 4.6.4 6 1.5 1.4-1.1 3.4-1.5 6-1.5V3c-2.6 0-4.6.4-6 1.5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M10 4.5V17" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M6 7h2.2M6 9.5h2.2M12 7h2.2M12 9.5h2.2"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function RequestIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M5 3h7l3 3v11H5z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.6 11.4l1.7 1.7 3.4-3.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

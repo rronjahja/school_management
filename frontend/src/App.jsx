@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout.jsx';
+import { useAuth } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -10,21 +11,116 @@ import StudentDetail from './pages/StudentDetail.jsx';
 import Finance from './pages/Finance.jsx';
 import Graduates from './pages/Graduates.jsx';
 import Settings from './pages/Settings.jsx';
+import Ditari from './pages/Ditari.jsx';
+import DitariKlasa from './pages/DitariKlasa.jsx';
+import GradeRequests from './pages/GradeRequests.jsx';
+import Administrata from './pages/Administrata.jsx';
+import GradeIssues from './pages/GradeIssues.jsx';
+import Oret from './pages/Oret.jsx';
+
+/** Rruget e panjohura e cojne perdoruesin te faqja e tij e pare. */
+function HomeRedirect() {
+  const { home } = useAuth();
+  return <Navigate to={home} replace />;
+}
 
 /** Faqet brenda aplikacionit — te gjitha kerkojne identifikim. */
 function AppRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/studentet" element={<Students />} />
-        <Route path="/studentet/regjistro" element={<RegisterStudent />} />
-        <Route path="/studentet/:id" element={<StudentDetail />} />
-        <Route path="/studentet/:id/ndrysho" element={<EditStudent />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute area="dashboard">
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/studentet"
+          element={
+            <ProtectedRoute area="students">
+              <Students />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/studentet/regjistro"
+          element={
+            <ProtectedRoute area="register">
+              <RegisterStudent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/studentet/:id"
+          element={
+            <ProtectedRoute area="students">
+              <StudentDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/studentet/:id/ndrysho"
+          element={
+            <ProtectedRoute area="students">
+              <EditStudent />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/administrata"
+          element={
+            <ProtectedRoute area="administrata">
+              <Administrata />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ditari"
+          element={
+            <ProtectedRoute area="ditari">
+              <Ditari />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ditari/:id"
+          element={
+            <ProtectedRoute area="ditari">
+              <DitariKlasa />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/oret"
+          element={
+            <ProtectedRoute area="mesimi">
+              <Oret />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gabimet"
+          element={
+            <ProtectedRoute area="issues">
+              <GradeIssues />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kerkesat"
+          element={
+            <ProtectedRoute area="requests">
+              <GradeRequests />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/financat"
           element={
-            <ProtectedRoute financeOnly>
+            <ProtectedRoute area="finance">
               <Finance />
             </ProtectedRoute>
           }
@@ -32,7 +128,7 @@ function AppRoutes() {
         <Route
           path="/te-diplomuarit"
           element={
-            <ProtectedRoute financeOnly>
+            <ProtectedRoute area="graduates">
               <Graduates />
             </ProtectedRoute>
           }
@@ -40,12 +136,12 @@ function AppRoutes() {
         <Route
           path="/cilesimet"
           element={
-            <ProtectedRoute adminOnly>
+            <ProtectedRoute area="settings">
               <Settings />
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<HomeRedirect />} />
       </Routes>
     </Layout>
   );

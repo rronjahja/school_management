@@ -1,6 +1,7 @@
 const authService = require('../services/authService');
 const { COOKIE_NAME } = require('../config/auth');
 const { httpError } = require('./errorHandler');
+const { can, canSeeFinance, isManager } = require('../config/roles');
 
 /**
  * Kerkon nje sesion te vlefshem.
@@ -25,30 +26,51 @@ async function requireAuth(req, res, next) {
   }
 }
 
-/** Vetem administratoret. */
-function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'admin') {
-    return next(httpError(403, 'Ky veprim kërkon të drejta administratori.'));
-  }
-  next();
+/**
+ * Mbrojtja sipas ZONES se punes. Kush i hap zonat percaktohet ne nje vend
+ * te vetem — config/roles.js — keshtu qe rruget lexohen si fjali dhe nuk ka
+ * lista rolesh te shperndara neper skedare.
+ *
+ * Kontrolli behet KETU, ne server: fshehja e butonave te nderfaqja eshte
+ * vetem lehtesi per syrin, jo mbrojtje.
+ */
+const MESSAGES = {
+  settings: 'Ky veprim kërkon të drejta administratori.',
+  manage: 'Ky veprim kërkon të drejta administratori ose menaxheri.',
+  finance: 'Ky veprim kërkon të drejta për financat.',
+  ditari: 'Ky veprim kërkon të drejta kujdestari.',
+  requests: 'Ky veprim kërkon të drejta kujdestari.',
+  register: 'Ky veprim kërkon të drejta për regjistrimin e nxënësve.',
+  students: 'Ky veprim kërkon të drejta për nxënësit.',
+  dashboard: 'Ky veprim kërkon të drejta administratori ose menaxheri.',
+};
+
+function requireArea(area) {
+  return function guard(req, res, next) {
+    if (!can(req.user, area)) {
+      return next(httpError(403, MESSAGES[area] || 'Nuk keni të drejta për këtë veprim.'));
+    }
+    next();
+  };
 }
+
+/** Vetem administratoret — konfigurimi i sistemit. */
+const requireAdmin = requireArea('settings');
+
+/** Administrator ose menaxher — veprimet e forta jashte cilesimeve. */
+const requireManager = requireArea('manage');
+
+/** Qasje te te dhenat financiare. */
+const requireFinance = requireArea('finance');
 
 /**
- * Qasje te te dhenat financiare: roli 'finance' dhe 'admin'.
+ * Ditari i klases.
  *
- * Stafi menaxhon vetem nxenesit — pagesat, fletepagesat, rikujtesat dhe
- * eksporti i mbeten te mbyllura. Kontrolli behet KETU, ne server: fshehja
- * e butonave te nderfaqja eshte vetem lehtesi, jo mbrojtje.
+ * Ky kontroll thote vetem «a ka fare qasje ne ditar». Se CILEN paralele
+ * mund ta preke, e verifikon registerService.assertClassAccess ne cdo
+ * veprim — kujdestari sheh vetem paralelen ku eshte caktuar.
  */
-function requireFinance(req, res, next) {
-  if (!req.user || !['admin', 'finance'].includes(req.user.role)) {
-    return next(httpError(403, 'Ky veprim kërkon të drejta për financat.'));
-  }
-  next();
-}
-
-/** A i sheh ky perdorues shifrat financiare? */
-const canSeeFinance = (user) => Boolean(user) && ['admin', 'finance'].includes(user.role);
+const requireKujdestar = requireArea('ditari');
 
 /**
  * Mbrojtje shtese nga CSRF.
@@ -66,5 +88,13 @@ function requireXhrHeader(req, res, next) {
 }
 
 module.exports = {
-  requireAuth, requireAdmin, requireFinance, canSeeFinance, requireXhrHeader,
+  requireAuth,
+  requireArea,
+  requireAdmin,
+  requireManager,
+  requireFinance,
+  requireKujdestar,
+  canSeeFinance,
+  isManager,
+  requireXhrHeader,
 };

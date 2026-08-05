@@ -12,7 +12,11 @@ const promotionController = require('../controllers/promotionController');
 const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 const activityLogController = require('../controllers/activityLogController');
-const { requireAuth, requireAdmin, requireFinance } = require('../middleware/auth');
+const registerController = require('../controllers/registerController');
+const lessonController = require('../controllers/lessonController');
+const {
+  requireAuth, requireArea, requireAdmin, requireManager, requireFinance, requireKujdestar,
+} = require('../middleware/auth');
 const { activityLogger } = require('../middleware/activityLogger');
 
 const router = Router();
@@ -47,7 +51,7 @@ router.put('/users/:id', requireAdmin, userController.update);
 router.post('/users/:id/reset-password', requireAdmin, userController.resetPassword);
 
 // Meta
-router.get('/categories', metaController.categories);
+router.get('/categories', metaController.categories);   // lista e drejtimeve i duhet cdo zone
 router.get('/banks', requireFinance, metaController.banks);
 
 // Konfigurimet — vetëm administratorët mund të ndryshojnë
@@ -81,29 +85,78 @@ router.put('/categories/:id', requireAdmin, metaController.updateCategory);
 router.delete('/categories/:id', requireAdmin, metaController.removeCategory);
 
 // Paneli
-router.get('/dashboard', dashboardController.stats);
+router.get('/dashboard', requireArea('dashboard'), dashboardController.stats);
 
 // Studentet
-router.get('/students/next-contract-number', studentController.nextContractNumber);
-router.get('/students', studentController.list);
-router.post('/students', studentController.create);
-router.get('/students/:id', studentController.detail);
-router.put('/students/:id', studentController.update);
-router.delete('/students/:id', requireAdmin, studentController.remove);
+router.get('/students/next-contract-number', requireArea('register'), studentController.nextContractNumber);
+router.get('/students', requireArea('students'), studentController.list);
+router.post('/students', requireArea('register'), studentController.create);
+router.get('/students/:id', requireArea('students'), studentController.detail);
+router.put('/students/:id', requireArea('students'), studentController.update);
+router.delete('/students/:id', requireManager, studentController.remove);
 
 // Dokumentet Word (shabllonet ne backend/templates)
-router.get('/templates', documentController.listTemplates);
-router.get('/students/:id/document', documentController.generate);
+router.get('/templates', requireArea('students'), documentController.listTemplates);
+router.get('/students/:id/document', requireArea('students'), documentController.generate);
 // rruga e vjeter mbahet per pajtueshmeri
-router.get('/students/:id/registration-doc', documentController.generate);
+router.get('/students/:id/registration-doc', requireArea('students'), documentController.generate);
 
 // Promovimi i gjeneratave (kalimi i vitit)
 router.get('/promotion', requireAdmin, promotionController.overview);
 router.get('/promotion/preview', requireAdmin, promotionController.preview);
 router.post('/promotion/run', requireAdmin, promotionController.run);
 
+// ---------------------------------------------------------------
+// Ditari i klasës («Suksesi i nxënësve sipas lëndëve mësimore»)
+//
+// Krijimi/ndryshimi i paraleleve: vetëm administratori.
+// Plotësimi i ditarit: administratori dhe kujdestari — por kujdestari
+// vetëm për paralelen e vet (verifikohet te registerService).
+// ---------------------------------------------------------------
+router.get('/classes', requireKujdestar, registerController.listClasses);
+router.get('/classes/options', requireArea('administrata'), registerController.classOptions);
+router.post('/classes', requireArea('administrata'), registerController.createClass);
+router.put('/classes/:id', requireArea('administrata'), registerController.updateClass);
+router.delete('/classes/:id', requireArea('administrata'), registerController.removeClass);
+
+router.get('/classes/:id/register', requireKujdestar, registerController.getRegister);
+
+router.post('/classes/:id/subjects', requireKujdestar, registerController.addSubject);
+router.put('/subjects/:id', requireKujdestar, registerController.updateSubject);
+router.delete('/subjects/:id', requireKujdestar, registerController.removeSubject);
+
+router.post('/classes/:id/grades', requireKujdestar, registerController.addGrade);
+router.delete('/grades/:id', requireKujdestar, registerController.removeGrade);
+router.put('/classes/:id/final-grade', requireKujdestar, registerController.setFinalGrade);
+router.put('/classes/:id/meta/:studentId', requireKujdestar, registerController.saveMeta);
+router.put('/classes/:id/order', requireKujdestar, registerController.saveOrder);
+
+// Ditari i oreve te mesimit. Roli 'profesor' hyn VETEM ketu.
+// Rregullat e holla (kush shkruan cilen ore) jane te lessonService.
+router.get('/lesson-classes', requireArea('mesimi'), lessonController.listClasses);
+router.get('/lessons/report', requireArea('mesimi'), lessonController.monthlyReport);
+router.get('/classes/:id/lessons', requireArea('mesimi'), lessonController.getMonth);
+router.post('/classes/:id/lessons', requireArea('mesimi'), lessonController.createLesson);
+router.put('/lessons/:id', requireArea('mesimi'), lessonController.updateLesson);
+router.delete('/lessons/:id', requireArea('mesimi'), lessonController.deleteLesson);
+router.put('/lessons/:id/review', requireArea('review'), lessonController.reviewLesson);
+
+// Kontrolli i notave: stafi i pranon ose i shenon si gabim, pa i ndryshuar
+router.post('/classes/:id/reviews', requireArea('review'), registerController.reviewGrade);
+router.get('/grade-issues', requireArea('issues'), registerController.listGradeIssues);
+router.get('/grade-issues/count', requireArea('issues'), registerController.countGradeIssues);
+router.put('/grade-issues/:id', requireArea('issues'), registerController.closeGradeIssue);
+
+// Kerkesat per ndryshimin e nje note te mbyllur.
+// Kujdestari kerkon dhe terheq; vetem administratori vendos.
+router.post('/classes/:id/edit-requests', requireKujdestar, registerController.createEditRequest);
+router.get('/edit-requests', requireKujdestar, registerController.listEditRequests);
+router.get('/edit-requests/count', requireKujdestar, registerController.countEditRequests);
+router.put('/edit-requests/:id', requireArea('approvals'), registerController.decideEditRequest);
+router.delete('/edit-requests/:id', requireKujdestar, registerController.cancelEditRequest);
+
 // Pagesat
 router.post('/payments', requireFinance, paymentController.create);
-router.delete('/payments/:id', requireAdmin, paymentController.remove);
+router.delete('/payments/:id', requireManager, paymentController.remove);
 
 module.exports = router;

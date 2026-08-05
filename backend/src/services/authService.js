@@ -6,11 +6,11 @@ const { httpError } = require('../middleware/errorHandler');
 /**
  * Rolet e lejuara, nga me i gjeri te me i ngushti.
  *
- * 'kujdestar' per momentin ka te njejtat te drejta si 'staff': asnje
- * qasje financiare dhe asnje te drejte administrimi. Te drejtat e veta
- * shtohen kur te percaktohet cfare duhet te shohe kujdestari.
+ * 'kujdestar' ka te drejtat e 'staff' (asnje qasje financiare, asnje
+ * administrim) PLUS Ditarin e notave — por vetem per paralelen ku eshte
+ * caktuar nga administratori (shih registerService.assertClassAccess).
  */
-const ROLES = ['admin', 'finance', 'kujdestar', 'staff'];
+const { ROLES } = require('../config/roles');
 const {
   JWT_SECRET,
   TOKEN_TTL,

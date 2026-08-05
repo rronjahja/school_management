@@ -1,0 +1,1908 @@
+/* =================================================================
+   Ditari i notave — pamja e librit fizik
+   «Suksesi i nxënësve sipas lëndëve mësimore»
+
+   Faqja rozë e librit, letra krem, vijat e rrjetës, emrat vertikalë
+   të lëndëve, notat «me bojë blu» dhe rreshti gri i N.P.-së me
+   shifra të kuqe — si në origjinal.
+   ================================================================= */
+
+/* Shkrimi i dorës për notat dhe emrat, si boja në libër */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
+
+:root {
+    --dt-pink: #f0c6d5;
+    /* buza rozë e faqes së librit */
+    --dt-pink-deep: #e3aec2;
+    --dt-paper: #fdfaf2;
+    /* letra krem */
+    --dt-line: #c3b8a5;
+    /* vijat e rrjetës */
+    --dt-line-strong: #8f8574;
+    --dt-head-bg: #efe9db;
+    /* sfondi i kokës së kolonave */
+    --dt-np-bg: #e4e0d5;
+    /* shiriti gri i rreshtit N.P. */
+    --dt-ink: #1d3f9e;
+    /* boja blu */
+    --dt-red: #b3261e;
+    /* boja e kuqe e notave përfundimtare */
+    --dt-font-hand: 'Caveat', 'Segoe Script', cursive;
+}
+
+/* Butoni i kuq i plotë për konfirmimet e fshirjes.
+   (Mungonte në base.css megjithëse përdorej — e rregullon edhe
+   butonin e DataManager-it.) */
+.btn-danger {
+    background: var(--red);
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #922e26;
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* ---------------- Kartat e paraleleve (faqja /ditari) ------------- */
+
+.dt-class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.dt-class-card {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--ink);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.dt-class-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-pop);
+}
+
+.dt-class-inactive {
+    opacity: 0.6;
+}
+
+.dt-class-spine {
+    width: 10px;
+    flex: 0 0 10px;
+}
+
+.dt-class-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 16px;
+    min-width: 0;
+}
+
+.dt-class-name {
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.dt-class-cat {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.dt-class-line {
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+.dt-class-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.dt-cat-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 7px;
+    vertical-align: baseline;
+}
+
+/* ---------------- Shiriti sipër ditarit --------------------------- */
+
+.dt-topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.dt-topbar-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.dt-topbar-info strong {
+    font-size: 17px;
+}
+
+.dt-topbar-info .muted {
+    font-size: 13px;
+}
+
+/* ---------------- Libri ------------------------------------------- */
+
+.dt-book {
+    background: linear-gradient(135deg, var(--dt-pink), var(--dt-pink-deep));
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.dt-paper {
+    background: var(--dt-paper);
+    border: 1px solid var(--dt-line);
+    border-radius: 6px;
+    padding: 14px 14px 10px;
+    box-shadow: inset 0 0 24px rgba(120, 100, 70, 0.08);
+}
+
+.dt-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.dt-heading-main {
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-size: 15px;
+    color: #3a3325;
+    text-align: center;
+}
+
+.dt-heading-sub {
+    font-size: 12.5px;
+    letter-spacing: 0.6px;
+    color: #6d6350;
+}
+
+.dt-legend {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 10px;
+}
+
+.dt-legend-np {
+    color: var(--dt-red);
+}
+
+/* ---------------- Tabela ------------------------------------------ */
+
+.dt-scroll {
+    overflow: auto;
+    max-height: calc(100vh - 250px);
+    border: 2px solid var(--dt-line-strong);
+    background: var(--dt-paper);
+}
+
+.dt-table {
+    border-collapse: separate;
+    /* e nevojshme që "sticky" të mbajë vijat */
+    border-spacing: 0;
+    width: max-content;
+    min-width: 100%;
+    font-size: 13px;
+}
+
+.dt-table th,
+.dt-table td {
+    border-right: 1px solid var(--dt-line);
+    border-bottom: 1px solid var(--dt-line);
+    background-clip: padding-box;
+}
+
+.dt-th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--dt-head-bg);
+    color: #4a4231;
+    font-weight: 700;
+    padding: 5px 7px;
+    text-align: center;
+    vertical-align: bottom;
+    border-bottom: 2px solid var(--dt-line-strong);
+}
+
+.dt-th-group {
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--dt-line);
+    white-space: nowrap;
+    padding: 6px 8px;
+}
+
+/* rreshti i dytë i kokës qëndron nën të parin */
+.dt-table thead tr:nth-child(2) .dt-th {
+    top: 29px;
+    border-top: 0;
+}
+
+.dt-th-vert {
+    height: 128px;
+    min-width: 58px;
+    max-width: 68px;
+    padding: 6px 3px;
+}
+
+.dt-vert {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    display: inline-block;
+    max-height: 118px;
+    overflow: hidden;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: normal;
+}
+
+.dt-th-name {
+    min-width: 170px;
+    text-align: left;
+}
+
+.dt-th-remark {
+    min-width: 150px;
+}
+
+/* qelizat trupore */
+.dt-td {
+    background: var(--dt-paper);
+    padding: 0;
+    vertical-align: middle;
+}
+
+/* kolonat e ngjitura majtas */
+.dt-sticky {
+    position: sticky;
+    z-index: 2;
+}
+
+.dt-sticky-1 {
+    left: 0;
+    min-width: 38px;
+    width: 38px;
+}
+
+.dt-sticky-2 {
+    left: 38px;
+    min-width: 170px;
+    width: 170px;
+}
+
+.dt-sticky-3 {
+    left: 208px;
+    min-width: 36px;
+    width: 36px;
+    border-right: 2px solid var(--dt-line-strong);
+}
+
+thead .dt-sticky {
+    z-index: 5;
+}
+
+/* numri rendor — shifra e madhe blu si në libër */
+.dt-num {
+    text-align: center;
+    font-family: var(--dt-font-hand);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--dt-ink);
+}
+
+/* emri i nxënësit i shkruar «me dorë», tri rreshta si në libër */
+.dt-name {
+    padding: 4px 10px;
+}
+
+.dt-name-line {
+    display: block;
+    font-family: var(--dt-font-hand);
+    font-size: 19px;
+    line-height: 1.05;
+    font-weight: 600;
+    color: var(--dt-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dt-name-parent {
+    font-size: 16px;
+    opacity: 0.85;
+}
+
+/* etiketa e gjysmëvjetorit (I / II / N.P.) */
+.dt-term {
+    text-align: center;
+    font-weight: 700;
+    font-size: 11.5px;
+    color: #5d5443;
+    background: var(--dt-head-bg);
+}
+
+.dt-term-np {
+    color: var(--dt-red);
+}
+
+/* rreshti N.P. — shiriti gri i librit */
+.dt-row-np .dt-td,
+.dt-td-np {
+    background: var(--dt-np-bg);
+}
+
+.dt-row-first .dt-td {
+    border-top: 2px solid var(--dt-line-strong);
+}
+
+.dt-row-first .dt-sticky-1,
+.dt-row-first .dt-sticky-2 {
+    border-top: 2px solid var(--dt-line-strong);
+}
+
+/* ---------------- Qelizat e notave -------------------------------- */
+
+.dt-cell {
+    display: flex;
+    align-items: stretch;
+    min-height: 36px;
+    min-width: 58px;
+    cursor: pointer;
+}
+
+/* zona e notave te vogla te vazhdueshme */
+.dt-marks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1px 3px;
+    flex: 1;
+    min-width: 32px;
+    padding: 2px 3px;
+}
+
+.dt-marks:hover {
+    background: rgba(29, 63, 158, 0.06);
+}
+
+.dt-marks:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+/* shifra e madhe e mbylljes se gjysmevjetorit, ndare me nje vije te holle */
+.dt-close {
+    flex: 0 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-left: 1px dashed var(--dt-line);
+    background: rgba(179, 38, 30, 0.045);
+    cursor: pointer;
+    font-family: var(--dt-font-hand);
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--dt-red);
+    padding: 0;
+}
+
+.dt-close:hover {
+    background: rgba(179, 38, 30, 0.14);
+}
+
+/* pa mbyllje ende — nje pike e zbehte, qe letra te mbetet e qete */
+.dt-close-empty {
+    color: var(--line-strong);
+    font-size: 17px;
+}
+
+.dt-close-empty:hover {
+    color: var(--dt-red);
+}
+
+.dt-cell-center {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1px 3px;
+    padding: 2px 4px;
+}
+
+.dt-cell-center:hover {
+    background: rgba(29, 63, 158, 0.06);
+}
+
+.dt-cell-center:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+/* shenja «+» duket vetëm kur kalon miun — letra mbetet e pastër */
+.dt-add {
+    visibility: hidden;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    margin-left: auto;
+    padding: 0 2px;
+}
+
+.dt-marks:hover .dt-add,
+.dt-cell-center:hover .dt-add,
+.dt-cell-remark:hover .dt-add {
+    visibility: visible;
+}
+
+/* nota e vazhdueshme — shifra me bojë blu */
+.dt-grade {
+    border: 0;
+    background: none;
+    padding: 0 1px;
+    cursor: pointer;
+    font-family: var(--dt-font-hand);
+    font-size: 21px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--dt-ink);
+}
+
+.dt-grade:hover {
+    color: var(--red);
+    text-decoration: line-through;
+}
+
+.dt-grade-plain {
+    cursor: inherit;
+}
+
+.dt-grade-plain:hover {
+    color: var(--dt-ink);
+    text-decoration: none;
+}
+
+/* nota përfundimtare — shifra e kuqe */
+.dt-cell-np {
+    justify-content: center;
+    align-items: center;
+    padding: 2px 4px;
+}
+
+.dt-cell-np:hover {
+    background: rgba(179, 38, 30, 0.08);
+}
+
+.dt-np-value {
+    font-family: var(--dt-font-hand);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--dt-red);
+}
+
+/* totalet e mungesave dhe mesatarja në rreshtin N.P. */
+.dt-total {
+    text-align: center;
+    font-family: var(--dt-font-hand);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dt-red);
+    padding: 0 4px;
+}
+
+.dt-avg {
+    text-align: center;
+    font-family: var(--dt-font-hand);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--dt-red);
+    min-width: 52px;
+    padding: 0 4px;
+}
+
+.dt-td-blank {
+    background: var(--dt-paper);
+}
+
+/* vërejtja */
+.dt-remark {
+    min-width: 150px;
+    max-width: 210px;
+}
+
+.dt-cell-remark {
+    align-items: flex-start;
+    padding: 5px 7px;
+}
+
+.dt-remark-text {
+    font-family: var(--dt-font-hand);
+    font-size: 16px;
+    line-height: 1.1;
+    color: var(--dt-ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* gjatë ruajtjes në server tabela «fiket» lehtë */
+.dt-busy {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+/* ---------------- Dritarja pranë qelizës --------------------------- */
+
+.dt-pop-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+}
+
+.dt-pop {
+    position: fixed;
+    z-index: 61;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow-pop);
+    padding: 12px 14px;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.dt-pop-title {
+    margin: 0 0 9px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.dt-pop-title em {
+    display: block;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.dt-pop-grades {
+    display: flex;
+    gap: 7px;
+    justify-content: center;
+}
+
+.dt-pop-grade {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--primary-border);
+    background: var(--primary-soft);
+    color: var(--dt-ink);
+    font-family: var(--dt-font-hand);
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.dt-pop-grade:hover {
+    transform: scale(1.12);
+    background: var(--primary);
+    color: #fff;
+}
+
+.dt-pop-grade-np {
+    background: var(--red-bg);
+    border-color: rgba(179, 38, 30, 0.3);
+    color: var(--dt-red);
+}
+
+.dt-pop-grade-np:hover {
+    background: var(--dt-red);
+    color: #fff;
+}
+
+.dt-pop-grade.active {
+    box-shadow: var(--focus-ring);
+}
+
+.dt-pop-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.dt-pop-clear {
+    display: block;
+    margin: 9px auto 0;
+    color: var(--red);
+}
+
+.dt-pop-input {
+    width: 80px;
+    padding: 7px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 15px;
+    text-align: center;
+}
+
+.dt-pop-textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    resize: vertical;
+    margin-bottom: 9px;
+    box-sizing: border-box;
+}
+
+/* ---------------- Lëndët (modali) --------------------------------- */
+
+.dt-subjects {
+    max-height: 46vh;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.dt-subjects-group {
+    margin-bottom: 12px;
+}
+
+.dt-subjects-title {
+    margin: 0 0 6px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+}
+
+.dt-subjects-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dt-subjects-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    margin-bottom: 5px;
+    background: var(--surface);
+}
+
+.dt-subjects-name {
+    flex: 1;
+    font-size: 13.5px;
+    min-width: 0;
+}
+
+.dt-subjects-move {
+    display: flex;
+    gap: 3px;
+}
+
+.dt-subjects-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.dt-subjects-btn:hover:not(:disabled) {
+    background: var(--primary-soft);
+}
+
+.dt-subjects-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.dt-subjects-rename {
+    flex: 1;
+    display: flex;
+    gap: 7px;
+    align-items: center;
+}
+
+.dt-subjects-rename input {
+    flex: 1;
+    padding: 6px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 13.5px;
+    min-width: 0;
+}
+
+.dt-subjects-confirm {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--red);
+    font-weight: 600;
+}
+
+.dt-subjects-add {
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    margin-top: 4px;
+}
+
+/* ---------------- Kutia e gabimit (ErrorBoundary) ------------------ */
+
+.err-box {
+    background: var(--neutral-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    padding: 12px 14px;
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--red);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: auto;
+    max-height: 260px;
+}
+
+.err-details {
+    margin-top: 10px;
+}
+
+.err-details summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+}
+
+/* ---------------- Shiriti i mjeteve dhe faqosja ------------------- */
+
+.dt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.dt-toolbar .dt-legend {
+    margin: 0;
+    text-align: left;
+    flex: 1;
+    min-width: 240px;
+}
+
+/* zgjedhesi i numrit te nxenesve per faqe */
+.dt-pagesize {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--dt-line);
+    border-radius: 999px;
+    padding: 3px 5px 3px 11px;
+    flex-shrink: 0;
+}
+
+.dt-pagesize-label {
+    font-size: 12px;
+    color: #6d6350;
+    margin-right: 4px;
+    white-space: nowrap;
+}
+
+.dt-pagesize-btn {
+    border: 0;
+    background: none;
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6d6350;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+
+.dt-pagesize-btn:hover {
+    background: rgba(29, 63, 158, 0.09);
+    color: var(--dt-ink);
+}
+
+.dt-pagesize-btn.active {
+    background: var(--dt-ink);
+    color: #fff;
+}
+
+/* shiriti i faqeve nen tabele */
+.dt-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--dt-line);
+}
+
+.dt-pager-info {
+    font-size: 12.5px;
+    color: #6d6350;
+    margin: 0 10px;
+    white-space: nowrap;
+}
+
+.dt-pager-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.dt-pager-btn {
+    border: 1px solid var(--dt-line);
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: var(--radius-small);
+    padding: 5px 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #5d5443;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.dt-pager-btn:hover:not(:disabled) {
+    border-color: var(--dt-ink);
+    color: var(--dt-ink);
+}
+
+.dt-pager-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.dt-pager-num {
+    min-width: 32px;
+    padding: 5px 8px;
+}
+
+.dt-pager-num.active {
+    background: var(--dt-ink);
+    border-color: var(--dt-ink);
+    color: #fff;
+}
+
+.dt-pager-gap {
+    color: var(--muted);
+    padding: 0 2px;
+}
+
+/* ---------------- Rendi i nxenesve (modali) ----------------------- */
+
+.dt-order-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.dt-order-count {
+    margin-left: auto;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.dt-order-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 52vh;
+    overflow: auto;
+}
+
+.dt-order-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    background: var(--surface);
+    cursor: grab;
+    transition: border-color 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+
+.dt-order-item:hover {
+    border-color: var(--primary-border);
+}
+
+.dt-order-item.dragging {
+    opacity: 0.55;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-pop);
+    cursor: grabbing;
+}
+
+.dt-order-grip {
+    color: var(--line-strong);
+    font-size: 15px;
+    line-height: 1;
+    letter-spacing: -2px;
+}
+
+.dt-order-num {
+    flex: 0 0 26px;
+    text-align: center;
+    font-family: var(--dt-font-hand);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--dt-ink);
+}
+
+.dt-order-name {
+    flex: 1;
+    font-size: 13.5px;
+    min-width: 0;
+}
+
+.dt-order-name em {
+    font-style: normal;
+    color: var(--muted);
+    font-size: 12.5px;
+}
+
+.dt-order-move {
+    display: flex;
+    gap: 3px;
+}
+
+/* ---------------- Mbyllja e kyçur dhe kerkesat -------------------- */
+
+/* nje mbyllje e kycur duket e qete, por e paprekshme */
+.dt-close-locked {
+    background: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+.dt-close-locked:hover {
+    background: rgba(0, 0, 0, 0.09);
+}
+
+/* kerkesa ne pritje — shirit i verdhe poshte shifres */
+.dt-close-pending {
+    background: var(--amber-bg);
+    box-shadow: inset 0 -3px 0 var(--amber);
+}
+
+/* leja e dhene — e gjelber, gati per nje ndryshim te vetem */
+.dt-close-unlocked {
+    background: var(--green-bg);
+    box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.dt-pop-note {
+    margin: 0 0 9px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+}
+
+.dt-pop-note-ok {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.dt-pop-reason {
+    margin: 0 0 9px;
+    padding: 7px 9px;
+    background: var(--neutral-bg);
+    border-radius: var(--radius-small);
+    font-size: 12.5px;
+    font-style: italic;
+    color: var(--ink-soft);
+}
+
+/* shenja me numrin e kerkesave te hapura, ne menu */
+.nav-badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--amber);
+    color: #3b2600;
+    font-size: 11.5px;
+    font-weight: 800;
+    line-height: 20px;
+    text-align: center;
+}
+
+/* ---------------- Faqja e kerkesave ------------------------------- */
+
+.dt-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.dt-tab {
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 7px 15px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.dt-tab:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.dt-tab.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.dt-req-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.dt-req {
+    padding: 16px 18px;
+}
+
+.dt-req-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.dt-req-who {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.dt-req-who strong {
+    font-size: 15.5px;
+}
+
+.dt-req-who .muted {
+    font-size: 12.5px;
+}
+
+.dt-req-values {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.dt-req-value {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 74px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-small);
+    background: var(--neutral-bg);
+}
+
+.dt-req-value em {
+    font-style: normal;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+}
+
+.dt-req-value strong {
+    font-family: var(--dt-font-hand);
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--dt-red);
+}
+
+.dt-req-value-new {
+    background: var(--green-bg);
+    border-color: rgba(22, 122, 74, 0.25);
+}
+
+.dt-req-value-new strong {
+    color: var(--green);
+}
+
+.dt-req-reason {
+    margin: 0 0 10px;
+    padding: 9px 12px;
+    background: var(--primary-soft);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
+    font-size: 13.5px;
+    font-style: italic;
+    color: var(--ink);
+}
+
+.dt-req-meta {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.dt-req-note {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+}
+
+.dt-req-hint {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.dt-req-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.dt-req-decline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.dt-req-decline input {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 13.5px;
+    min-width: 0;
+}
+
+/* ---------------- Kontrolli i notave ------------------------------ */
+
+/* Nje note e pranuar: nenvijim i holle jeshil, sa per t'u dalluar
+   pa e mbushur faqen me ngjyra. */
+.dt-grade.rev-ok {
+    box-shadow: inset 0 -3px 0 var(--green);
+}
+
+/* Nje note e shenuar si gabim: rreth i kuq — kete duhet ta shohesh
+   menjehere, edhe kur faqja eshte plot me shifra. */
+.dt-grade.rev-error {
+    color: var(--red);
+    background: var(--red-bg);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1.5px var(--red);
+    padding: 0 3px;
+}
+
+.dt-close.rev-ok {
+    box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.dt-close.rev-error,
+.dt-cell-np.rev-error {
+    background: var(--red-bg);
+    box-shadow: inset 0 0 0 1.5px var(--red);
+}
+
+/* Sqarimi i ngjyrave te shiriti i siperm */
+.dt-legend-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 12px;
+    white-space: nowrap;
+}
+
+.dt-legend-key i {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.dt-legend-key .key-ok {
+    background: var(--green);
+}
+
+.dt-legend-key .key-bad {
+    background: var(--red);
+}
+
+.dt-mode-review {
+    color: var(--dt-red);
+}
+
+/* Lista e notave brenda dritares se kontrollit */
+.dt-rev-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 210px;
+    overflow: auto;
+}
+
+.dt-rev-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 2px;
+    border-bottom: 1px solid var(--line);
+}
+
+.dt-rev-item:last-child {
+    border-bottom: 0;
+}
+
+.dt-rev-value {
+    flex: 0 0 30px;
+    text-align: center;
+    font-family: var(--dt-font-hand);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dt-ink);
+}
+
+.dt-rev-state {
+    flex: 1;
+    min-width: 0;
+    font-size: 11.5px;
+}
+
+.dt-rev-state em {
+    font-style: normal;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dt-rev-good {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.dt-rev-bad {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.dt-rev-none {
+    color: var(--muted);
+}
+
+.dt-rev-btn {
+    flex: 0 0 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.dt-rev-btn-ok {
+    color: var(--green);
+}
+
+.dt-rev-btn-ok:hover {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+}
+
+.dt-rev-btn-bad {
+    color: var(--red);
+}
+
+.dt-rev-btn-bad:hover {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+}
+
+/* Shenja e kuqe e gabimeve te menuja */
+.nav-badge-red {
+    background: var(--red);
+    color: #fff;
+}
+
+/* ---------------- Zgjedhesi i numrit te paraleles ----------------- */
+
+.nr-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nr-btn {
+    width: 46px;
+    height: 46px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.08s;
+}
+
+.nr-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.nr-btn.active,
+.nr-btn.active:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: var(--focus-ring);
+    transform: none;
+}
+
+/* I zene: mbetet i dukshem por qartesisht jashte loje — nje numer i
+   fshehur do te te linte te pyesje pse mungon. */
+.nr-btn.taken {
+    background: var(--neutral-bg);
+    border-color: var(--line);
+    border-style: dashed;
+    color: var(--muted);
+    cursor: not-allowed;
+    position: relative;
+}
+
+.nr-btn.taken::after {
+    content: '';
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 50%;
+    height: 1.5px;
+    background: var(--line-strong);
+    transform: rotate(-28deg);
+}
+
+
+/* ---------------- Modaliteti i kontrollit ------------------------- */
+
+/* Banderola: e para gje qe lexohet, qe te mos pyesesh pse s'shkruhet dot */
+.dt-review-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    padding: 9px 13px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--dt-line);
+    border-left: 4px solid var(--dt-ink);
+    border-radius: var(--radius-small);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #4a4231;
+}
+
+.dt-review-badge {
+    flex: 0 0 auto;
+    background: var(--dt-ink);
+    color: #fff;
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+/* Celesi mes plotesimit dhe kontrollit */
+.dt-modeswitch {
+    display: flex;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid var(--dt-line);
+    border-radius: 999px;
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.dt-mode-btn {
+    border: 0;
+    background: none;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6d6350;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+
+.dt-mode-btn:hover {
+    background: rgba(29, 63, 158, 0.09);
+    color: var(--dt-ink);
+}
+
+.dt-mode-btn.active {
+    background: var(--dt-ink);
+    color: #fff;
+}
+
+/* Gjate kontrollit, kalimi mbi nje note NUK duhet te sugjeroje fshirje:
+   vija e shkarravitur ishte premtim i gabuar. Ne vend te saj, nje kornize
+   qe thote «kliko per ta shqyrtuar». */
+.dt-review-mode .dt-grade:hover {
+    color: var(--dt-ink);
+    text-decoration: none;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.dt-review-mode .dt-grade,
+.dt-review-mode .dt-close,
+.dt-review-mode .dt-marks,
+.dt-review-mode .dt-cell-np {
+    cursor: pointer;
+}
+
+/* Qelizat qe nuk kontrollohen dot (mungesat, sjellja, verejtja) rrine
+   te qeta: pa kursor gishti dhe pa shenjen «+», qe te mos ftojne kot. */
+.dt-review-mode .dt-cell-center,
+.dt-review-mode .dt-cell-remark {
+    cursor: default;
+}
+
+.dt-review-mode .dt-cell-center:hover,
+.dt-review-mode .dt-cell-remark:hover {
+    background: none;
+}
+
+.dt-review-mode .dt-cell-center .dt-add,
+.dt-review-mode .dt-cell-remark .dt-add {
+    display: none;
+}
+
+/* Nje mbyllje bosh s'ka çfare te kontrollohet */
+.dt-review-mode .dt-close-empty {
+    cursor: default;
+}
+
+/* ================================================================
+   ORET E MESIMIT — libri blu
+   E njejta fryme si ditari i notave, por faqja e librit fizik eshte
+   BLU: korniza e erret blu, letra e bardhe ne te kalter, boja blu.
+   ================================================================ */
+
+.lb-toolbar {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.lb-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.lb-pick select,
+.lb-pick input {
+    min-width: 210px;
+    padding: 8px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 14px;
+    background: var(--surface);
+}
+
+/* kapaku blu i librit */
+.lb-book {
+    background: linear-gradient(135deg, #1d3f9e 0%, #2c55c4 55%, #1a3788 100%);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 28px rgba(19, 41, 102, 0.35);
+    margin-bottom: 20px;
+}
+
+/* letra: e bardhe ne te kalter, si flete e vjeter regjistri */
+.lb-paper {
+    --lb-ink: #1d3f9e;
+    /* boja blu e shkrimit   */
+    --lb-line: #9db4e4;
+    /* vijat e tabeles       */
+    --lb-head: #eaf0fc;
+    background: #f6f9ff;
+    border-radius: 8px;
+    padding: 14px 16px 16px;
+}
+
+.lb-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.lb-heading-main {
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--lb-ink);
+}
+
+.lb-heading-sub {
+    font-size: 12.5px;
+    color: #51618c;
+}
+
+.lb-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #51618c;
+}
+
+.lb-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.lb-key-z,
+.lb-key-ok,
+.lb-key-bad {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 800;
+    font-style: normal;
+}
+
+.lb-key-z {
+    background: #fff3d6;
+    color: #8a5b00;
+    border: 1px solid #e8c983;
+}
+
+.lb-key-ok {
+    background: var(--green-bg);
+    color: var(--green);
+}
+
+.lb-key-bad {
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.lb-scroll {
+    overflow-x: auto;
+}
+
+/* nje tabele per cdo jave — si faqet e librit */
+.lb-table {
+    width: 100%;
+    min-width: 940px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-bottom: 14px;
+    background: #fff;
+}
+
+.lb-table:last-child {
+    margin-bottom: 0;
+}
+
+.lb-th {
+    border: 1px solid var(--lb-line);
+    background: var(--lb-head);
+    padding: 5px 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--lb-ink);
+    text-align: center;
+}
+
+.lb-th-day {
+    width: 108px;
+    text-align: left;
+}
+
+.lb-day {
+    border: 1px solid var(--lb-line);
+    background: var(--lb-head);
+    padding: 6px 8px;
+    vertical-align: top;
+}
+
+.lb-day-name {
+    display: block;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--lb-ink);
+}
+
+.lb-day-date {
+    display: block;
+    font-size: 11.5px;
+    color: #6a7aa6;
+}
+
+.lb-td {
+    border: 1px solid var(--lb-line);
+    padding: 0;
+    vertical-align: top;
+}
+
+.lb-cell {
+    min-height: 78px;
+    height: 100%;
+    padding: 5px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.lb-cell:hover {
+    background: #eef3ff;
+}
+
+.lb-cell.filled {
+    background: #fbfdff;
+}
+
+.lb-cell.filled:hover {
+    background: #f2f6ff;
+}
+
+/* konturi i kontrollit — si te notat */
+.lb-cell.rev-ok {
+    box-shadow: inset 0 -3px 0 var(--green);
+}
+
+.lb-cell.rev-error {
+    background: var(--red-bg);
+    box-shadow: inset 0 0 0 1.5px var(--red);
+}
+
+.lb-subject {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #51618c;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* tema — me doren e profesorit, me boje blu */
+.lb-topic {
+    flex: 1;
+    font-family: var(--dt-font-hand);
+    font-size: 16.5px;
+    line-height: 1.12;
+    color: var(--lb-ink);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.lb-foot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 17px;
+}
+
+.lb-prof {
+    flex: 1;
+    min-width: 0;
+    font-size: 10.5px;
+    color: #6a7aa6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lb-add {
+    margin: auto;
+    font-size: 20px;
+    color: #b9c7e8;
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.lb-cell:hover .lb-add {
+    opacity: 1;
+}
+
+/* shenimet brenda dritares */
+.lb-note {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius-small);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.lb-note-ok {
+    background: var(--green-bg);
+    color: var(--green);
+}
+
+.lb-note-bad {
+    background: var(--red-bg);
+    color: var(--red);
+}
+
+.lb-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lb-view-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+}
+
+.lb-view-row em {
+    font-style: normal;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+}
+
+.lb-subswitch {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13.5px;
+    cursor: pointer;
+}
+
+.lb-subswitch input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.lb-actions {
+    align-items: center;
+}
+
+.lb-delete {
+    margin-right: auto;
+    color: var(--red);
+}
+
+.lb-confirm {
+    margin-right: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 600;
+}
+
+.lb-review {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line-strong);
+}
+
+.lb-review-label {
+    margin-right: auto;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+/* raporti mujor */
+.lb-report {
+    margin-top: 4px;
+}
+
+.lb-report-total {
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.lb-report-note {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+}

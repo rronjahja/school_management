@@ -1,6 +1,6 @@
 const studentService = require('../services/studentService');
 const financeService = require('../services/financeService');
-const { canSeeFinance } = require('../middleware/auth');
+const { canSeeFinance, isManager } = require('../middleware/auth');
 const { stripStudentFinance, stripListFinance } = require('../utils/redactFinance');
 const { validateStudent } = require('../utils/validateStudent');
 
@@ -43,7 +43,7 @@ async function create(req, res, next) {
     const id = await studentService.createStudent(req.body, {
       // vetem administratoret (p.sh. migrimi i kontratave) mund ta mbajne
       // kuoten e kontrates edhe kur drejtimi ka kuote te konfiguruar
-      allowQuotaOverride: req.user && req.user.role === 'admin',
+      allowQuotaOverride: isManager(req.user),
     });
     const created = await financeService.getStudentDetail(id);
     res.locals.logEntityId = id;

@@ -73,7 +73,7 @@ export default function Settings() {
       });
       setNotice(
         `U krye: ${res.promoted} nxënës kaluan në ${shortGen(res.to_generation)}, ` +
-          `${res.graduated} u diplomuan.`
+        `${res.graduated} u diplomuan.`
       );
       setConfirmOpen(false);
       setPreview(null);

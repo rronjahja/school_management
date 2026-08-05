@@ -25,6 +25,13 @@ const ENTITY_LABELS = {
   settings: 'Cilësimet',
   promotion: 'Kalimi i vitit',
   auth: 'Llogaria',
+  class: 'Paralelja',
+  subject: 'Lënda',
+  grade: 'Nota',
+  register: 'Ditari i klasës',
+  grade_request: 'Kërkesa për notë',
+  grade_review: 'Kontrolli i notave',
+  lesson: 'Ora e mësimit',
 };
 
 const ACTION_LABELS = {
@@ -52,6 +59,21 @@ function classify(method, path) {
   const map = [
     [/^\/api\/students\/\d+$/, 'student'],
     [/^\/api\/students$/, 'student'],
+    // Ditari i klasës — modelet e veçanta PËRPARA atij të përgjithshëm /classes
+    [/^\/api\/classes\/\d+\/grades/, 'grade'],
+    [/^\/api\/grades/, 'grade'],
+    [/^\/api\/classes\/\d+\/final-grade/, 'grade'],
+    [/^\/api\/classes\/\d+\/subjects/, 'subject'],
+    [/^\/api\/subjects/, 'subject'],
+    [/^\/api\/classes\/\d+\/meta/, 'register'],
+    [/^\/api\/classes\/\d+\/order/, 'register'],
+    [/^\/api\/classes\/\d+\/lessons/, 'lesson'],
+    [/^\/api\/lessons/, 'lesson'],
+    [/^\/api\/classes\/\d+\/reviews/, 'grade_review'],
+    [/^\/api\/grade-issues/, 'grade_review'],
+    [/^\/api\/classes\/\d+\/edit-requests/, 'grade_request'],
+    [/^\/api\/edit-requests/, 'grade_request'],
+    [/^\/api\/classes/, 'class'],
     [/^\/api\/payments/, 'payment'],
     [/^\/api\/users/, 'user'],
     [/^\/api\/banks/, 'bank'],

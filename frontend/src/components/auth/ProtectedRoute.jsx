@@ -3,20 +3,28 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import Loader from '../ui/Loader.jsx';
 
 /**
- * Lejon vetem perdoruesit e identifikuar.
- *   adminOnly   → vetem administratoret
- *   financeOnly → administratoret dhe roli 'finance'
- * Kush s'ka te drejte kthehet te faqja kryesore, jo te nje faqe gabimi:
- * menuja s'ia ka shfaqur fare linkun, ndaj ketu vjen vetem me URL te shkruar.
+ * Lejon vetem perdoruesit e identifikuar qe e hapin ZONEN e kerkuar.
+ *
+ *   <ProtectedRoute area="finance"> ... </ProtectedRoute>
+ *
+ * Kush s'ka te drejte kthehet te faqja e VET e pare, jo te «/»: paneli
+ * nuk eshte me i hapur per te gjithe, keshtu qe nje kthim i verber te «/»
+ * do ta fuste stafin ne nje cikel te pafund midis dy faqeve te mbyllura.
+ *
+ * Kjo eshte lehtesi per syrin — mbrojtja e vertete eshte ne server.
  */
-export default function ProtectedRoute({ children, adminOnly = false, financeOnly = false }) {
-  const { user, ready, isAdmin, isFinance } = useAuth();
+export default function ProtectedRoute({ children, area }) {
+  const { user, ready, can, home } = useAuth();
   const location = useLocation();
 
   if (!ready) return <Loader text="Duke verifikuar sesionin…" />;
   if (!user) return <Navigate to="/hyrje" state={{ from: location }} replace />;
-  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
-  if (financeOnly && !isFinance) return <Navigate to="/" replace />;
+
+  if (area && !can(area)) {
+    // Nese as shtepia s'i hapet (rast qe s'duhet te ndodhe), del te hyrja
+    const target = home === location.pathname ? '/hyrje' : home;
+    return <Navigate to={target} replace />;
+  }
 
   return children;
 }

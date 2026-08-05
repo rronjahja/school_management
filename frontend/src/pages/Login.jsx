@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { fetchAuthStatus } from '../api/auth';
 import { errorMessage } from '../api/client';
@@ -7,8 +7,7 @@ import IspeLogo from '../components/ui/IspeLogo.jsx';
 import InvasoftLogo from '../components/ui/InvasoftLogo.jsx';
 
 export default function Login() {
-  const { user, ready, signIn } = useAuth();
-  const navigate = useNavigate();
+  const { user, ready, signIn, home } = useAuth();
   const location = useLocation();
 
   const [form, setForm] = useState({ username: '', password: '' });
@@ -24,7 +23,9 @@ export default function Login() {
   }, []);
 
   if (ready && user) {
-    return <Navigate to={location.state?.from?.pathname || '/'} replace />;
+    // Pas hyrjes secili rol shkon te faqja e VET e pare: paneli nuk eshte
+    // me i hapur per te gjithe, ndaj «/» s'eshte shtepi e perbashket.
+    return <Navigate to={location.state?.from?.pathname || home} replace />;
   }
 
   const submit = async (e) => {
@@ -33,7 +34,8 @@ export default function Login() {
     setError('');
     try {
       await signIn(form.username.trim(), form.password);
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      // Pa navigim me dore: sapo vendoset perdoruesi, degezimi me lart e con
+      // secilin te faqja e vet — roli behet i njohur vetem pas hyrjes.
     } catch (err) {
       setError(errorMessage(err));
       setForm((f) => ({ ...f, password: '' }));

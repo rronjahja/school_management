@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { canAccess, homePath } from '../config/roles';
 import * as authApi from '../api/auth';
 import { setUnauthorizedHandler } from '../api/client';
 
@@ -43,9 +44,15 @@ export function AuthProvider({ children }) {
         ready,
         signIn,
         signOut,
-        isAdmin: user?.role === 'admin',
-        // Financat i sheh edhe roli 'finance'; stafi jo
-        isFinance: user?.role === 'admin' || user?.role === 'finance',
+        // can('zona') eshte menyra e vetme e sakte per te pyetur «a e hap?».
+        // Te drejtat jetojne te config/roles.js, jo te shperndara neper faqe.
+        can: (area) => canAccess(user, area),
+        home: homePath(user),
+        // Shkurtore per rastet e shpeshta te nderfaqes
+        isAdmin: canAccess(user, 'settings'),
+        isManager: canAccess(user, 'manage'),
+        isFinance: canAccess(user, 'finance'),
+        isKujdestar: canAccess(user, 'ditari'),
       }}
     >
       {children}

@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { SCHOOL } from '../../config/school';
+import { SCHOOL } from '../config/school';
 import { money, date, classLabel, YEAR_LABELS } from './format';
 
 /**

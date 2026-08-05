@@ -7,15 +7,15 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { date, dateTime } from '../../utils/format';
 import Modal from '../ui/Modal.jsx';
 import Field from '../ui/Field.jsx';
+import { ROLE_LABELS, ROLE_HINTS } from '../../config/roles';
 
 const EMPTY = { username: '', full_name: '', role: 'staff', password: '' };
 
-const ROLE_LABELS = {
-  admin: 'Administrator',
-  finance: 'Financa',
-  kujdestar: 'Kujdestar',
-  staff: 'Staf',
-};
+// Renditur nga me e ngushta te me e gjera, qe zgjedhja e paravendosur
+// (Staf) te jete gjithnje ajo me pak te drejta.
+const ROLE_ORDER = ['profesor', 'staff', 'kujdestar', 'finance', 'menaxher', 'admin'];
+
+
 
 /** Menaxhimi i perdoruesve + ndryshimi i fjalekalimit tuaj (vetem admin). */
 export default function UserManager() {
@@ -159,10 +159,11 @@ export default function UserManager() {
               </Field>
               <Field label="Roli" required>
                 <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                  <option value="staff">Staf — vetëm nxënësit</option>
-                  <option value="kujdestar">Kujdestar — vetëm nxënësit</option>
-                  <option value="finance">Financa — nxënësit + financat</option>
-                  <option value="admin">Administrator — gjithçka</option>
+                  {ROLE_ORDER.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]} — {ROLE_HINTS[r]}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Fjalëkalimi" required>

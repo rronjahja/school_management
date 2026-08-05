@@ -1,5 +1,5 @@
 import Logo from './Logo.jsx';
-import { LOGOS } from '../../../config/assets';
+import { LOGOS } from '../../config/assets.js';
 
 /**
  * Logoja e kompanisë Invasoft.
