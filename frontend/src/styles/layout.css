@@ -15,9 +15,14 @@
   top: 0;
   height: 100vh;
   padding: 24px 16px;
+  /* Menuja u zgjat me faqe te reja dhe kalonte poshte ekranit: sfondi
+     mbaronte aty ku mbaronte 100vh, kurse zerat vazhdonin mbi te bardhen.
+     Rrjedhja mbahet brenda; leviz vetem lista, jo i gjithe paneli. */
+  overflow: hidden;
 }
 
 .sidebar-brand {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -51,6 +56,32 @@
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  overflow-y: auto;
+  /* Pa kete, nje femije flex nuk zvogelohet dot nen permbajtjen e vet
+     dhe rrjedhja s'do te niste kurre. */
+  min-height: 0;
+  /* Vend per shiritin, qe zerat te mos kercejne kur shfaqet */
+  margin-right: -6px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .nav-item {
@@ -81,6 +112,7 @@
   flex-direction: column;
   gap: 14px;
   padding-top: 18px;
+  flex-shrink: 0;
 }
 
 .foot-year {
@@ -196,6 +228,7 @@
     height: auto;
     position: static;
     padding: 16px;
+    overflow: visible;
   }
 
   .sidebar-brand {
@@ -223,6 +256,9 @@
   .sidebar-nav {
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: visible;
+    margin-right: 0;
+    padding-right: 0;
   }
 
   .sidebar-foot {
