@@ -13,7 +13,7 @@ const EMPTY = { username: '', full_name: '', role: 'staff', password: '' };
 
 // Renditur nga me e ngushta te me e gjera, qe zgjedhja e paravendosur
 // (Staf) te jete gjithnje ajo me pak te drejta.
-const ROLE_ORDER = ['profesor', 'staff', 'kujdestar', 'finance', 'menaxher', 'admin'];
+const ROLE_ORDER = ['staff', 'kujdestar', 'finance', 'menaxher', 'admin'];
 
 
 

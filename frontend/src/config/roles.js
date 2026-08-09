@@ -15,7 +15,6 @@ export const ROLE_LABELS = {
   finance: 'Financa',
   kujdestar: 'Kujdestar/e',
   staff: 'Staf',
-  profesor: 'Profesor/eshë',
 };
 
 /** Përshkrimet e shkurtra që dalin te zgjedhja e rolit në Cilësimet. */
@@ -24,7 +23,6 @@ export const ROLE_HINTS = {
   menaxher: 'Gjithçka, përveç cilësimeve të sistemit',
   finance: 'Financat dhe nxënësit',
   kujdestar: 'Vetëm ditari i notave',
-  profesor: 'Vetëm ditari i orëve të mësimit',
   staff: 'Nxënësit, regjistrimi, administrata dhe ditari',
 };
 
@@ -35,12 +33,13 @@ export const AREA_ROLES = {
   finance: ['admin', 'menaxher', 'finance'],
   graduates: ['admin', 'menaxher', 'finance'],
   administrata: ['admin', 'menaxher', 'staff'],
-  mesimi: ['admin', 'menaxher', 'staff', 'kujdestar', 'profesor'],
+  mesimi: ['admin', 'menaxher', 'staff', 'kujdestar'],
   ditari: ['admin', 'menaxher', 'kujdestar', 'staff'],
   review: ['admin', 'menaxher', 'staff'],
   approvals: ['admin', 'menaxher', 'staff'],
   issues: ['admin', 'menaxher', 'staff', 'kujdestar'],
   requests: ['admin', 'menaxher', 'kujdestar', 'staff'],
+  logs: ['admin', 'menaxher'],
   settings: ['admin'],
   manage: ['admin', 'menaxher'],
 };
@@ -63,7 +62,6 @@ export function homePath(user) {
   switch (user.role) {
     case 'finance': return '/financat';
     case 'kujdestar': return '/ditari';
-    case 'profesor': return '/oret';
     case 'staff': return '/studentet';
     default: return '/';        // admin, menaxher
   }

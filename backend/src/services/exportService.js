@@ -28,7 +28,11 @@ const SHEET_ORDER = ['TD', 'BPI', 'AF', 'TF', 'TIK'];
 const BLOCKS = 13;
 const FIRST_BLOCK_COL = 7; // G
 const MONEY_FMT = '#,##0.00\\ [$€-1]';
-const DATE_FMT = 'dd.mm.yyyy';
+// Vija e pjerret shpetohet me \, qe Excel-i ta shtypi ashtu si eshte:
+// e paluajtur, «/» ne kodin e formatit zevendesohet me ndarsen e gjuhes
+// se sistemit, dhe e njejta skede do te dilte 12.03.2008 ne nje kompjuter
+// e 12/03/2008 ne nje tjeter.
+const DATE_FMT = 'dd\\/mm\\/yyyy';
 
 /**
  * Emri i shkurtër i bankës për kolonën "Banka":

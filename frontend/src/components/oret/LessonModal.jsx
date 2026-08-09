@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext.jsx';
 import Modal from '../ui/Modal.jsx';
 import Field from '../ui/Field.jsx';
 
-const dmy = (iso) => String(iso).split('-').reverse().join('.');
+const dmy = (iso) => String(iso).split('-').reverse().join('/');
 
 /**
  * Një qelizë e librit të orëve, e hapur.
@@ -19,29 +18,39 @@ const dmy = (iso) => String(iso).split('-').reverse().join('.');
  * dyshim se kujt i shkon ora në raportin mujor.
  */
 export default function LessonModal({ cell, data, busy, onClose, onSave, onDelete, onReview }) {
-    const { user } = useAuth();
     const { lesson } = cell;
 
-    const isProfessor = data.is_professor;
+    // Profesoret nuk kycen: oret i plotëson administrata (staf e lart).
     const canAdmin = data.can_admin;
-    const isOwn = lesson && lesson.professor_id === user.id;
-
-    const canEdit = lesson
-        ? (canAdmin || (isProfessor && isOwn && lesson.review_status !== 'ok'))
-        : (canAdmin || isProfessor);
+    const canEdit = canAdmin;
 
     const [form, setForm] = useState(() => ({
         subject_id: lesson?.subject_id || data.subjects[0]?.id || '',
         topic: lesson?.topic || '',
-        professor_id: lesson?.professor_id || (isProfessor ? user.id : ''),
+        professor_id: lesson?.professor_id || '',
         is_substitution: Boolean(lesson?.substitute_for),
         substitute_for: lesson?.substitute_for || '',
     }));
-    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [showAllProfs, setShowAllProfs] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
     const [reviewOpen, setReviewOpen] = useState(false);
     const [comment, setComment] = useState('');
 
-    const submit = () => {
+    /**
+   * Profesorët e lëndës së zgjedhur. Ngushtimi ka rëndësi praktike: në
+   * një shkollë me dhjetëra profesorë, lista e plotë e bën zgjedhjen e
+   * gabuar shumë të lehtë, kurse Matematikën e japin 2–3 veta.
+   *
+   * Zëvendësimi është pikërisht rasti kur duhet dikush jashtë listës,
+   * ndaj mbetet një çelës për t'i parë të gjithë — ngushtimi ndihmon,
+   * nuk ndalon.
+   */
+  const subjectKey = data.subjects.find((x) => String(x.id) === String(form.subject_id));
+  const taught = (data.professors_by_subject || {})[subjectKey?.subject_id] || [];
+  const narrowed = data.professors.filter((p) => taught.includes(p.id));
+  const profOptions = (showAllProfs || narrowed.length === 0) ? data.professors : narrowed;
+
+  const submit = () => {
         onSave({
             lesson_date: cell.date,
             period: cell.period,
@@ -58,12 +67,6 @@ export default function LessonModal({ cell, data, busy, onClose, onSave, onDelet
 
     return (
         <Modal title={title} onClose={onClose}>
-            {/* Ora e pranuar nuk ndryshohet nga profesori — i thuhet, jo i fshihet */}
-            {lesson && isProfessor && isOwn && lesson.review_status === 'ok' && (
-                <p className="lb-note lb-note-ok">
-                    Kjo orë është pranuar nga kontrolli dhe nuk ndryshohet më — drejtojuni stafit.
-                </p>
-            )}
             {lesson?.review_status === 'error' && (
                 <p className="lb-note lb-note-bad">
                     Shënuar me gabim: «{lesson.review_comment}»
@@ -77,7 +80,19 @@ export default function LessonModal({ cell, data, busy, onClose, onSave, onDelet
                         <Field label="Lënda" required>
                             <select
                                 value={form.subject_id}
-                                onChange={(e) => setForm({ ...form, subject_id: e.target.value })}
+                                onChange={(e) => {
+                                    const sub = data.subjects.find((x) => String(x.id) === e.target.value);
+                                    const holders = (data.professors_by_subject || {})[sub?.subject_id] || [];
+                                    // Mos e lër të zgjedhur dikë që s'e jep lëndën e re
+                                    const keep = !canAdmin || holders.length === 0
+                                        || holders.includes(Number(form.professor_id));
+                                    setForm({
+                                        ...form,
+                                        subject_id: e.target.value,
+                                        professor_id: keep ? form.professor_id : '',
+                                    });
+                                    setShowAllProfs(false);
+                                }}
                             >
                                 {data.subjects.map((s) => (
                                     <option key={s.id} value={s.id}>{s.name}</option>
@@ -85,23 +100,39 @@ export default function LessonModal({ cell, data, busy, onClose, onSave, onDelet
                             </select>
                         </Field>
 
-                        {canAdmin ? (
-                            <Field label="Kush e mbajti orën" required hint="Ora i numërohet këtij profesori">
+                        <Field
+                                label="Kush e mbajti orën"
+                                required
+                                hint={narrowed.length > 0 && !showAllProfs
+                                    ? `Profesorët e lëndës ${subjectKey?.name || ''} — ora i numërohet atij`
+                                    : 'Ora i numërohet këtij profesori'}
+                            >
                                 <select
                                     value={form.professor_id}
                                     onChange={(e) => setForm({ ...form, professor_id: e.target.value })}
                                 >
                                     <option value="">— zgjidh —</option>
-                                    {data.professors.map((p) => (
+                                    {profOptions.map((p) => (
                                         <option key={p.id} value={p.id}>{p.full_name}</option>
                                     ))}
                                 </select>
+                                {narrowed.length > 0 && (
+                                    <button
+                                        type="button"
+                                        className="lb-showall"
+                                        onClick={() => setShowAllProfs((v) => !v)}
+                                    >
+                                        {showAllProfs
+                                            ? `Shfaq vetëm profesorët e lëndës (${narrowed.length})`
+                                            : `Shfaq të gjithë profesorët (${data.professors.length})`}
+                                    </button>
+                                )}
+                                {narrowed.length === 0 && form.subject_id && (
+                                    <span className="lb-hintwarn">
+                                        Kësaj lënde nuk i është caktuar asnjë profesor te «Administrata».
+                                    </span>
+                                )}
                             </Field>
-                        ) : (
-                            <Field label="Kush e mbajti orën">
-                                <input value={user.full_name} disabled />
-                            </Field>
-                        )}
 
                         <Field label="Njësia mësimore" required span>
                             <textarea

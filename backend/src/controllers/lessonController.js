@@ -5,7 +5,7 @@ const lessonService = require('../services/lessonService');
  * lessonService. Këtu vetëm përmbledhjet shqip për ditarin e veprimeve.
  */
 
-const dmy = (iso) => String(iso).split('-').reverse().join('.');
+const dmy = (iso) => String(iso).split('-').reverse().join('/');
 
 async function listClasses(req, res, next) {
     try { res.json(await lessonService.listClasses(req.user)); } catch (err) { next(err); }

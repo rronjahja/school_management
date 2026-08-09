@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchLogs, fetchLogFacets } from '../../api/meta';
+import { dateTime } from '../../utils/format';
+import { ROLE_LABELS } from '../../config/roles';
 import { errorMessage } from '../../api/client';
 import EmptyState from '../ui/EmptyState.jsx';
 
@@ -12,23 +14,29 @@ import EmptyState from '../ui/EmptyState.jsx';
  * përndryshe ditari s'do të kishte vlerë si dëshmi.
  */
 
-const PER_PAGE = 50;
+// Dhjete veprimet e fundit per faqe: lista lexohet me nje veshtrim dhe
+// pyetja e zakonshme — «cfare ndodhi tani» — merr pergjigje pa rreshqitje.
+const PER_PAGE = 10;
 
-/** "2026-07-21 14:32" nga vlera që kthen MySQL. */
+/** Deri ne 5 numra faqesh rreth asaj ku ndodhemi. */
+function pageWindow(current, total) {
+  const span = 5;
+  let start = Math.max(1, current - Math.floor(span / 2));
+  const end = Math.min(total, start + span - 1);
+  start = Math.max(1, end - span + 1);
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+}
+
+/**
+ * Data e veprimit. Delegon te ndihmesi i perbashket, qe formati te mos
+ * jete nje kopje me vete qe mbetet pas kur ndryshon rregulli.
+ */
 function stamp(value) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value).slice(0, 16).replace('T', ' ');
-  const p = (n) => String(n).padStart(2, '0');
-  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return dateTime(value);
 }
-
-const ROLE_LABELS = {
-  admin: 'Administrator',
-  finance: 'Financa',
-  kujdestar: 'Kujdestar',
-  staff: 'Staf',
-};
 
 /** Veprimet që meritojnë të bien në sy. */
 const TONE = {
@@ -196,23 +204,64 @@ export default function ActivityLog() {
 
           {data.pages > 1 && (
             <div className="log-pager">
-              <button
-                type="button"
-                className="btn btn-ghost btn-small"
-                disabled={page <= 1 || busy}
-                onClick={() => setPage((n) => n - 1)}
-              >
-                ← Më të reja
-              </button>
-              <span className="muted">Faqja {data.page} nga {data.pages}</span>
-              <button
-                type="button"
-                className="btn btn-ghost btn-small"
-                disabled={page >= data.pages || busy}
-                onClick={() => setPage((n) => n + 1)}
-              >
-                Më të vjetra →
-              </button>
+              <span className="muted log-range">
+                {(data.page - 1) * data.limit + 1}–
+                {Math.min(data.page * data.limit, data.total)} nga{' '}
+                {data.total.toLocaleString('de-DE')}
+              </span>
+
+              <span className="log-pager-btns">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  title="Të fundit"
+                  disabled={page <= 1 || busy}
+                  onClick={() => setPage(1)}
+                >
+                  «
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  disabled={page <= 1 || busy}
+                  onClick={() => setPage((n) => n - 1)}
+                >
+                  ← Më të reja
+                </button>
+
+                {/* Nje dritare e ngushte numrash: me 10 per faqe numri i
+                    faqeve rritet shpejt, dhe nje rresht i tere numrash do
+                    te ishte me i veshtire per t'u lexuar se vete lista. */}
+                {pageWindow(data.page, data.pages).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`log-page-btn${n === data.page ? ' active' : ''}`}
+                    disabled={busy}
+                    onClick={() => setPage(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  disabled={page >= data.pages || busy}
+                  onClick={() => setPage((n) => n + 1)}
+                >
+                  Më të vjetra →
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  title="Të parat"
+                  disabled={page >= data.pages || busy}
+                  onClick={() => setPage(data.pages)}
+                >
+                  »
+                </button>
+              </span>
             </div>
           )}
         </>

@@ -1,5 +1,6 @@
 import PageHeader from '../components/ui/PageHeader.jsx';
 import ClassManager from '../components/settings/ClassManager.jsx';
+import ProfessorManager from '../components/settings/ProfessorManager.jsx';
 
 /**
  * Administrata — puna e përditshme e organizimit të shkollës.
@@ -14,10 +15,12 @@ export default function Administrata() {
         <>
             <PageHeader
                 title="Administrata"
-                subtitle="Paralelet, kujdestarët dhe organizimi i vitit shkollor"
+                subtitle="Paralelet, kujdestarët, profesorët dhe lëndët"
             />
 
             <ClassManager />
+
+            <ProfessorManager />
         </>
     );
 }

@@ -30,7 +30,7 @@ function weekdaysOf(month) {
             current.push({
                 iso: `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
                 label: DAY_LABELS[dow - 1],
-                dm: `${String(day).padStart(2, '0')}.${String(m).padStart(2, '0')}`,
+                dm: `${String(day).padStart(2, '0')}/${String(m).padStart(2, '0')}`,
             });
         }
     }

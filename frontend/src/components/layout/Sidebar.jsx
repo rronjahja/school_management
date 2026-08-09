@@ -21,7 +21,10 @@ const NAV = [
   { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon, area: 'graduates' },
 ];
 
-const NAV_BOTTOM = [{ to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, area: 'settings' }];
+const NAV_BOTTOM = [
+  { to: '/veprimet', label: 'Ditari i veprimeve', icon: LogIcon, area: 'logs' },
+  { to: '/cilesimet', label: 'Cilësimet', icon: GearIcon, area: 'settings' },
+];
 
 export default function Sidebar() {
   const { user, can, signOut } = useAuth();
@@ -163,6 +166,27 @@ function RegisterIcon() {
     <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
       <path d="M4 3h9l3 3v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path d="M10 8v5M7.5 10.5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Ditari i veprimeve — rreshta te shkruar, si nje regjistër. */
+function LogIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M4 3.25h12v13.5H4z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7 7h6M7 10h6M7 13h3.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

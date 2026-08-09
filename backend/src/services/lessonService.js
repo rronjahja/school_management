@@ -2,17 +2,20 @@ const pool = require('../config/db');
 const { httpError } = require('../middleware/errorHandler');
 const { can, isManager, isReviewer } = require('../config/roles');
 const registerService = require('./registerService');
+const professorService = require('./professorService');
 
 /**
  * Ditari i orëve të mësimit — libri «Orët e mësimit sipas fushave dhe
  * lëndëve mësimore». Çdo ditë pune ka deri në 7 orë; profesori shënon
  * lëndën dhe temën e orës që mbajti.
  *
+ * Profesorët nuk kyçen në sistem: orët i bart dikush nga administrata,
+ * nga ditari fizik në atë dixhital. Prandaj «kush e mbajti orën» është
+ * gjithnjë një zgjedhje nga lista e profesorëve, jo përdoruesi që shkruan.
+ *
  * RREGULLAT E SHKRIMIT (të gjitha zbatohen KËTU, në server):
- *   · profesori shkruan vetëm orë të VETAT (professor_id = ai vetë) dhe
- *     ndryshon vetëm ato që stafi s'i ka pranuar ende
- *   · stafi, menaxheri dhe administratori shkruajnë e ndryshojnë çdo orë
- *     — përfshirë zëvendësimet
+ *   · shkruajnë stafi, menaxheri dhe administratori
+ *   · kujdestari e sheh ditarin e paraleles së vet, por nuk e plotëson
  *   · zëvendësimi: ora i numërohet atij që e MBAJTI (professor_id);
  *     kush mungoi ruhet te substitute_for, sa për gjurmë
  *
@@ -63,12 +66,12 @@ function assertMonth(value) {
     return value;
 }
 
-async function assertProfessor(userId, label) {
+async function assertProfessor(professorId, label) {
     const [[u]] = await pool.query(
-        "SELECT id, full_name FROM users WHERE id = ? AND role = 'profesor' AND is_active = 1",
-        [userId]
+        'SELECT id, full_name FROM professors WHERE id = ? AND is_active = 1',
+        [professorId]
     );
-    if (!u) throw httpError(400, `${label} duhet të jetë përdorues aktiv me rolin «Profesor».`);
+    if (!u) throw httpError(400, `${label} duhet të jetë profesor aktiv.`);
     return u;
 }
 
@@ -111,14 +114,7 @@ const canAdminLessons = (user) => isManager(user) || isReviewer(user);
  */
 function assertLessonEdit(user, lesson) {
     if (canAdminLessons(user)) return;
-    if (user.role === 'profesor' && lesson.professor_id === user.id) {
-        if (lesson.review_status === 'ok') {
-            throw httpError(403,
-                'Kjo orë është pranuar nga kontrolli dhe nuk ndryshohet më — drejtojuni stafit.');
-        }
-        return;
-    }
-    throw httpError(403, 'Ju ndryshoni vetëm orët tuaja.');
+    throw httpError(403, 'Orët e mësimit i plotëson dhe i ndryshon vetëm administrata.');
 }
 
 // ---------------------------------------------------------------
@@ -156,8 +152,8 @@ async function getMonth(user, classId, month) {
             r.full_name AS reviewed_by_name
        FROM lessons l
        JOIN class_subjects cs ON cs.id = l.subject_id
-       JOIN users p ON p.id = l.professor_id
-  LEFT JOIN users m ON m.id = l.substitute_for
+       JOIN professors p ON p.id = l.professor_id
+  LEFT JOIN professors m ON m.id = l.substitute_for
   LEFT JOIN users r ON r.id = l.reviewed_by
       WHERE l.class_id = ? AND DATE_FORMAT(l.lesson_date, '%Y-%m') = ?
       ORDER BY l.lesson_date, l.period`,
@@ -172,7 +168,7 @@ async function getMonth(user, classId, month) {
     );
 
     const [professors] = await pool.query(
-        "SELECT id, full_name FROM users WHERE role = 'profesor' AND is_active = 1 ORDER BY full_name"
+        'SELECT id, full_name FROM professors WHERE is_active = 1 ORDER BY full_name'
     );
 
     return {
@@ -183,7 +179,6 @@ async function getMonth(user, classId, month) {
         professors,
         can_admin: canAdminLessons(user),
         can_review: isReviewer(user),
-        is_professor: user.role === 'profesor',
         viewer_id: user.id,
     };
 }
@@ -214,18 +209,9 @@ async function validatePayload(user, cls, data) {
     );
     if (!subject) throw httpError(400, 'Lënda nuk bën pjesë në këtë paralele.');
 
-    // Kush e mbajti orën. Profesori vetëm veten — një profesor nuk shkruan
-    // orë në emër të një tjetri; atë e bën stafi kur regjistron zëvendësim.
-    let professorId;
-    if (user.role === 'profesor') {
-        professorId = user.id;
-        if (data.professor_id && Number(data.professor_id) !== user.id) {
-            throw httpError(403, 'Ju shënoni vetëm orët tuaja. Zëvendësimet i regjistron stafi.');
-        }
-    } else {
-        professorId = Number(data.professor_id);
-        await assertProfessor(professorId, 'Mbajtësi i orës');
-    }
+    // Kush e mbajti orën — zgjidhet gjithnjë nga lista e profesorëve.
+    const professorId = Number(data.professor_id);
+    await assertProfessor(professorId, 'Mbajtësi i orës');
 
     // Zëvendësimi: kush mungoi. S'mund të mungosh nga ora që e mban vetë.
     let substituteFor = data.substitute_for ? Number(data.substitute_for) : null;
@@ -248,7 +234,7 @@ async function validatePayload(user, cls, data) {
 async function createLesson(user, classId, data) {
     const cls = await assertLessonAccess(user, classId);
     if (user.role === 'kujdestar') {
-        throw httpError(403, 'Orët i shënojnë profesorët dhe stafi.');
+        throw httpError(403, 'Orët e mësimit i plotëson administrata.');
     }
     const v = await validatePayload(user, cls, data);
 
@@ -267,7 +253,7 @@ async function createLesson(user, classId, data) {
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             throw httpError(409,
-                `Ora ${v.period} e datës ${v.lesson_date.split('-').reverse().join('.')} `
+                `Ora ${v.period} e datës ${v.lesson_date.split('-').reverse().join('/')} `
                 + 'është shënuar tashmë — hapeni për ta ndryshuar.');
         }
         throw err;
@@ -281,7 +267,7 @@ async function loadLesson(lessonId) {
        FROM lessons l
        JOIN classes c ON c.id = l.class_id
        JOIN class_subjects cs ON cs.id = l.subject_id
-       JOIN users p ON p.id = l.professor_id
+       JOIN professors p ON p.id = l.professor_id
       WHERE l.id = ?`,
         [lessonId]
     );
@@ -361,7 +347,6 @@ async function reviewLesson(user, lessonId, data) {
 /**
  * Sa orë mbajti secili profesor gjatë muajit — numërimi shkon te ai që
  * e MBAJTI orën, ndaj zëvendësimet i numërohen zëvendësuesit vetvetiu.
- * Profesori sheh vetëm rreshtin e vet; të tjerët gjithë tabelën.
  */
 async function monthlyReport(user, month, classId = null) {
     if (!can(user, 'mesimi')) throw httpError(403, 'Nuk keni qasje në raportin e orëve.');
@@ -370,7 +355,6 @@ async function monthlyReport(user, month, classId = null) {
     const where = ["DATE_FORMAT(l.lesson_date, '%Y-%m') = ?"];
     const params = [month];
     if (classId) { where.push('l.class_id = ?'); params.push(Number(classId)); }
-    if (user.role === 'profesor') { where.push('l.professor_id = ?'); params.push(user.id); }
     if (user.role === 'kujdestar') {
         where.push('l.class_id IN (SELECT id FROM classes WHERE kujdestar_id = ?)');
         params.push(user.id);
@@ -383,7 +367,7 @@ async function monthlyReport(user, month, classId = null) {
             SUM(l.review_status = 'ok') AS verified,
             SUM(l.review_status = 'error') AS flagged
        FROM lessons l
-       JOIN users u ON u.id = l.professor_id
+       JOIN professors u ON u.id = l.professor_id
       WHERE ${where.join(' AND ')}
       GROUP BY l.professor_id, u.full_name
       ORDER BY total_hours DESC, u.full_name`,

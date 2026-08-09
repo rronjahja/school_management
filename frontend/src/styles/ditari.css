@@ -251,9 +251,11 @@
 }
 
 .dt-th-vert {
-    height: 128px;
-    min-width: 58px;
-    max-width: 68px;
+    /* Kutia u zgjatua bashke me shkronjat, qe emrat e gjate te lendeve
+       (p.sh. «Ed. fizike, sportet dhe shendeti») te vazhdojne te hyjne. */
+    height: 152px;
+    min-width: 62px;
+    max-width: 72px;
     padding: 6px 3px;
 }
 
@@ -261,11 +263,18 @@
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     display: inline-block;
-    max-height: 118px;
+    max-height: 142px;
     overflow: hidden;
-    font-weight: 600;
-    font-size: 12px;
-    line-height: 1.15;
+    /* I njejti font dhe e njejta trashesi si koka tjeter e tabeles.
+       Ishte 600 — nje trashesi qe Lato-ja NUK e ka te ngarkuar (vetem
+       400, 700 dhe 900), keshtu qe shfletuesi e trashte vete shkronjen
+       ose e zevendesonte me nje font tjeter. Prandaj dukej si font i
+       huaj krahasuar me pjesen tjeter te tabeles. */
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13.5px;
+    letter-spacing: 0.1px;
+    line-height: 1.2;
     white-space: normal;
 }
 
@@ -1906,3 +1915,158 @@ thead .dt-sticky {
     margin: 10px 0 0;
     font-size: 12.5px;
 }
+/* ---------------- Profesoret dhe lendet -------------------------- */
+
+.pm-chips { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+
+.pm-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pm-chip-btn { border: 0; cursor: pointer; transition: background 0.12s; }
+.pm-chip-btn:hover { background: var(--primary); color: #fff; }
+
+/* Nje profesor pa lende s'del dot te oret — duhet vene re menjehere */
+.pm-warn { font-size: 12.5px; color: var(--amber); font-weight: 600; }
+
+.pm-subject-add { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+
+.pm-subject-add input {
+  flex: 1;
+  max-width: 320px;
+  padding: 7px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-small);
+  font-size: 14px;
+}
+
+.pm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.pm-group-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+
+.pm-subject {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.pm-subject:last-child { border-bottom: 0; }
+
+.pm-subject-name { font-size: 14px; font-weight: 600; }
+
+/* Zgjedhesi i lendeve brenda dritares */
+.pm-picker {
+  margin-top: 6px;
+  padding: 14px;
+  background: var(--neutral-bg);
+  border-radius: var(--radius-small);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.pm-picker-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.pm-picker-group { margin-bottom: 12px; }
+.pm-picker-group:last-child { margin-bottom: 0; }
+
+.pm-picker-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.pm-picker-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Kuti te klikueshme, jo liste rreshqitese me shume zgjedhje: zgjedhjet
+   duken te gjitha njeheresh dhe nuk kerkojne Ctrl+klik. */
+.pm-pick {
+  padding: 6px 12px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pm-pick:hover { border-color: var(--primary); color: var(--primary); }
+
+.pm-pick.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.pm-pick.active::before { content: '✓ '; }
+
+/* Celesi mes profesoreve te lendes dhe te gjitheve */
+.lb-showall {
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.lb-hintwarn {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+/* Koka e kartelës së profesorëve: butoni rri lart-djathtas dhe nuk
+   ngjitet me skedat poshtë. Pershkrimi mban gjeresine e vet, qe teksti
+   te mos shkoje deri nen buton. */
+.pm-head {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.pm-head .btn { flex-shrink: 0; }
+
+.pm-head-sub {
+  margin-top: 4px;
+  margin-bottom: 0;
+  max-width: 60ch;
+}
+
+/* Skedat marrin pak fryme nga koka dhe nga tabela */
+.pm-head + .dt-tabs,
+.card .dt-tabs { margin-top: 4px; }

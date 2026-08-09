@@ -1,0 +1,232 @@
+const pool = require('../config/db');
+const { httpError } = require('../middleware/errorHandler');
+
+/**
+ * Profesorët dhe lëndët që japin.
+ *
+ * Profesori NUK është përdorues i sistemit: ai nuk kyçet askund. Orët e
+ * mësimit i bart dikush nga administrata, nga ditari fizik në atë
+ * dixhital. Prandaj këtu nuk ka emër përdoruesi as fjalëkalim — vetëm
+ * emri, lëndët dhe nëse është ende në punë.
+ *
+ * Një profesor jep disa lëndë; një lëndë jepet nga disa profesorë —
+ * zakonisht 2–3. Lidhja ruhet te `professor_subjects`.
+ */
+
+const GROUPS = ['gjuhet', 'matematika', 'shkencat', 'shoqeria', 'sportet',
+  'teknologjia', 'teorike', 'praktike'];
+
+function assertFullName(name) {
+  const n = String(name || '').trim().replace(/\s+/g, ' ');
+  if (n.length < 3) throw httpError(400, 'Shkruani emrin dhe mbiemrin e profesorit.');
+  return n.slice(0, 120);
+}
+
+// ---------------------------------------------------------------
+//  Katalogu i lëndëve
+// ---------------------------------------------------------------
+
+/** Lëndët e shkollës, me numrin e profesorëve që e japin secilën. */
+async function listSubjects() {
+  const [rows] = await pool.query(
+    `SELECT s.id, s.name, s.grp, s.is_active,
+            COUNT(ps.professor_id) AS professor_count
+       FROM subjects s
+  LEFT JOIN professor_subjects ps ON ps.subject_id = s.id
+      GROUP BY s.id, s.name, s.grp, s.is_active
+      ORDER BY s.name`
+  );
+  return rows.map((r) => ({ ...r, professor_count: Number(r.professor_count) }));
+}
+
+async function createSubject(data) {
+  const name = String(data.name || '').trim();
+  if (name.length < 2) throw httpError(400, 'Shkruani emrin e lëndës.');
+  const grp = GROUPS.includes(data.grp) ? data.grp : 'teorike';
+
+  try {
+    const [r] = await pool.query('INSERT INTO subjects SET ?', [{ name: name.slice(0, 80), grp }]);
+    return { id: r.insertId, name, grp };
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      throw httpError(409, `Lënda «${name}» ekziston tashmë në katalog.`);
+    }
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------
+//  Profesorët
+// ---------------------------------------------------------------
+
+/** Profesorët me lëndët e secilit, në një kërkesë të vetme. */
+async function listProfessors() {
+  const [rows] = await pool.query(
+    `SELECT p.id, p.full_name, p.is_active,
+            GROUP_CONCAT(DISTINCT s.id ORDER BY s.name SEPARATOR ',')   AS subject_ids,
+            GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR '|') AS subject_names,
+            COUNT(DISTINCT l.id) AS lesson_count
+       FROM professors p
+  LEFT JOIN professor_subjects ps ON ps.professor_id = p.id
+  LEFT JOIN subjects s ON s.id = ps.subject_id
+  LEFT JOIN lessons l ON l.professor_id = p.id
+      GROUP BY p.id, p.full_name, p.is_active
+      ORDER BY p.is_active DESC, p.full_name`
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    full_name: r.full_name,
+    is_active: r.is_active,
+    lesson_count: Number(r.lesson_count),
+    subjects: r.subject_ids
+      ? r.subject_ids.split(',').map((id, i) => ({
+        id: Number(id),
+        name: r.subject_names.split('|')[i],
+      }))
+      : [],
+  }));
+}
+
+async function loadProfessor(id) {
+  const [[p]] = await pool.query('SELECT * FROM professors WHERE id = ?', [id]);
+  if (!p) throw httpError(404, 'Profesori nuk u gjet.');
+  return p;
+}
+
+async function createProfessor(data) {
+  const full_name = assertFullName(data.full_name);
+
+  // Dy profesorë me të njëjtin emër do të ishin të padallueshëm te
+  // zgjedhësi i orës, ndaj ndalohet.
+  const [[twin]] = await pool.query(
+    'SELECT id FROM professors WHERE full_name = ?', [full_name]
+  );
+  if (twin) throw httpError(409, `Profesori «${full_name}» ekziston tashmë.`);
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [r] = await conn.query('INSERT INTO professors SET ?', [{ full_name, is_active: 1 }]);
+    await replaceSubjects(conn, r.insertId, data.subject_ids);
+    await conn.commit();
+    return { id: r.insertId, full_name };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+async function updateProfessor(id, data) {
+  const prof = await loadProfessor(id);
+
+  const patch = {};
+  if (data.full_name !== undefined) {
+    patch.full_name = assertFullName(data.full_name);
+    if (patch.full_name !== prof.full_name) {
+      const [[twin]] = await pool.query(
+        'SELECT id FROM professors WHERE full_name = ? AND id <> ?', [patch.full_name, id]
+      );
+      if (twin) throw httpError(409, `Profesori «${patch.full_name}» ekziston tashmë.`);
+    }
+  }
+  if (data.is_active !== undefined) patch.is_active = data.is_active ? 1 : 0;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    if (Object.keys(patch).length) {
+      await conn.query('UPDATE professors SET ? WHERE id = ?', [patch, id]);
+    }
+    if (data.subject_ids !== undefined) {
+      await replaceSubjects(conn, id, data.subject_ids);
+    }
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+  return { ...prof, ...patch };
+}
+
+/**
+ * Fshirja lejohet vetëm derisa profesori s'ka orë të shënuara. Pas kësaj
+ * ai çaktivizohet: fshirja do të hiqte edhe gjurmën e orëve të mbajtura,
+ * dhe raporti i një muaji të kaluar do të ndryshonte vite më vonë.
+ */
+async function deleteProfessor(id) {
+  const prof = await loadProfessor(id);
+  const [[used]] = await pool.query(
+    'SELECT COUNT(*) AS n FROM lessons WHERE professor_id = ? OR substitute_for = ?',
+    [id, id]
+  );
+  if (Number(used.n) > 0) {
+    throw httpError(409,
+      `${prof.full_name} ka ${used.n} orë të shënuara dhe nuk fshihet — çaktivizojeni.`);
+  }
+  await pool.query('DELETE FROM professors WHERE id = ?', [id]);
+  return prof;
+}
+
+/** Zëvendëson lëndët e një profesori me listën e re. */
+async function replaceSubjects(conn, professorId, subjectIds) {
+  const ids = Array.isArray(subjectIds)
+    ? [...new Set(subjectIds.map(Number).filter(Number.isInteger))]
+    : [];
+
+  if (ids.length) {
+    const [valid] = await conn.query(
+      `SELECT id FROM subjects WHERE id IN (${ids.map(() => '?').join(',')})`,
+      ids
+    );
+    if (valid.length !== ids.length) {
+      throw httpError(400, 'Një nga lëndët e zgjedhura nuk ekziston.');
+    }
+  }
+
+  if (ids.length === 0) {
+    await conn.query('DELETE FROM professor_subjects WHERE professor_id = ?', [professorId]);
+    return;
+  }
+
+  // Fshihen vetem ato qe s'jane me ne liste, dhe shtohen te rejat.
+  await conn.query(
+    `DELETE FROM professor_subjects
+      WHERE professor_id = ? AND subject_id NOT IN (${ids.map(() => '?').join(',')})`,
+    [professorId, ...ids]
+  );
+  await conn.query(
+    `INSERT IGNORE INTO professor_subjects (professor_id, subject_id) VALUES ${
+      ids.map(() => '(?, ?)').join(', ')}`,
+    ids.flatMap((sid) => [professorId, sid])
+  );
+}
+
+/** Profesorët sipas lëndës — dritarja e orës ngushton listën me këtë. */
+async function professorsBySubject() {
+  const [rows] = await pool.query(
+    `SELECT ps.subject_id, ps.professor_id
+       FROM professor_subjects ps
+       JOIN professors p ON p.id = ps.professor_id
+      WHERE p.is_active = 1`
+  );
+  const map = {};
+  for (const r of rows) {
+    (map[r.subject_id] = map[r.subject_id] || []).push(r.professor_id);
+  }
+  return map;
+}
+
+module.exports = {
+  listSubjects,
+  createSubject,
+  listProfessors,
+  createProfessor,
+  updateProfessor,
+  deleteProfessor,
+  professorsBySubject,
+};

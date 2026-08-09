@@ -210,15 +210,18 @@ const canWriteClass = (user, cls) => isManager(user) || cls.kujdestar_id === use
  * Rendi: ai i vendosur nga kujdestari (class_student_meta.position) dhe,
  * për këdo pa rend ende — p.sh. një nxënës i saporegjistruar — alfabeti,
  * në fund të listës. Kështu rendi i ditarit nuk prishet kurrë vetvetiu.
+ *
+ * «Emri i prindit» në ditar është GJITHNJË emri i babait, si në librin
+ * fizik: aty ai shërben si atësi e nxënësit — «Rea (Flamur) Kaçiku» —
+ * jo si e dhënë kontakti. Kontakti i parë (primary_contact) mund të jetë
+ * nëna ose kujdestari dhe ndryshon sipas nevojës; atësia nuk ndryshon.
+ * Po t'i lidhnim të dyja, i njëjti nxënës do të dukej me emra të
+ * ndryshëm prindi varësisht se kë kishin vënë si kontakt.
  */
 async function rosterOf(cls) {
   const [rows] = await pool.query(
     `SELECT s.id, s.first_name, s.last_name, s.gender, s.class_name, m.position,
-            CASE s.primary_contact
-              WHEN 'mother'   THEN s.mother_name
-              WHEN 'guardian' THEN s.guardian_name
-              ELSE s.father_name
-            END AS parent_name
+            NULLIF(TRIM(s.father_name), '') AS parent_name
        FROM students s
   LEFT JOIN class_student_meta m ON m.student_id = s.id AND m.class_id = ?
       WHERE s.status = 'active'

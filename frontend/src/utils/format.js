@@ -7,7 +7,7 @@ const euro = new Intl.NumberFormat('de-DE', {
 
 export const money = (n) => euro.format(Number(n) || 0);
 
-export const date = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '—');
+export const date = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '—');
 
 /**
  * Ora e regjistrimit, p.sh. "14:32".
@@ -19,7 +19,7 @@ export const date = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '—');
 export const time = (d) => (d ? dayjs(d).format('HH:mm') : '—');
 
 /** Data dhe ora bashke, per titujt e ndihmes. */
-export const dateTime = (d) => (d ? dayjs(d).format('DD.MM.YYYY HH:mm') : '—');
+export const dateTime = (d) => (d ? dayjs(d).format('DD/MM/YYYY HH:mm') : '—');
 
 export const PLAN_LABELS = {
   immediate: 'E menjëhershme',
@@ -76,6 +76,20 @@ export function discountText(type, value) {
 }
 
 /** Paralelja ne formatin X/1 (pranon edhe "X-1" nga te dhenat e vjetra). */
+/**
+ * Telefoni per shfaqje: numri vendor ndahet me viza pas cdo tri shifrash
+ * (044-123-456), kurse nje numer i huaj kthehet ashtu si eshte ruajtur.
+ * Ne baze rrine vetem shifrat — vizat jane ceshtje pamjeje.
+ */
+export function phone(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '—';
+  const digits = raw.replace(/\D/g, '');
+  const local = /^0\d{8}$/.test(digits) && !/[^\d\s-]/.test(raw);
+  if (!local) return raw;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6, 9)}`;
+}
+
 /** Prefiksi roman sipas vitit te studimit. */
 export const YEAR_ROMAN = { 1: 'X', 2: 'XI', 3: 'XII' };
 

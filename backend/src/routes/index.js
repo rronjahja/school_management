@@ -14,6 +14,7 @@ const userController = require('../controllers/userController');
 const activityLogController = require('../controllers/activityLogController');
 const registerController = require('../controllers/registerController');
 const lessonController = require('../controllers/lessonController');
+const professorController = require('../controllers/professorController');
 const {
   requireAuth, requireArea, requireAdmin, requireManager, requireFinance, requireKujdestar,
 } = require('../middleware/auth');
@@ -41,8 +42,8 @@ router.post('/auth/logout', authController.logout);
 router.post('/auth/change-password', authController.changePassword);
 
 // Ditari i veprimeve — vetëm administratorët
-router.get('/logs', requireAdmin, activityLogController.list);
-router.get('/logs/facets', requireAdmin, activityLogController.facets);
+router.get('/logs', requireArea('logs'), activityLogController.list);
+router.get('/logs/facets', requireArea('logs'), activityLogController.facets);
 
 // Menaxhimi i përdoruesve — vetëm administratorët
 router.get('/users', requireAdmin, userController.list);
@@ -130,6 +131,15 @@ router.delete('/grades/:id', requireKujdestar, registerController.removeGrade);
 router.put('/classes/:id/final-grade', requireKujdestar, registerController.setFinalGrade);
 router.put('/classes/:id/meta/:studentId', requireKujdestar, registerController.saveMeta);
 router.put('/classes/:id/order', requireKujdestar, registerController.saveOrder);
+
+// Profesoret dhe lendet qe japin — i menaxhon stafi nga «Administrata».
+// Roli 'profesor' shkruhet ne server dhe nuk merret kurre nga kerkesa.
+router.get('/subjects', requireArea('administrata'), professorController.listSubjects);
+router.post('/subjects', requireArea('administrata'), professorController.createSubject);
+router.get('/professors', requireArea('administrata'), professorController.list);
+router.post('/professors', requireArea('administrata'), professorController.create);
+router.put('/professors/:id', requireArea('administrata'), professorController.update);
+router.delete('/professors/:id', requireArea('administrata'), professorController.remove);
 
 // Ditari i oreve te mesimit. Roli 'profesor' hyn VETEM ketu.
 // Rregullat e holla (kush shkruan cilen ore) jane te lessonService.

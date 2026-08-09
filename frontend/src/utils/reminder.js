@@ -90,12 +90,12 @@ export function buildReminder(student, banks = [], template = null) {
     dLines.push(
       i.is_carryover
         ? `Borxhi i mbetur nga viti i kaluar shkollor është ${money(remaining(i))} ` +
-            'dhe duhet shlyer sa më parë.'
+        'dhe duhet shlyer sa më parë.'
         : overdue.length
           ? `Kësti ${i.seq} në shumën ${money(remaining(i))} ka pasur afat pagese më ` +
-              `${date(i.due_date)} dhe ende nuk figuron i paguar.`
+          `${date(i.due_date)} dhe ende nuk figuron i paguar.`
           : `Kësti ${i.seq} në shumën ${money(remaining(i))} ka afat pagese më ` +
-              `${date(i.due_date)}.`
+          `${date(i.due_date)}.`
     );
   } else if (target.length > 1) {
     dLines.push(
@@ -113,7 +113,7 @@ export function buildReminder(student, banks = [], template = null) {
     dLines.push('');
     dLines.push(
       `Totali i ${overdue.length ? 'vonuar' : 'afërt'}: ` +
-        money(target.reduce((a, i) => a + remaining(i), 0))
+      money(target.reduce((a, i) => a + remaining(i), 0))
     );
   } else {
     dLines.push(`Detyrimi total i mbetur sipas planit është ${money(f.balance)}.`);
@@ -127,7 +127,7 @@ export function buildReminder(student, banks = [], template = null) {
   const withAccounts = banks.filter((b) => b.account_number);
   const bankBlock = withAccounts.length
     ? ['Pagesa mund të kryhet përmes llogarive bankare:',
-       ...withAccounts.map((b) => `  ${b.name}: ${b.account_number}`)].join('\n')
+      ...withAccounts.map((b) => `  ${b.name}: ${b.account_number}`)].join('\n')
     : '';
 
   // Pagesa me para te gatshme — e pavarur nga bankat: shfaqet edhe kur
@@ -156,7 +156,7 @@ export function buildReminder(student, banks = [], template = null) {
     pagesa_kesh: cashBlock,
     shkolla: SCHOOL.name,
     telefoni_shkolles: SCHOOL.phone,
-    data: dayjs().format('DD.MM.YYYY'),
+    data: dayjs().format('DD/MM/YYYY'),
   };
 
   const tpl = template && template.trim() ? template : DEFAULT_TEMPLATE;
@@ -178,7 +178,7 @@ const DEFAULT_TEMPLATE = [
   'Përshëndetje {pershendetja} {emri_kontaktit},',
   '',
   'Ky është një rikujtesë nga {shkolla} për obligimet financiare {te_nxenesit} ' +
-    '{emri_nxenesit}, drejtimi {drejtimi}{viti_fraza}{klasa_fraza}.',
+  '{emri_nxenesit}, drejtimi {drejtimi}{viti_fraza}{klasa_fraza}.',
   '',
   '{detyrimet}',
   '',
@@ -186,7 +186,7 @@ const DEFAULT_TEMPLATE = [
   '{pagesa_kesh}',
   '',
   'Nëse pagesa është kryer tashmë, ju lutemi na dërgoni konfirmimin dhe ' +
-    'konsiderojeni këtë mesazh të pavlefshëm.',
+  'konsiderojeni këtë mesazh të pavlefshëm.',
   '',
   'Faleminderit për bashkëpunimin,',
   '{shkolla}',

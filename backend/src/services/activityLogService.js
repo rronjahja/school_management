@@ -32,6 +32,7 @@ const ENTITY_LABELS = {
   grade_request: 'Kërkesa për notë',
   grade_review: 'Kontrolli i notave',
   lesson: 'Ora e mësimit',
+  professor: 'Profesori',
 };
 
 const ACTION_LABELS = {
@@ -67,6 +68,8 @@ function classify(method, path) {
     [/^\/api\/subjects/, 'subject'],
     [/^\/api\/classes\/\d+\/meta/, 'register'],
     [/^\/api\/classes\/\d+\/order/, 'register'],
+    [/^\/api\/professors/, 'professor'],
+    [/^\/api\/subjects/, 'subject'],
     [/^\/api\/classes\/\d+\/lessons/, 'lesson'],
     [/^\/api\/lessons/, 'lesson'],
     [/^\/api\/classes\/\d+\/reviews/, 'grade_review'],

@@ -4,7 +4,6 @@ import {
     reviewLesson, fetchLessonReport,
 } from '../api/oret';
 import { errorMessage } from '../api/client';
-import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import Loader from '../components/ui/Loader.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
@@ -32,8 +31,7 @@ const monthLabel = (m) => {
  * mbajti secili profesor (zëvendësimet i numërohen zëvendësuesit).
  */
 export default function Oret() {
-    const { user } = useAuth();
-    const [classes, setClasses] = useState(null);
+      const [classes, setClasses] = useState(null);
     const [classId, setClassId] = useState(null);
     const [month, setMonth] = useState(thisMonth());
     const [data, setData] = useState(null);
@@ -188,11 +186,6 @@ export default function Oret() {
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                        {user.role === 'profesor' && (
-                            <p className="muted lb-report-note">
-                                Këtu shfaqen vetëm orët tuaja. Zëvendësimet ju numërohen juve si mbajtës i orës.
-                            </p>
                         )}
                     </section>
                 </>

@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS users (
   username      VARCHAR(60)  NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name     VARCHAR(120) NOT NULL,
-  role       ENUM('admin','menaxher','finance','kujdestar','staff','profesor') NOT NULL DEFAULT 'staff',
+  role       ENUM('admin','menaxher','finance','kujdestar','staff') NOT NULL DEFAULT 'staff',
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   failed_attempts INT       NOT NULL DEFAULT 0,
   locked_until    DATETIME  DEFAULT NULL,
@@ -283,9 +283,51 @@ CREATE TABLE IF NOT EXISTS classes (
 
 CREATE INDEX idx_classes_kujdestar ON classes (kujdestar_id);
 
+-- ----------------------------------------------------------------
+-- Katalogu i lendeve te shkolles. Nje rresht per cdo lende; paralelet
+-- i referohen ketij katalogu, dhe profesoret lidhen me te.
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS subjects (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(80) NOT NULL,
+  grp        ENUM('gjuhet','matematika','shkencat','shoqeria','sportet',
+                  'teknologjia','teorike','praktike') NOT NULL DEFAULT 'teorike',
+  is_active  TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT uq_subject_name UNIQUE (name)
+) ENGINE = InnoDB;
+
+-- Profesoret NUK jane perdorues: ata nuk kycen askund. Oret e mesimit i
+-- bart dikush nga administrata nga ditari fizik. Prandaj profesori eshte
+-- thjesht nje e dhene — emri dhe lendet qe jep.
+CREATE TABLE IF NOT EXISTS professors (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  full_name  VARCHAR(120) NOT NULL,
+  is_active  TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
+
+CREATE INDEX idx_professor_name ON professors (full_name);
+
+-- Nje profesor jep disa lende; nje lende jepet nga disa profesore.
+CREATE TABLE IF NOT EXISTS professor_subjects (
+  professor_id INT NOT NULL,
+  subject_id   INT NOT NULL,
+  created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (professor_id, subject_id),
+  CONSTRAINT fk_ps_professor FOREIGN KEY (professor_id) REFERENCES professors (id) ON DELETE CASCADE,
+  CONSTRAINT fk_ps_subject   FOREIGN KEY (subject_id)   REFERENCES subjects (id) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+CREATE INDEX idx_ps_subject ON professor_subjects (subject_id);
+
 CREATE TABLE IF NOT EXISTS class_subjects (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   class_id   INT         NOT NULL,
+  subject_id INT         DEFAULT NULL,      -- lidhja me katalogun e lendeve
   name       VARCHAR(80) NOT NULL,
   grp        ENUM('gjuhet','matematika','shkencat','shoqeria','sportet',
                   'teknologjia','teorike','praktike') NOT NULL DEFAULT 'teorike',
@@ -293,7 +335,8 @@ CREATE TABLE IF NOT EXISTS class_subjects (
   is_active  TINYINT(1)  NOT NULL DEFAULT 1,      -- 0 = e hequr, por notat ruhen
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  CONSTRAINT fk_subjects_class FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE
+  CONSTRAINT fk_subjects_class FOREIGN KEY (class_id) REFERENCES classes (id) ON DELETE CASCADE,
+  CONSTRAINT fk_cs_subject FOREIGN KEY (subject_id) REFERENCES subjects (id) ON DELETE SET NULL
 ) ENGINE = InnoDB;
 
 CREATE INDEX idx_subjects_class ON class_subjects (class_id, grp, position);
@@ -454,8 +497,8 @@ CREATE TABLE IF NOT EXISTS lessons (
 
   CONSTRAINT fk_lesson_class     FOREIGN KEY (class_id)       REFERENCES classes (id)        ON DELETE CASCADE,
   CONSTRAINT fk_lesson_subject   FOREIGN KEY (subject_id)     REFERENCES class_subjects (id) ON DELETE CASCADE,
-  CONSTRAINT fk_lesson_professor FOREIGN KEY (professor_id)   REFERENCES users (id),
-  CONSTRAINT fk_lesson_missing   FOREIGN KEY (substitute_for) REFERENCES users (id)          ON DELETE SET NULL,
+  CONSTRAINT fk_lesson_professor FOREIGN KEY (professor_id)   REFERENCES professors (id),
+  CONSTRAINT fk_lesson_missing   FOREIGN KEY (substitute_for) REFERENCES professors (id)     ON DELETE SET NULL,
   CONSTRAINT fk_lesson_reviewer  FOREIGN KEY (reviewed_by)    REFERENCES users (id)          ON DELETE SET NULL,
   CONSTRAINT fk_lesson_creator   FOREIGN KEY (created_by)     REFERENCES users (id)          ON DELETE SET NULL,
   CONSTRAINT uq_lesson UNIQUE (class_id, lesson_date, period),

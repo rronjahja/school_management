@@ -9,7 +9,7 @@
  * roli të ri është një rresht, jo një gjueti nëpër skedarë.
  */
 
-const ROLES = ['admin', 'menaxher', 'finance', 'kujdestar', 'staff', 'profesor'];
+const ROLES = ['admin', 'menaxher', 'finance', 'kujdestar', 'staff'];
 
 const ROLE_LABELS = {
     admin: 'Administrator',
@@ -17,15 +17,14 @@ const ROLE_LABELS = {
     finance: 'Financa',
     kujdestar: 'Kujdestar/e',
     staff: 'Staf',
-    profesor: 'Profesor/eshë',
-};
+  };
 
 /**
  * Zonat e punës dhe rolet që i hapin.
  *
  *   dashboard    → Paneli
  *   administrata → Paralelet dhe kujdestaret
- *   mesimi       → Ditari i oreve te mesimit (roli 'profesor' sheh VETEM kete)
+ *   mesimi       → Ditari i oreve te mesimit (e plotesojne stafi e lart)
  *   students  → Nxënësit (lista, kartela, ndryshimi)
  *   register  → Regjistrimi i nxënësit të ri
  *   finance   → Financat, pagesat, fletëpagesat, eksporti
@@ -54,13 +53,14 @@ const AREA_ROLES = {
     finance: ['admin', 'menaxher', 'finance'],
     graduates: ['admin', 'menaxher', 'finance'],
     administrata: ['admin', 'menaxher', 'staff'],
-    mesimi: ['admin', 'menaxher', 'staff', 'kujdestar', 'profesor'],
+    mesimi: ['admin', 'menaxher', 'staff', 'kujdestar'],
     ditari: ['admin', 'menaxher', 'kujdestar', 'staff'],
     review: ['admin', 'menaxher', 'staff'],
     approvals: ['admin', 'menaxher', 'staff'],
     issues: ['admin', 'menaxher', 'staff', 'kujdestar'],
     requests: ['admin', 'menaxher', 'kujdestar', 'staff'],
-    settings: ['admin'],
+    logs: ['admin', 'menaxher'],
+  settings: ['admin'],
     manage: ['admin', 'menaxher'],
 };
 

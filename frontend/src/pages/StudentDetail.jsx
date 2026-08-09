@@ -19,10 +19,11 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import InstallmentTable from '../components/finance/InstallmentTable.jsx';
 import PaymentList from '../components/finance/PaymentList.jsx';
 import PaymentModal from '../components/finance/PaymentModal.jsx';
+import { downloadPaymentReport } from '../utils/paymentReport';
 import ReminderButton from '../components/finance/ReminderButton.jsx';
 import { canRemind } from '../utils/reminder';
 import { downloadSlipPdf, printSlip, reminderSlipUrl } from '../utils/slip';
-import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortGen } from '../utils/format';
+import { money, date, PLAN_LABELS, YEAR_LABELS, discountText, classLabel, shortGen, phone } from '../utils/format';
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -131,6 +132,16 @@ export default function StudentDetail() {
       return null;
     } finally {
       setPaymentBusy(false);
+    }
+  };
+
+  /** Pasqyra financiare si PDF — vizatohet ne shfletues, pa asnje kerkese. */
+  const handleReport = () => {
+    setNotice('');
+    try {
+      downloadPaymentReport(student);
+    } catch (err) {
+      setNotice(`Raporti nuk u krijua dot: ${err.message}`);
     }
   };
 
@@ -297,7 +308,7 @@ export default function StudentDetail() {
             <Info label="Adresa" value={student.address} span />
             <Info label="Shtetësia" value={student.citizenship} />
             <Info label="Kombësia" value={student.nationality} />
-            <Info label="Telefoni" value={student.phone} />
+            <Info label="Telefoni" value={phone(student.phone)} />
             <Info label="E-mail" value={student.email} />
             <Info label="Nr. i kontratës" value={student.contract_number} />
             <Info label="Data e regjistrimit" value={date(student.enrollment_date)} />
@@ -320,7 +331,7 @@ export default function StudentDetail() {
                 </div>
                 <dl className="parent-facts">
                   <Info label="Emri" value={[student.guardian_name, student.guardian_last_name].filter(Boolean).join(' ')} />
-                  <Info label="Telefoni" value={student.guardian_phone} strong />
+                  <Info label="Telefoni" value={phone(student.guardian_phone)} strong />
                   <Info label="Datëlindja" value={date(student.guardian_birthday)} />
                   <Info label="Nr. personal" value={student.guardian_personal_id} />
                   <Info label="E-mail" value={student.guardian_email} />
@@ -342,7 +353,7 @@ export default function StudentDetail() {
                   <Info label="Emri" value={[student.mother_name, student.mother_last_name].filter(Boolean).join(' ')} />
                   <Info
                     label="Telefoni"
-                    value={student.mother_phone}
+                    value={phone(student.mother_phone)}
                     strong={student.primary_contact === 'mother'}
                   />
                   <Info label="Datëlindja" value={date(student.mother_birthday)} />
@@ -362,7 +373,7 @@ export default function StudentDetail() {
                   <Info label="Emri" value={[student.father_name, student.father_last_name].filter(Boolean).join(' ')} />
                   <Info
                     label="Telefoni"
-                    value={student.father_phone}
+                    value={phone(student.father_phone)}
                     strong={student.primary_contact === 'father'}
                   />
                   <Info label="Datëlindja" value={date(student.father_birthday)} />
@@ -378,13 +389,24 @@ export default function StudentDetail() {
           <section className="card">
             <div className="card-title-row">
               <h2 className="card-title">Pagesat</h2>
-              <button
-                type="button"
-                className="btn btn-primary btn-small"
-                onClick={() => setShowPayment(true)}
-              >
-                + Shto pagesë
-              </button>
+              <span className="card-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  title="Pasqyra e plotë e pagesave dhe e kësteve, si PDF"
+                  onClick={handleReport}
+                >
+                  <ReportIcon />
+                  Pasqyra financiare
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-small"
+                  onClick={() => setShowPayment(true)}
+                >
+                  + Shto pagesë
+                </button>
+              </span>
             </div>
             <PaymentList
               payments={student.payments}
@@ -483,6 +505,23 @@ function CertificateIcon() {
         strokeWidth="1.6"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+/** Pasqyra financiare — nje flete me rreshta dhe nje shenje euro. */
+function ReportIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M5.5 2.75h9l4 4v14.5h-13z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M8.5 11h7M8.5 14.5h7M8.5 18h4" stroke="currentColor"
+        strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M14.5 2.75v4h4" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     </svg>
   );
 }

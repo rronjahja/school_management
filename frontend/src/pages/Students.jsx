@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchStudents } from '../api/students';
+import Pager from '../components/ui/Pager.jsx';
 import { fetchCategories } from '../api/meta';
 import { errorMessage } from '../api/client';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -12,30 +13,52 @@ import EmptyState from '../components/ui/EmptyState.jsx';
 import { money, PLAN_LABELS, shortGen } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
 
+/**
+ * Sa nxenes merren me nje kerkese. Faqosja behet ne SERVER: perndryshe
+ * cdo hapje e faqes do te lexonte te dhenat e cdo nxenesi bashke me
+ * kestet e tyre, edhe pse ne ekran shihen njezet.
+ */
+const PER_PAGE = 20;
+
 export default function Students() {
   const { isFinance } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState(null);
+  const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1, limit: PER_PAGE });
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [page, setPage] = useState(1);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => { });
   }, []);
 
+  // Nje filter i ri e nis listen nga e para: faqja 7 e nje kerkimi te
+  // meparshem s'ka kuptim per rezultatet e reja.
+  useEffect(() => { setPage(1); }, [search, categoryId]);
+
   useEffect(() => {
+    setBusy(true);
     const timer = setTimeout(() => {
       fetchStudents({
         search: search || undefined,
         category_id: categoryId || undefined,
+        page,
+        limit: PER_PAGE,
       })
-        .then((d) => { setStudents(d); setError(''); })
-        .catch((err) => setError(errorMessage(err)));
+        .then((d) => {
+          setStudents(d.rows);
+          setMeta({ total: d.total, page: d.page, pages: d.pages, limit: d.limit });
+          setError('');
+        })
+        .catch((err) => setError(errorMessage(err)))
+        .finally(() => setBusy(false));
     }, 250); // debounce i kerkimit
     return () => clearTimeout(timer);
-  }, [search, categoryId]);
+  }, [search, categoryId, page]);
 
   const isEmpty = useMemo(
     () => students && students.length === 0 && !search && !categoryId,
@@ -46,7 +69,12 @@ export default function Students() {
 
   return (
     <>
-      <PageHeader title="Nxënësit" subtitle="Lista e plotë e nxënësve të regjistruar">
+      <PageHeader
+        title="Nxënësit"
+        subtitle={meta.total
+          ? `${meta.total.toLocaleString('de-DE')} nxënës të regjistruar`
+          : 'Lista e nxënësve të regjistruar'}
+      >
         <Link to="/studentet/regjistro" className="btn btn-primary">
           + Regjistro nxënës
         </Link>
@@ -132,6 +160,16 @@ export default function Students() {
               </tbody>
             </table>
           </div>
+
+          <Pager
+            page={meta.page}
+            pages={meta.pages}
+            total={meta.total}
+            limit={meta.limit}
+            busy={busy}
+            noun="nxënës"
+            onPage={setPage}
+          />
         </div>
       )}
     </>

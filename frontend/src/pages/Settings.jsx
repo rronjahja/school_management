@@ -15,7 +15,6 @@ import UserManager from '../components/settings/UserManager.jsx';
 import DataManager from '../components/settings/DataManager.jsx';
 import ReminderTemplateEditor from '../components/settings/ReminderTemplateEditor.jsx';
 import ContractImport from '../components/settings/ContractImport.jsx';
-import ActivityLog from '../components/settings/ActivityLog.jsx';
 
 export default function Settings() {
   const [data, setData] = useState(null);
@@ -211,6 +210,17 @@ export default function Settings() {
               </div>
             </div>
 
+            {preview.losing_discount > 0 && (
+              <p className="promo-discount-note">
+                <strong>{preview.losing_discount}</strong>
+                {preview.losing_discount === 1
+                  ? ' nxënës e ka një zbritje këtë vit dhe kalon te kuota standarde e drejtimit.'
+                  : ' nxënës i kanë zbritje këtë vit dhe kalojnë te kuota standarde e drejtimit.'}
+                {' '}Sipas politikës, zbritja vlen vetëm për vitin në të cilin u dha — nëse duhet
+                përsëritur, jepet me dorë pas kalimit.
+              </p>
+            )}
+
             <div className="form-grid promo-opts">
               <Field label="Data e fillimit të vitit të ri">
                 <input
@@ -219,7 +229,10 @@ export default function Settings() {
                   onChange={(e) => setOpts({ ...opts, year_start_date: e.target.value })}
                 />
               </Field>
-              <Field label="Rrit kuotën për vitin e ri (%)">
+              <Field
+                label="Rrit kuotën për vitin e ri (%)"
+                hint="Zbatohet mbi kuotën standarde të drejtimit, jo mbi çmimin e vitit të kaluar"
+              >
                 <input
                   type="number"
                   min="0"
@@ -302,7 +315,6 @@ export default function Settings() {
 
       <UserManager />
 
-      <ActivityLog />
 
       {confirmOpen && preview && (
         <Modal title="Konfirmo kalimin e vitit" onClose={() => setConfirmOpen(false)}>

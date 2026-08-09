@@ -74,6 +74,16 @@ async function preview(fromGeneration) {
     [fromGeneration]
   );
 
+  // Sa nxenes e humbin zbritjen kur kalojne vitin — kjo duhet thene PARA
+  // se te shtypet butoni, jo te zbulohet me pas nga nje prind i habitur.
+  const [[disc]] = await pool.query(
+    `SELECT COUNT(*) AS n
+       FROM students
+      WHERE status = 'active' AND generation = ? AND study_year < ?
+        AND discount_type <> 'none' AND discount_value > 0`,
+    [fromGeneration, FINAL_YEAR]
+  );
+
   const byYear = rows.map((r) => ({
     study_year: r.study_year,
     students: Number(r.n),
@@ -85,6 +95,7 @@ async function preview(fromGeneration) {
     from_generation: fromGeneration,
     to_generation: to,
     already_done: done.c > 0,
+    losing_discount: Number(disc.n),
     promote: byYear.filter((y) => y.action === 'promote'),
     graduate: byYear.filter((y) => y.action === 'graduate'),
     promote_total: byYear.filter((y) => y.action === 'promote').reduce((a, y) => a + y.students, 0),
@@ -159,6 +170,19 @@ async function promote({
       [from_generation]
     );
 
+    // Kuotat standarde te drejtimeve — baza e vitit te ri.
+    //
+    // Politika e kolegjit: nje zbritje vlen VETEM per vitin ne te cilin u
+    // dha. Vitin tjeter nxenesi kthehet te cmimi standard i drejtimit, dhe
+    // nese i takon sërish zbritje, ajo jepet me dore nga stafi. Prandaj
+    // ketu nuk bartet as kuota e vjeter e nxenesit (qe mund te ishte
+    // ndryshuar me dore), as zbritja e vitit qe po mbyllet.
+    const [cats] = await conn.query('SELECT id, default_quota FROM categories');
+    const standardQuota = new Map(
+      cats.filter((c) => c.default_quota !== null)
+        .map((c) => [c.id, Number(c.default_quota)])
+    );
+
     let promoted = 0;
     let graduated = 0;
 
@@ -170,7 +194,7 @@ async function promote({
             discount_type, discount_value, payment_plan, enrollment_date)
          VALUES (?,?,?,?,?,?,?,?,?)`,
         [s.id, s.generation, s.study_year, s.contract_number, s.yearly_quota,
-         s.discount_type, s.discount_value, s.payment_plan, s.enrollment_date]
+        s.discount_type, s.discount_value, s.payment_plan, s.enrollment_date]
       );
 
       if (s.study_year >= FINAL_YEAR) {
@@ -187,7 +211,14 @@ async function promote({
 
       // 2b. Kalon ne vitin pasues
       const contract = await newContractNumber(conn, s.category_id, to);
-      const newQuota = round2(Number(s.yearly_quota) * (1 + increase / 100));
+
+      // Baza eshte kuota standarde e drejtimit. Nese drejtimi s'ka kuote te
+      // vendosur, mbetet ajo e nxenesit — me mire nje shume e bartur se nje
+      // zero e heshtur qe do te dukej si shkollim falas.
+      const base = standardQuota.has(s.category_id)
+        ? standardQuota.get(s.category_id)
+        : Number(s.yearly_quota);
+      const newQuota = round2(base * (1 + increase / 100));
 
       await conn.query(
         `UPDATE students
@@ -195,9 +226,11 @@ async function promote({
                 generation = ?,
                 contract_number = ?,
                 enrollment_date = ?,
-                yearly_quota = ?
+                yearly_quota = ?,
+                discount_type = 'none',
+                discount_value = 0
           WHERE id = ?`,
-        [to, contract, startDate, create_new_year ? newQuota : s.yearly_quota, s.id]
+        [to, contract, startDate, create_new_year ? newQuota : base, s.id]
       );
 
       // 2c. Mbyllja e vitit te vjeter: kestet e paguara HIQEN; borxhi i mbetur

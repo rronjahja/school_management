@@ -1613,3 +1613,48 @@ input.is-locked:focus {
   color: var(--muted);
   font-size: 13.5px;
 }
+/* Njoftimi per zbritjet qe bien gjate kalimit te vitit */
+.promo-discount-note {
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  background: var(--amber-bg);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--radius-small) var(--radius-small) 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b4a00;
+}
+
+/* Numrat e faqeve te ditari i veprimeve */
+.log-pager { flex-wrap: wrap; gap: 10px; }
+
+.log-range { font-size: 12.5px; white-space: nowrap; }
+
+.log-pager-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.log-page-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.log-page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+
+.log-page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}

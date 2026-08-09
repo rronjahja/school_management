@@ -70,10 +70,32 @@ function normalizeGeneration(value) {
   return `${start}/${start + 1}`;
 }
 
+const PHONE_FIELDS = ['phone', 'mother_phone', 'father_phone', 'guardian_phone'];
+
+/**
+ * Numri vendor ruhet vetem si shifra; vizat jane ceshtje pamjeje dhe
+ * i vendos nderfaqja. Nje numer i huaj ruhet ashtu si eshte shkruar,
+ * sepse s'ka forme te vetme per t'u dhene.
+ *
+ * Kjo pastron edhe te dhenat e vjetra, ku numri mund te jete ruajtur
+ * si «044-123-456»: pa kete, i njejti numer do te ekzistonte ne dy
+ * forma dhe kerkimi do te gjente vetem njeren.
+ */
+function normalizePhone(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, '');
+  const local = /^0\d{8}$/.test(digits) && !/[^\d\s-]/.test(raw);
+  return local ? digits : raw;
+}
+
 function pickStudentFields(body) {
   const data = {};
   STUDENT_FIELDS.forEach((f) => {
     if (body[f] !== undefined) data[f] = body[f] === '' ? null : body[f];
+  });
+  PHONE_FIELDS.forEach((f) => {
+    if (data[f] !== undefined && data[f] !== null) data[f] = normalizePhone(data[f]);
   });
   if (data.generation) data.generation = normalizeGeneration(data.generation);
   if (!data.discount_type) data.discount_type = 'none';
@@ -181,7 +203,7 @@ async function updateStudent(id, body) {
   // Nese drejtimi mbetet i njejti, kuota e studentit NUK preket — kontrata
   // e nenshkruar nuk ndryshon kur dikush perditeson kuotat te Cilesimet.
   if (data.category_id !== undefined &&
-      Number(data.category_id) !== Number(existing.category_id)) {
+    Number(data.category_id) !== Number(existing.category_id)) {
     data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
   } else {
     data.yearly_quota = existing.yearly_quota;
@@ -253,7 +275,13 @@ async function deleteStudent(id) {
 }
 
 /** Lista e studenteve me filtra opsionale (kerkim + drejtim + plan). */
-async function listStudents({ search, category_id, payment_plan, study_year, status } = {}) {
+/**
+ * Kushtet e filtrimit, te ndara qe lista dhe numerimi te perdorin
+ * SAKTESISHT te njejtat: perndryshe numri i pergjithshem do t'i takonte
+ * nje filtri, kurse rreshtat nje tjetri, dhe faqja e fundit do te dilte
+ * bosh pa asnje shpjegim.
+ */
+function studentFilter({ search, category_id, payment_plan, study_year, status } = {}) {
   const where = [];
   const params = [];
 
@@ -275,12 +303,34 @@ async function listStudents({ search, category_id, payment_plan, study_year, sta
     params.push(study_year);
   }
   // Si parazgjedhje shfaqen vetem studentet aktive
-  if (status === 'all') {
-    // pa filtrim
-  } else {
+  if (status !== 'all') {
     where.push('s.status = ?');
     params.push(status || 'active');
   }
+
+  return { clause: where.length ? `WHERE ${where.join(' AND ')}` : '', params };
+}
+
+/** Sa nxenes i pergjigjen ketij filtri — per faqosjen. */
+async function countStudents(filters = {}) {
+  const { clause, params } = studentFilter(filters);
+  const [[row]] = await pool.query(
+    `SELECT COUNT(*) AS n FROM students s ${clause}`,
+    params
+  );
+  return Number(row.n);
+}
+
+/**
+ * Lista e nxenesve. Pa `limit` kthen gjithcka, si me pare — dashboard-i
+ * dhe raportet i duan te gjithe. Me `limit` kthen vetem nje faqe.
+ */
+async function listStudents(filters = {}) {
+  const { clause, params } = studentFilter(filters);
+
+  const limit = Number(filters.limit);
+  const paged = Number.isInteger(limit) && limit > 0;
+  const offset = Math.max(Number(filters.offset) || 0, 0);
 
   const [rows] = await pool.query(
     `SELECT s.*, c.name AS category_name, c.code AS category_code, c.color AS category_color,
@@ -291,9 +341,10 @@ async function listStudents({ search, category_id, payment_plan, study_year, sta
          SELECT student_id, SUM(amount) AS total_paid
            FROM payments GROUP BY student_id
        ) p ON p.student_id = s.id
-      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-      ORDER BY s.created_at DESC`,
-    params
+      ${clause}
+      ORDER BY s.created_at DESC
+      ${paged ? 'LIMIT ? OFFSET ?' : ''}`,
+    paged ? [...params, limit, offset] : params
   );
   return rows;
 }
@@ -325,5 +376,6 @@ module.exports = {
   deleteStudent,
   getStudentRow,
   listStudents,
+  countStudents,
   installmentsByStudent,
 };

@@ -1,17 +1,26 @@
 const studentService = require('../services/studentService');
 const financeService = require('../services/financeService');
-const { canSeeFinance, isManager } = require('../middleware/auth');
+const { canSeeFinance } = require('../middleware/auth');
+const { can } = require('../config/roles');
 const { stripStudentFinance, stripListFinance } = require('../utils/redactFinance');
 const { validateStudent } = require('../utils/validateStudent');
 
 async function list(req, res, next) {
   try {
-    const { search, category_id, payment_plan, study_year, status } = req.query;
-    const students = await financeService.listStudentsWithFinance({
-      search, category_id, payment_plan, study_year, status,
-    });
-    // Stafi i sheh nxenesit, jo shifrat e tyre
-    res.json(canSeeFinance(req.user) ? students : stripListFinance(students));
+    const { search, category_id, payment_plan, study_year, status, page, limit } = req.query;
+    const filters = { search, category_id, payment_plan, study_year, status };
+    const hide = !canSeeFinance(req.user);   // stafi i sheh nxenesit, jo shifrat
+
+    // Me `limit` kthehet nje faqe me numrin e pergjithshem; pa te, lista e
+    // plote — si me pare. Keshtu faqet qe ende s'jane faqosur (Financat,
+    // Te diplomuarit) vazhdojne te punojne pa asnje ndryshim.
+    if (limit) {
+      const result = await financeService.listStudentsPage({ ...filters, page, limit });
+      return res.json(hide ? { ...result, rows: stripListFinance(result.rows) } : result);
+    }
+
+    const students = await financeService.listStudentsWithFinance(filters);
+    return res.json(hide ? stripListFinance(students) : students);
   } catch (err) { next(err); }
 }
 
@@ -41,9 +50,10 @@ async function create(req, res, next) {
     if (errors.length) return res.status(400).json({ error: errors.join(' ') });
 
     const id = await studentService.createStudent(req.body, {
-      // vetem administratoret (p.sh. migrimi i kontratave) mund ta mbajne
-      // kuoten e kontrates edhe kur drejtimi ka kuote te konfiguruar
-      allowQuotaOverride: isManager(req.user),
+      // Kuota e drejtimit eshte rregulli; ndryshimi me dore eshte perjashtimi.
+      // Sipas politikes se kolegjit, kete perjashtim e bejne ata qe
+      // regjistrojne nxenes: stafi, menaxheri dhe administratori.
+      allowQuotaOverride: can(req.user, 'register'),
     });
     const created = await financeService.getStudentDetail(id);
     res.locals.logEntityId = id;

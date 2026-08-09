@@ -17,6 +17,7 @@ import GradeRequests from './pages/GradeRequests.jsx';
 import Administrata from './pages/Administrata.jsx';
 import GradeIssues from './pages/GradeIssues.jsx';
 import Oret from './pages/Oret.jsx';
+import Logs from './pages/Logs.jsx';
 
 /** Rruget e panjohura e cojne perdoruesin te faqja e tij e pare. */
 function HomeRedirect() {
@@ -130,6 +131,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute area="graduates">
               <Graduates />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/veprimet"
+          element={
+            <ProtectedRoute area="logs">
+              <Logs />
             </ProtectedRoute>
           }
         />
