@@ -1015,68 +1015,7 @@ thead .dt-sticky {
     gap: 3px;
 }
 
-/* ---------------- Mbyllja e kyçur dhe kerkesat -------------------- */
-
-/* nje mbyllje e kycur duket e qete, por e paprekshme */
-.dt-close-locked {
-    background: rgba(0, 0, 0, 0.05);
-    cursor: pointer;
-}
-
-.dt-close-locked:hover {
-    background: rgba(0, 0, 0, 0.09);
-}
-
-/* kerkesa ne pritje — shirit i verdhe poshte shifres */
-.dt-close-pending {
-    background: var(--amber-bg);
-    box-shadow: inset 0 -3px 0 var(--amber);
-}
-
-/* leja e dhene — e gjelber, gati per nje ndryshim te vetem */
-.dt-close-unlocked {
-    background: var(--green-bg);
-    box-shadow: inset 0 -3px 0 var(--green);
-}
-
-.dt-pop-note {
-    margin: 0 0 9px;
-    font-size: 12.5px;
-    line-height: 1.45;
-    color: var(--ink-soft);
-}
-
-.dt-pop-note-ok {
-    color: var(--green);
-    font-weight: 600;
-}
-
-.dt-pop-reason {
-    margin: 0 0 9px;
-    padding: 7px 9px;
-    background: var(--neutral-bg);
-    border-radius: var(--radius-small);
-    font-size: 12.5px;
-    font-style: italic;
-    color: var(--ink-soft);
-}
-
-/* shenja me numrin e kerkesave te hapura, ne menu */
-.nav-badge {
-    margin-left: auto;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: var(--amber);
-    color: #3b2600;
-    font-size: 11.5px;
-    font-weight: 800;
-    line-height: 20px;
-    text-align: center;
-}
-
-/* ---------------- Faqja e kerkesave ------------------------------- */
+/* ---------------- Skedat (profesoret / lendet) -------------------- */
 
 .dt-tabs {
     display: flex;
@@ -1106,131 +1045,6 @@ thead .dt-sticky {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
-}
-
-.dt-req-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.dt-req {
-    padding: 16px 18px;
-}
-
-.dt-req-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.dt-req-who {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
-}
-
-.dt-req-who strong {
-    font-size: 15.5px;
-}
-
-.dt-req-who .muted {
-    font-size: 12.5px;
-}
-
-.dt-req-values {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.dt-req-value {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 74px;
-    padding: 6px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-small);
-    background: var(--neutral-bg);
-}
-
-.dt-req-value em {
-    font-style: normal;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-}
-
-.dt-req-value strong {
-    font-family: var(--dt-font-hand);
-    font-size: 26px;
-    line-height: 1.1;
-    color: var(--dt-red);
-}
-
-.dt-req-value-new {
-    background: var(--green-bg);
-    border-color: rgba(22, 122, 74, 0.25);
-}
-
-.dt-req-value-new strong {
-    color: var(--green);
-}
-
-.dt-req-reason {
-    margin: 0 0 10px;
-    padding: 9px 12px;
-    background: var(--primary-soft);
-    border-left: 3px solid var(--primary);
-    border-radius: 0 var(--radius-small) var(--radius-small) 0;
-    font-size: 13.5px;
-    font-style: italic;
-    color: var(--ink);
-}
-
-.dt-req-meta {
-    margin: 0;
-    font-size: 12.5px;
-    color: var(--muted);
-}
-
-.dt-req-note {
-    margin: 8px 0 0;
-    font-size: 12.5px;
-    color: var(--ink-soft);
-}
-
-.dt-req-hint {
-    margin: 10px 0 0;
-    font-size: 12.5px;
-    color: var(--muted);
-}
-
-.dt-req-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.dt-req-decline {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 12px;
-}
-
-.dt-req-decline input {
-    flex: 1;
-    padding: 7px 10px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-small);
-    font-size: 13.5px;
-    min-width: 0;
 }
 
 /* ---------------- Kontrolli i notave ------------------------------ */
@@ -1379,11 +1193,6 @@ thead .dt-sticky {
     color: #fff;
 }
 
-/* Shenja e kuqe e gabimeve te menuja */
-.nav-badge-red {
-    background: var(--red);
-    color: #fff;
-}
 
 /* ---------------- Zgjedhesi i numrit te paraleles ----------------- */
 
@@ -1915,158 +1724,358 @@ thead .dt-sticky {
     margin: 10px 0 0;
     font-size: 12.5px;
 }
+
 /* ---------------- Profesoret dhe lendet -------------------------- */
 
-.pm-chips { display: inline-flex; flex-wrap: wrap; gap: 5px; }
-
-.pm-chip {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  font-size: 12.5px;
-  font-weight: 600;
-  white-space: nowrap;
+.pm-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
-.pm-chip-btn { border: 0; cursor: pointer; transition: background 0.12s; }
-.pm-chip-btn:hover { background: var(--primary); color: #fff; }
+.pm-chip {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pm-chip-btn {
+    border: 0;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.pm-chip-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
 
 /* Nje profesor pa lende s'del dot te oret — duhet vene re menjehere */
-.pm-warn { font-size: 12.5px; color: var(--amber); font-weight: 600; }
+.pm-warn {
+    font-size: 12.5px;
+    color: var(--amber);
+    font-weight: 600;
+}
 
-.pm-subject-add { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+.pm-subject-add {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+}
 
 .pm-subject-add input {
-  flex: 1;
-  max-width: 320px;
-  padding: 7px 11px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-small);
-  font-size: 14px;
+    flex: 1;
+    max-width: 320px;
+    padding: 7px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 14px;
 }
 
 .pm-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 18px;
 }
 
 .pm-group-title {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--muted);
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
 }
 
 .pm-subject {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
 }
 
-.pm-subject:last-child { border-bottom: 0; }
+.pm-subject:last-child {
+    border-bottom: 0;
+}
 
-.pm-subject-name { font-size: 14px; font-weight: 600; }
+.pm-subject-name {
+    font-size: 14px;
+    font-weight: 600;
+}
 
 /* Zgjedhesi i lendeve brenda dritares */
 .pm-picker {
-  margin-top: 6px;
-  padding: 14px;
-  background: var(--neutral-bg);
-  border-radius: var(--radius-small);
-  max-height: 300px;
-  overflow-y: auto;
+    margin-top: 6px;
+    padding: 14px;
+    background: var(--neutral-bg);
+    border-radius: var(--radius-small);
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .pm-picker-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
 }
 
-.pm-picker-group { margin-bottom: 12px; }
-.pm-picker-group:last-child { margin-bottom: 0; }
+.pm-picker-group {
+    margin-bottom: 12px;
+}
+
+.pm-picker-group:last-child {
+    margin-bottom: 0;
+}
 
 .pm-picker-label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--muted);
+    display: block;
+    margin-bottom: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
 }
 
-.pm-picker-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-picker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
 
 /* Kuti te klikueshme, jo liste rreshqitese me shume zgjedhje: zgjedhjet
    duken te gjitha njeheresh dhe nuk kerkojne Ctrl+klik. */
 .pm-pick {
-  padding: 6px 12px;
-  border: 1.5px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+    padding: 6px 12px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.pm-pick:hover { border-color: var(--primary); color: var(--primary); }
+.pm-pick:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
 
 .pm-pick.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 
-.pm-pick.active::before { content: '✓ '; }
+.pm-pick.active::before {
+    content: '✓ ';
+}
 
 /* Celesi mes profesoreve te lendes dhe te gjitheve */
 .lb-showall {
-  margin-top: 5px;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  cursor: pointer;
-  text-decoration: underline;
+    margin-top: 5px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+    text-decoration: underline;
 }
 
 .lb-hintwarn {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-  color: var(--amber);
-  font-weight: 600;
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--amber);
+    font-weight: 600;
 }
 
 /* Koka e kartelës së profesorëve: butoni rri lart-djathtas dhe nuk
    ngjitet me skedat poshtë. Pershkrimi mban gjeresine e vet, qe teksti
    te mos shkoje deri nen buton. */
 .pm-head {
-  align-items: flex-start;
-  margin-bottom: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
-.pm-head .btn { flex-shrink: 0; }
+.pm-head .btn {
+    flex-shrink: 0;
+}
 
 .pm-head-sub {
-  margin-top: 4px;
-  margin-bottom: 0;
-  max-width: 60ch;
+    margin-top: 4px;
+    margin-bottom: 0;
+    max-width: 60ch;
 }
 
 /* Skedat marrin pak fryme nga koka dhe nga tabela */
-.pm-head + .dt-tabs,
-.card .dt-tabs { margin-top: 4px; }
+.pm-head+.dt-tabs,
+.card .dt-tabs {
+    margin-top: 4px;
+}
+
+/* ---------------- Oret e mbajtura -------------------------------- */
+
+.hl-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+/* Dita / Java / Muaji — nje zgjedhje e vetme, ndaj shufer e ndare */
+.hl-period {
+    display: inline-flex;
+    background: var(--neutral-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 3px;
+}
+
+.hl-period-btn {
+    border: 0;
+    background: none;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.hl-period-btn:hover {
+    color: var(--primary);
+}
+
+.hl-period-btn.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.hl-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.hl-field select,
+.hl-field input {
+    min-width: 170px;
+    padding: 8px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-small);
+    font-size: 14px;
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.hl-check {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    cursor: pointer;
+    padding-bottom: 9px;
+}
+
+.hl-check input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.hl-summary-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 15px;
+}
+
+.hl-note {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+}
+
+.hl-day {
+    margin-bottom: 22px;
+}
+
+.hl-day:last-child {
+    margin-bottom: 0;
+}
+
+.hl-day-title {
+    margin: 0 0 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--line);
+}
+
+.hl-table td {
+    vertical-align: top;
+}
+
+/* Tema mund te jete e gjate; nuk e lejojme te shtype kolonat e tjera */
+.hl-topic {
+    max-width: 320px;
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+
+/* Vetem rreshti i totalit theksohet. Po t'i jepnim peshe cdo shifre,
+   asnje s'do te kishte me peshe — syri s'do ta gjente dot ate qe kerkon.
+   Prandaj shifrat e rreshtave rrine krejt normale. */
+/* Oret e secilit mesimdhenes: kjo eshte shifra qe kerkohet, ndaj rri e
+   theksuar. Kolonat e tjera — zevendesimet — mbeten normale. */
+.hl-hours {
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--ink);
+}
+
+.hl-total td {
+    border-top: 2px solid var(--line-strong);
+    padding-top: 10px;
+    font-weight: 800;
+    font-size: 14.5px;
+    color: var(--ink);
+}
+
+/* Shenja e zevendesimit te LISTA e oreve: aty tregon KE zevendesoi dhe
+   ndryshon kuptimin e rreshtit. Te permbledhja, numri rri i thjeshte. */
+.hl-sub {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #fff3d6;
+    border: 1px solid #e8c983;
+    color: #8a5b00;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}

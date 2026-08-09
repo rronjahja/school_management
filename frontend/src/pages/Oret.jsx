@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     fetchLessonClasses, fetchLessonMonth, createLesson, updateLesson, deleteLesson,
     reviewLesson, fetchLessonReport,
@@ -31,11 +31,10 @@ const monthLabel = (m) => {
  * mbajti secili profesor (zëvendësimet i numërohen zëvendësuesit).
  */
 export default function Oret() {
-      const [classes, setClasses] = useState(null);
+    const [classes, setClasses] = useState(null);
     const [classId, setClassId] = useState(null);
     const [month, setMonth] = useState(thisMonth());
     const [data, setData] = useState(null);
-    const [report, setReport] = useState(null);
     const [error, setError] = useState('');
     const [actionError, setActionError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -62,7 +61,7 @@ export default function Oret() {
             .catch((err) => setError(errorMessage(err)));
     }, [classId, month]);
 
-    useEffect(() => { setData(null); setReport(null); load(); }, [load]);
+    useEffect(() => { setData(null); load(); }, [load]);
 
     const run = async (fn) => {
         if (busy) return false;
@@ -96,10 +95,6 @@ export default function Oret() {
         if (ok) setOpenCell(null);
     };
 
-    const selectedClass = useMemo(
-        () => (classes || []).find((c) => c.id === Number(classId)),
-        [classes, classId]
-    );
 
     if (error) return <EmptyState title="Gabim" hint={error} />;
     if (!classes) return <Loader text="Duke hapur ditarin e orëve…" />;
@@ -150,44 +145,6 @@ export default function Oret() {
                         onOpenCell={setOpenCell}
                     />
 
-                    <section className="card lb-report">
-                        <h2 className="card-title">
-                            Përmbledhja mujore — {monthLabel(month)}
-                            {selectedClass && <span className="muted"> · paralelja {selectedClass.label}</span>}
-                        </h2>
-                        {!report || report.length === 0 ? (
-                            <p className="muted">Asnjë orë e shënuar këtë muaj.</p>
-                        ) : (
-                            <div className="table-wrap">
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Profesori</th>
-                                            <th className="num">Orë gjithsej</th>
-                                            <th className="num">Prej tyre zëvendësime</th>
-                                            <th className="num">Të pranuara</th>
-                                            <th className="num">Me gabim</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {report.map((r) => (
-                                            <tr key={r.professor_id}>
-                                                <td><strong>{r.professor_name}</strong></td>
-                                                <td className="num lb-report-total">{r.total_hours}</td>
-                                                <td className="num">{r.substitutions || '—'}</td>
-                                                <td className="num">{r.verified || '—'}</td>
-                                                <td className="num">
-                                                    {r.flagged
-                                                        ? <span className="badge badge-red"><span className="badge-dot" />{r.flagged}</span>
-                                                        : '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </section>
                 </>
             )}
 

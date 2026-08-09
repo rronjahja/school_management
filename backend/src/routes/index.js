@@ -144,26 +144,20 @@ router.delete('/professors/:id', requireArea('administrata'), professorControlle
 // Ditari i oreve te mesimit. Roli 'profesor' hyn VETEM ketu.
 // Rregullat e holla (kush shkruan cilen ore) jane te lessonService.
 router.get('/lesson-classes', requireArea('mesimi'), lessonController.listClasses);
-router.get('/lessons/report', requireArea('mesimi'), lessonController.monthlyReport);
+// Pasqyra e oreve te mbajtura — administrata, jo kujdestari.
+router.get('/lessons/held', requireArea('oret_raport'), lessonController.heldLessons);
+router.get('/lessons/filters', requireArea('oret_raport'), lessonController.reportFilters);
+router.get('/lessons/report', requireArea('oret_raport'), lessonController.monthlyReport);
 router.get('/classes/:id/lessons', requireArea('mesimi'), lessonController.getMonth);
 router.post('/classes/:id/lessons', requireArea('mesimi'), lessonController.createLesson);
 router.put('/lessons/:id', requireArea('mesimi'), lessonController.updateLesson);
 router.delete('/lessons/:id', requireArea('mesimi'), lessonController.deleteLesson);
 router.put('/lessons/:id/review', requireArea('review'), lessonController.reviewLesson);
 
-// Kontrolli i notave: stafi i pranon ose i shenon si gabim, pa i ndryshuar
+// Kontrolli i notave: stafi i pranon ose i shenon si gabim.
+// Korrigjimin e ben kush ta gjeje i pari — nuk ka me kerkesa e miratime.
 router.post('/classes/:id/reviews', requireArea('review'), registerController.reviewGrade);
-router.get('/grade-issues', requireArea('issues'), registerController.listGradeIssues);
-router.get('/grade-issues/count', requireArea('issues'), registerController.countGradeIssues);
-router.put('/grade-issues/:id', requireArea('issues'), registerController.closeGradeIssue);
 
-// Kerkesat per ndryshimin e nje note te mbyllur.
-// Kujdestari kerkon dhe terheq; vetem administratori vendos.
-router.post('/classes/:id/edit-requests', requireKujdestar, registerController.createEditRequest);
-router.get('/edit-requests', requireKujdestar, registerController.listEditRequests);
-router.get('/edit-requests/count', requireKujdestar, registerController.countEditRequests);
-router.put('/edit-requests/:id', requireArea('approvals'), registerController.decideEditRequest);
-router.delete('/edit-requests/:id', requireKujdestar, registerController.cancelEditRequest);
 
 // Pagesat
 router.post('/payments', requireFinance, paymentController.create);

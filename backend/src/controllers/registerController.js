@@ -145,69 +145,6 @@ async function reviewGrade(req, res, next) {
   } catch (err) { next(err); }
 }
 
-async function listGradeIssues(req, res, next) {
-  try {
-    res.json(await registerService.listGradeIssues(req.user, { status: req.query.status }));
-  } catch (err) { next(err); }
-}
-
-async function countGradeIssues(req, res, next) {
-  try { res.json(await registerService.openIssueCount(req.user)); } catch (err) { next(err); }
-}
-
-async function closeGradeIssue(req, res, next) {
-  try {
-    const r = await registerService.closeGradeIssue(req.user, req.params.id, req.body.status);
-    res.locals.logEntityId = r.id;
-    res.locals.logSummary =
-      `Gabimi u ${r.status === 'resolved' ? 'rregullua' : 'hoq si i pabazuar'} — `
-      + `${r.student_name} · ${r.subject_name} (${r.term_label}) · ${r.class_label}`;
-    res.json({ ok: true, status: r.status });
-  } catch (err) { next(err); }
-}
-
-// ---- Kërkesat për ndryshimin e notës së mbyllur ----
-
-async function createEditRequest(req, res, next) {
-  try {
-    const r = await registerService.createEditRequest(req.user, req.params.id, req.body);
-    res.locals.logEntityId = r.id;
-    res.locals.logSummary =
-      `Kërkesë për ndryshim: ${r.term_label} (${r.old_value}) — ${fullName(r.student)} · ${r.subject.name} · ${r.class.label}`;
-    res.status(201).json({ ok: true, id: r.id });
-  } catch (err) { next(err); }
-}
-
-async function listEditRequests(req, res, next) {
-  try {
-    res.json(await registerService.listEditRequests(req.user, { status: req.query.status }));
-  } catch (err) { next(err); }
-}
-
-async function countEditRequests(req, res, next) {
-  try { res.json(await registerService.pendingRequestCount(req.user)); } catch (err) { next(err); }
-}
-
-async function decideEditRequest(req, res, next) {
-  try {
-    const r = await registerService.decideEditRequest(req.user, req.params.id, req.body);
-    res.locals.logEntityId = r.id;
-    res.locals.logSummary =
-      `Kërkesa e ${r.requested_by_name} u ${r.status === 'approved' ? 'miratua' : 'refuzua'}: `
-      + `${r.term_label} — ${r.student_name} · ${r.subject_name} · ${r.class_label}`;
-    res.json({ ok: true, status: r.status });
-  } catch (err) { next(err); }
-}
-
-async function cancelEditRequest(req, res, next) {
-  try {
-    const r = await registerService.cancelEditRequest(req.user, req.params.id);
-    res.locals.logSummary =
-      `Kërkesa u tërhoq: ${r.term_label} — ${r.student_name} · ${r.subject_name} · ${r.class_label}`;
-    res.json({ ok: true });
-  } catch (err) { next(err); }
-}
-
 module.exports = {
   listClasses,
   classOptions,
@@ -224,12 +161,4 @@ module.exports = {
   saveMeta,
   saveOrder,
   reviewGrade,
-  listGradeIssues,
-  countGradeIssues,
-  closeGradeIssue,
-  createEditRequest,
-  listEditRequests,
-  countEditRequests,
-  decideEditRequest,
-  cancelEditRequest,
 };

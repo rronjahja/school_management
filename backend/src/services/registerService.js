@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { httpError } = require('../middleware/errorHandler');
-const { isManager, isReviewer, canApprove } = require('../config/roles');
+const { isManager, isReviewer } = require('../config/roles');
 
 /**
  * Ditari i klasës — digjitalizimi i librit fizik
@@ -182,24 +182,22 @@ async function assertClassAccess(user, classId) {
 /**
  * Si me siper, por per veprimet qe NDRYSHOJNE ditarin.
  *
- * Shkruan vetem kujdestari i caktuar i asaj paraleleje (dhe menaxheri
- * a administratori). Stafi qe vetem kontrollon nuk e prek doren: ai
- * shenon gabimin, korrigjimin e ben kujdestari. Kontrolli eshte KETU,
- * ne server — jo nje buton i fshehur ne ekran.
+ * Shkruajne: kujdestari i caktuar i paraleles, stafi qe kontrollon,
+ * menaxheri dhe administratori. Nje note e mbyllur nuk eshte e kycur —
+ * kujdestari e ndryshon kurdo, dhe stafi e korrigjon vete kur gjen nje
+ * mospertputhje me librin fizik.
  */
 async function assertClassWrite(user, classId) {
   const cls = await assertClassAccess(user, classId);
-  const isOwner = cls.kujdestar_id === user.id;
-  if (!isManager(user) && !isOwner) {
-    throw httpError(403,
-      'Notat e kësaj paraleleje i plotëson vetëm kujdestari i saj. '
-      + 'Ju mund të shënoni një gabim, që ta korrigjojë ai.');
+  if (!canWriteClass(user, cls)) {
+    throw httpError(403, 'Nuk keni të drejtë të plotësoni ditarin e kësaj paraleleje.');
   }
   return cls;
 }
 
 /** A mund ta shkruaje ky perdorues kete paralele? (pa hedhur gabim) */
-const canWriteClass = (user, cls) => isManager(user) || cls.kujdestar_id === user.id;
+const canWriteClass = (user, cls) =>
+  isManager(user) || isReviewer(user) || cls.kujdestar_id === user.id;
 
 /**
  * Nxënësit e paraleles: aktivë, të të njëjtit drejtim, vit studimi dhe
@@ -477,27 +475,6 @@ async function getRegister(user, classId) {
     [classId]
   );
 
-  // Kërkesat e hapura: ditari shënon me to cilat mbyllje presin miratim
-  // dhe cilat janë të lira për t'u ndryshuar një herë.
-  const [requests] = await pool.query(
-    `SELECT r.id, r.student_id, r.subject_id, r.term, r.status, r.reason,
-            r.requested_by, r.created_at, u.full_name AS requested_by_name
-       FROM grade_edit_requests r
-       JOIN users u ON u.id = r.requested_by
-      WHERE r.class_id = ? AND r.status IN ('pending','approved')`,
-    [classId]
-  );
-
-  // Kontrollet e notave: cilat jane pranuar, cilat jane shenuar gabim
-  const [reviews] = await pool.query(
-    `SELECT r.id, r.student_id, r.subject_id, r.kind, r.term, r.grade_id,
-            r.observed_value, r.status, r.comment, r.reviewed_by, r.reviewed_at,
-            u.full_name AS reviewed_by_name
-       FROM grade_reviews r
-       JOIN users u ON u.id = r.reviewed_by
-      WHERE r.class_id = ? AND r.status IN ('ok','error')`,
-    [classId]
-  );
 
   return {
     class: cls,
@@ -507,13 +484,10 @@ async function getRegister(user, classId) {
     grades,
     finals,
     meta,
-    requests,
     reviews,
     // A i plotëson notat ky përdorues, apo vetëm i kontrollon?
     can_write: canWriteClass(user, cls),
     can_review: isReviewer(user),
-    // Administratori i ndryshon mbylljet lirisht; kujdestari jo.
-    can_edit_closed: isManager(user),
     viewer_id: user.id,
   };
 }
@@ -659,23 +633,6 @@ async function removeGrade(user, gradeId) {
 //  Nota përfundimtare (N.P. — shifra e kuqe)
 // ---------------------------------------------------------------
 
-/**
- * Leja e lirë për ndryshimin e një note të mbyllur, nëse ekziston.
- * Administratori nuk ka nevojë për leje; kujdestarit i duhet një kërkesë
- * e miratuar, e tija, pikërisht për atë qelizë.
- */
-async function findUnlock(user, cls, studentId, subjectId, term) {
-  if (isManager(user)) return null;
-  const [[row]] = await pool.query(
-    `SELECT id FROM grade_edit_requests
-      WHERE class_id = ? AND student_id = ? AND subject_id = ? AND term = ?
-        AND requested_by = ? AND status = 'approved'
-      ORDER BY decided_at DESC LIMIT 1`,
-    [cls.id, studentId, subjectId, term, user.id]
-  );
-  return row || null;
-}
-
 async function setFinalGrade(user, classId, data) {
   const cls = await assertClassWrite(user, classId);
   const student = await assertStudentInClass(cls, data.student_id);
@@ -687,31 +644,11 @@ async function setFinalGrade(user, classId, data) {
     [subject.id, student.id, term]
   );
 
-  // Vendosja e parë është e lirë. Ndryshimi i një note TASHMË TË MBYLLUR
-  // kërkon leje: kjo është pika ku ndalet kujdestari, dhe ndalet në server
-  // — jo thjesht me një buton të çaktivizuar në ekran.
-  let unlock = null;
-  if (existing && !isManager(user)) {
-    unlock = await findUnlock(user, cls, student.id, subject.id, term);
-    if (!unlock) {
-      throw httpError(403,
-        `${FINAL_TERM_LABELS[term]} është e mbyllur dhe nuk ndryshohet drejtpërdrejt. `
-        + 'Dërgoni një kërkesë te administratori dhe prisni miratimin.');
-    }
-  }
-
   const finish = async () => {
     // Nota ndryshoi: gabimi i shënuar mbi të s'ka më kuptim, mbyllet vetë.
     await autoResolveReviews({
       studentId: student.id, subjectId: subject.id, term, kind: 'closing',
     });
-    // Leja vlen për një ndryshim të vetëm; pasi përdoret, mbyllet.
-    if (unlock) {
-      await pool.query(
-        "UPDATE grade_edit_requests SET status = 'used', used_at = NOW() WHERE id = ?",
-        [unlock.id]
-      );
-    }
   };
 
   // value = null e heq mbylljen (u vendos gabimisht)
@@ -723,7 +660,7 @@ async function setFinalGrade(user, classId, data) {
     await finish();
     return {
       removed: true, class: cls, student, subject, term, value: null,
-      term_label: FINAL_TERM_LABELS[term], used_unlock: Boolean(unlock),
+      term_label: FINAL_TERM_LABELS[term],
     };
   }
 
@@ -737,186 +674,8 @@ async function setFinalGrade(user, classId, data) {
   await finish();
   return {
     removed: false, class: cls, student, subject, term, value,
-    term_label: FINAL_TERM_LABELS[term], used_unlock: Boolean(unlock),
+    term_label: FINAL_TERM_LABELS[term],
     old_value: existing ? existing.value : null,
-  };
-}
-
-// ---------------------------------------------------------------
-//  Kërkesat për ndryshimin e notës së mbyllur
-// ---------------------------------------------------------------
-
-/** Kujdestari kërkon leje për një qelizë të caktuar. */
-async function createEditRequest(user, classId, data) {
-  const cls = await assertClassWrite(user, classId);
-  const student = await assertStudentInClass(cls, data.student_id);
-  const subject = await subjectOf(cls, data.subject_id);
-  const term = assertFinalTerm(data.term);
-
-  const reason = String(data.reason || '').trim();
-  if (reason.length < 5) {
-    throw httpError(400, 'Shkruani arsyen e ndryshimit (të paktën 5 karaktere).');
-  }
-
-  const [[existing]] = await pool.query(
-    'SELECT value FROM class_final_grades WHERE subject_id = ? AND student_id = ? AND term = ?',
-    [subject.id, student.id, term]
-  );
-  if (!existing) {
-    throw httpError(400, 'Kjo notë nuk është e mbyllur — mund ta vendosni drejtpërdrejt.');
-  }
-
-  const [[open]] = await pool.query(
-    `SELECT id, status FROM grade_edit_requests
-      WHERE class_id = ? AND student_id = ? AND subject_id = ? AND term = ?
-        AND requested_by = ? AND status IN ('pending','approved')
-      LIMIT 1`,
-    [cls.id, student.id, subject.id, term, user.id]
-  );
-  if (open) {
-    throw httpError(409, open.status === 'pending'
-      ? 'Për këtë notë keni një kërkesë që pret ende miratimin.'
-      : 'Për këtë notë leja është dhënë tashmë — mund ta ndryshoni notën.');
-  }
-
-  const [result] = await pool.query('INSERT INTO grade_edit_requests SET ?', [{
-    class_id: cls.id,
-    student_id: student.id,
-    subject_id: subject.id,
-    term,
-    old_value: existing.value,
-    reason: reason.slice(0, 500),
-    requested_by: user.id,
-  }]);
-
-  return {
-    id: result.insertId, class: cls, student, subject, term,
-    term_label: FINAL_TERM_LABELS[term], old_value: existing.value,
-  };
-}
-
-/**
- * Lista e kërkesave. Administratori i sheh të gjitha; kujdestari vetëm
- * të vetat — edhe kjo në server, jo në ndërfaqe.
- */
-async function listEditRequests(user, { status } = {}) {
-  const where = [];
-  const params = [];
-
-  if (status && status !== 'all') {
-    if (!['pending', 'approved', 'declined', 'used'].includes(status)) {
-      throw httpError(400, 'Gjendja e kërkuar nuk njihet.');
-    }
-    where.push('r.status = ?');
-    params.push(status);
-  }
-  if (!canApprove(user)) {
-    where.push('r.requested_by = ?');
-    params.push(user.id);
-  }
-
-  const [rows] = await pool.query(
-    `SELECT r.id, r.term, r.old_value, r.reason, r.status, r.decision_note,
-            r.decided_at, r.used_at, r.created_at,
-            c.id AS class_id, c.name AS class_name, c.study_year,
-            cat.name AS category_name, cat.color AS category_color,
-            s.id AS student_id, s.first_name, s.last_name,
-            cs.name AS subject_name,
-            u.full_name AS requested_by_name, u.username AS requested_by_username,
-            d.full_name AS decided_by_name,
-            f.value AS current_value
-       FROM grade_edit_requests r
-       JOIN classes c        ON c.id  = r.class_id
-       JOIN categories cat   ON cat.id = c.category_id
-       JOIN students s       ON s.id  = r.student_id
-       JOIN class_subjects cs ON cs.id = r.subject_id
-       JOIN users u          ON u.id  = r.requested_by
-  LEFT JOIN users d          ON d.id  = r.decided_by
-  LEFT JOIN class_final_grades f
-         ON f.subject_id = r.subject_id AND f.student_id = r.student_id AND f.term = r.term
-      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-      ORDER BY FIELD(r.status, 'pending', 'approved', 'declined', 'used'), r.created_at DESC`,
-    params
-  );
-
-  return rows.map((r) => ({
-    ...r,
-    term_label: FINAL_TERM_LABELS[r.term],
-    class_label: classLabelOf(r.study_year, r.class_name),
-  }));
-}
-
-/** Sa kërkesa presin administratorin — për shenjën te menuja. */
-async function pendingRequestCount(user) {
-  const [[row]] = await pool.query(
-    canApprove(user)
-      ? "SELECT COUNT(*) AS c FROM grade_edit_requests WHERE status = 'pending'"
-      : "SELECT COUNT(*) AS c FROM grade_edit_requests WHERE status = 'pending' AND requested_by = ?",
-    canApprove(user) ? [] : [user.id]
-  );
-  return { pending: row.c };
-}
-
-/** Miratimi ose refuzimi — vetëm administratori. */
-async function decideEditRequest(user, requestId, data) {
-  const status = data.status === 'approved' ? 'approved'
-    : data.status === 'declined' ? 'declined' : null;
-  if (!status) throw httpError(400, 'Vendimi duhet të jetë miratim ose refuzim.');
-
-  const [[req]] = await pool.query(
-    `SELECT r.*, c.name AS class_name, c.study_year, cs.name AS subject_name,
-            CONCAT(s.first_name, ' ', s.last_name) AS student_name,
-            u.full_name AS requested_by_name
-       FROM grade_edit_requests r
-       JOIN classes c ON c.id = r.class_id
-       JOIN class_subjects cs ON cs.id = r.subject_id
-       JOIN students s ON s.id = r.student_id
-       JOIN users u ON u.id = r.requested_by
-      WHERE r.id = ?`,
-    [requestId]
-  );
-  if (!req) throw httpError(404, 'Kërkesa nuk u gjet.');
-  if (req.status !== 'pending') {
-    throw httpError(409, 'Kjo kërkesë është shqyrtuar tashmë.');
-  }
-
-  await pool.query(
-    'UPDATE grade_edit_requests SET status = ?, decided_by = ?, decision_note = ?, decided_at = NOW() WHERE id = ?',
-    [status, user.id, data.note ? String(data.note).slice(0, 500) : null, requestId]
-  );
-
-  return {
-    ...req, status,
-    term_label: FINAL_TERM_LABELS[req.term],
-    class_label: classLabelOf(req.study_year, req.class_name),
-  };
-}
-
-/** Kujdestari mund ta tërheqë kërkesën e vet derisa s'është shqyrtuar. */
-async function cancelEditRequest(user, requestId) {
-  const [[req]] = await pool.query(
-    `SELECT r.*, c.name AS class_name, c.study_year, cs.name AS subject_name,
-            CONCAT(s.first_name, ' ', s.last_name) AS student_name
-       FROM grade_edit_requests r
-       JOIN classes c ON c.id = r.class_id
-       JOIN class_subjects cs ON cs.id = r.subject_id
-       JOIN students s ON s.id = r.student_id
-      WHERE r.id = ?`,
-    [requestId]
-  );
-  if (!req) throw httpError(404, 'Kërkesa nuk u gjet.');
-  if (!canApprove(user) && req.requested_by !== user.id) {
-    throw httpError(403, 'Mund të tërhiqni vetëm kërkesat tuaja.');
-  }
-  if (req.status !== 'pending') {
-    throw httpError(409, 'Vetëm një kërkesë në pritje mund të tërhiqet.');
-  }
-
-  await pool.query('DELETE FROM grade_edit_requests WHERE id = ?', [requestId]);
-  return {
-    ...req,
-    term_label: FINAL_TERM_LABELS[req.term],
-    class_label: classLabelOf(req.study_year, req.class_name),
   };
 }
 
@@ -993,7 +752,6 @@ async function saveStudentMeta(user, classId, studentId, data) {
 
   return { meta: row, class: cls, student };
 }
-
 
 // ---------------------------------------------------------------
 //  Kontrolli i notave — pranimi ose shënimi i një gabimi
@@ -1099,123 +857,6 @@ async function reviewGrade(user, classId, data) {
   };
 }
 
-/**
- * Lista e gabimeve. Kontrolluesit dhe drejtuesit i shohin të gjitha;
- * kujdestari vetëm ato të paraleleve të veta — ato që duhet t'i rregullojë.
- */
-async function listGradeIssues(user, { status = 'error' } = {}) {
-  const where = [];
-  const params = [];
-
-  if (status && status !== 'all') {
-    if (!['ok', 'error', 'resolved', 'dismissed'].includes(status)) {
-      throw httpError(400, 'Gjendja e kërkuar nuk njihet.');
-    }
-    where.push('r.status = ?');
-    params.push(status);
-  } else {
-    // «Të gjitha» do të thotë historiku i gabimeve, jo notat e pranuara
-    where.push("r.status <> 'ok'");
-  }
-
-  if (!isManager(user) && !isReviewer(user)) {
-    where.push('c.kujdestar_id = ?');
-    params.push(user.id);
-  }
-
-  const [rows] = await pool.query(
-    `SELECT r.id, r.kind, r.term, r.observed_value, r.status, r.comment,
-            r.reviewed_at, r.resolved_at, r.grade_id,
-            c.id AS class_id, c.name AS class_name, c.study_year, c.kujdestar_id,
-            cat.name AS category_name, cat.color AS category_color,
-            s.id AS student_id, s.first_name, s.last_name,
-            cs.name AS subject_name,
-            u.full_name AS reviewed_by_name,
-            d.full_name AS resolved_by_name,
-            k.full_name AS kujdestar_name,
-            g.value AS current_mark,
-            f.value AS current_closing
-       FROM grade_reviews r
-       JOIN classes c         ON c.id  = r.class_id
-       JOIN categories cat    ON cat.id = c.category_id
-       JOIN students s        ON s.id  = r.student_id
-       JOIN class_subjects cs ON cs.id = r.subject_id
-       JOIN users u           ON u.id  = r.reviewed_by
-  LEFT JOIN users d           ON d.id  = r.resolved_by
-  LEFT JOIN users k           ON k.id  = c.kujdestar_id
-  LEFT JOIN class_grades g    ON g.id  = r.grade_id
-  LEFT JOIN class_final_grades f
-         ON r.kind = 'closing' AND f.subject_id = r.subject_id
-        AND f.student_id = r.student_id AND f.term = r.term
-      ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-      ORDER BY FIELD(r.status, 'error', 'resolved', 'dismissed'), r.reviewed_at DESC`,
-    params
-  );
-
-  return rows.map((r) => ({
-    ...r,
-    term_label: FINAL_TERM_LABELS[r.term] || TERM_LABELS[r.term],
-    class_label: classLabelOf(r.study_year, r.class_name),
-    // Vlera e tanishme: nga nota e vazhdueshme ose nga mbyllja
-    current_value: r.kind === 'mark' ? r.current_mark : r.current_closing,
-  }));
-}
-
-/** Sa gabime presin — per shenjen te menuja. */
-async function openIssueCount(user) {
-  const seesAll = isManager(user) || isReviewer(user);
-  const [[row]] = await pool.query(
-    seesAll
-      ? "SELECT COUNT(*) AS c FROM grade_reviews WHERE status = 'error'"
-      : `SELECT COUNT(*) AS c FROM grade_reviews r
-           JOIN classes c ON c.id = r.class_id
-          WHERE r.status = 'error' AND c.kujdestar_id = ?`,
-    seesAll ? [] : [user.id]
-  );
-  return { open: row.c };
-}
-
-/**
- * Mbyllja me dore e nje gabimi.
- *   'resolved'  → u rregullua
- *   'dismissed' → s'ishte gabim; e hedh poshte vetem kontrolluesi a drejtuesi
- */
-async function closeGradeIssue(user, issueId, action) {
-  const status = ['resolved', 'dismissed'].includes(action) ? action : null;
-  if (!status) throw httpError(400, 'Veprimi nuk njihet.');
-
-  const [[issue]] = await pool.query(
-    `SELECT r.*, c.name AS class_name, c.study_year, c.kujdestar_id, cs.name AS subject_name,
-            CONCAT(s.first_name, ' ', s.last_name) AS student_name
-       FROM grade_reviews r
-       JOIN classes c ON c.id = r.class_id
-       JOIN class_subjects cs ON cs.id = r.subject_id
-       JOIN students s ON s.id = r.student_id
-      WHERE r.id = ?`,
-    [issueId]
-  );
-  if (!issue) throw httpError(404, 'Gabimi nuk u gjet.');
-  if (issue.status !== 'error') throw httpError(409, 'Ky gabim është mbyllur tashmë.');
-
-  const isOwner = issue.kujdestar_id === user.id;
-  if (status === 'dismissed' && !isManager(user) && !isReviewer(user)) {
-    throw httpError(403, 'Vetëm kontrolluesi mund ta heqë një gabim si të pabazuar.');
-  }
-  if (!isManager(user) && !isReviewer(user) && !isOwner) {
-    throw httpError(403, 'Nuk keni qasje në këtë gabim.');
-  }
-
-  await pool.query(
-    'UPDATE grade_reviews SET status = ?, resolved_by = ?, resolved_at = NOW() WHERE id = ?',
-    [status, user.id, issueId]
-  );
-  return {
-    ...issue, status,
-    term_label: FINAL_TERM_LABELS[issue.term] || TERM_LABELS[issue.term],
-    class_label: classLabelOf(issue.study_year, issue.class_name),
-  };
-}
-
 module.exports = {
   MAX_PARALLELS,
   classLabelOf,
@@ -1236,12 +877,4 @@ module.exports = {
   saveStudentMeta,
   saveStudentOrder,
   reviewGrade,
-  listGradeIssues,
-  openIssueCount,
-  closeGradeIssue,
-  createEditRequest,
-  listEditRequests,
-  pendingRequestCount,
-  decideEditRequest,
-  cancelEditRequest,
 };

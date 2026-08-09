@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import IspeLogo from '../ui/IspeLogo.jsx';
 import InvasoftLogo from '../ui/InvasoftLogo.jsx';
 import { shortGen, currentSchoolYear } from '../../utils/format';
-import { fetchEditRequestCount, fetchGradeIssueCount } from '../../api/ditari';
 import { ROLE_LABELS } from '../../config/roles';
 
 // Cdo zë i menusë mban ZONEN e vet; kush e sheh vendoset te config/roles.js
@@ -15,8 +13,7 @@ const NAV = [
   { to: '/administrata', label: 'Administrata', icon: AdminIcon, area: 'administrata' },
   { to: '/ditari', label: 'Ditari i notave', icon: DiaryIcon, area: 'ditari' },
   { to: '/oret', label: 'Orët e mësimit', icon: ClockIcon, area: 'mesimi' },
-  { to: '/gabimet', label: 'Gabimet e ditarit', icon: IssueIcon, area: 'issues', badge: 'issues' },
-  { to: '/kerkesat', label: 'Kërkesat për nota', icon: RequestIcon, area: 'requests', badge: 'requests' },
+  { to: '/oret-e-mbajtura', label: 'Orët e mbajtura', icon: TallyIcon, area: 'oret_raport' },
   { to: '/financat', label: 'Financat', icon: FinanceIcon, area: 'finance' },
   { to: '/te-diplomuarit', label: 'Të diplomuarit', icon: GraduateIcon, area: 'graduates' },
 ];
@@ -29,27 +26,7 @@ const NAV_BOTTOM = [
 export default function Sidebar() {
   const { user, can, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [pending, setPending] = useState(0);
-  const [issues, setIssues] = useState(0);
 
-  // Sa kërkesa presin. Rilexohet sa herë ndërrohet faqja, që administratori
-  // ta shohë numrin e ri sapo vendos për njërën — pa e rifreskuar shfletuesin.
-  useEffect(() => {
-    let alive = true;
-    if (can('requests')) {
-      fetchEditRequestCount()
-        .then((d) => { if (alive) setPending(d.pending || 0); })
-        .catch(() => { /* shenja është ndihmëse; heshtja është e mjaftueshme */ });
-    }
-    if (can('issues')) {
-      fetchGradeIssueCount()
-        .then((d) => { if (alive) setIssues(d.open || 0); })
-        .catch(() => { });
-    }
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.role, location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,7 +43,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {NAV.filter((n) => can(n.area)).map(({ to, label, icon: Icon, end, badge }) => (
+        {NAV.filter((n) => can(n.area)).map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -75,14 +52,6 @@ export default function Sidebar() {
           >
             <Icon />
             <span>{label}</span>
-            {badge === 'requests' && pending > 0 && (
-              <span className="nav-badge" title={`${pending} kërkesa në pritje`}>{pending}</span>
-            )}
-            {badge === 'issues' && issues > 0 && (
-              <span className="nav-badge nav-badge-red" title={`${issues} gabime të hapura`}>
-                {issues}
-              </span>
-            )}
           </NavLink>
         ))}
       </nav>
@@ -191,6 +160,22 @@ function LogIcon() {
   );
 }
 
+/** Oret e mbajtura — shufra numerimi, si nje permbledhje. */
+function TallyIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+      <path
+        d="M4 15.5V9M8 15.5V5.5M12 15.5v-4M16 15.5V7.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <path d="M2.75 17.5h14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /** Oret e mesimit — nje ore me akrepa. */
 function ClockIcon() {
   return (
@@ -198,23 +183,6 @@ function ClockIcon() {
       <circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" strokeWidth="1.7" />
       <path d="M10 6v4.2l2.8 1.7" fill="none" stroke="currentColor"
         strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-/** Gabimet e ditarit — nje shenje pasthirrmeje mbi nje flete. */
-function IssueIcon() {
-  return (
-    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-      <path
-        d="M5 2.75h7L15 6v11.25H5z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path d="M10 8v3.6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-      <circle cx="10" cy="14.2" r="0.95" fill="currentColor" />
     </svg>
   );
 }
@@ -253,28 +221,6 @@ function DiaryIcon() {
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function RequestIcon() {
-  return (
-    <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-      <path
-        d="M5 3h7l3 3v11H5z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.6 11.4l1.7 1.7 3.4-3.6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );

@@ -58,6 +58,16 @@ async function reviewLesson(req, res, next) {
     } catch (err) { next(err); }
 }
 
+async function heldLessons(req, res, next) {
+    try {
+        res.json(await lessonService.heldLessons(req.user, req.query));
+    } catch (err) { next(err); }
+}
+
+async function reportFilters(req, res, next) {
+    try { res.json(await lessonService.reportFilters(req.user)); } catch (err) { next(err); }
+}
+
 async function monthlyReport(req, res, next) {
     try {
         res.json(await lessonService.monthlyReport(req.user, req.query.month, req.query.class_id));
@@ -65,5 +75,6 @@ async function monthlyReport(req, res, next) {
 }
 
 module.exports = {
-    listClasses, getMonth, createLesson, updateLesson, deleteLesson, reviewLesson, monthlyReport,
+    listClasses, getMonth, createLesson, updateLesson, deleteLesson, reviewLesson,
+    monthlyReport, heldLessons, reportFilters,
 };

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
     fetchRegister, addGrade, deleteGrade, setFinalGrade, saveStudentMeta, saveStudentOrder,
-    createEditRequest, cancelEditRequest, reviewGrade,
+    reviewGrade,
 } from '../api/ditari';
 import { errorMessage } from '../api/client';
 import Loader from '../components/ui/Loader.jsx';
@@ -76,13 +76,7 @@ export default function DitariKlasa() {
                     (f) => !(f.student_id === student_id && f.subject_id === subject_id && f.term === term)
                 );
                 if (value !== null) finals.push({ student_id, subject_id, term, value });
-                // Nëse ndryshimi u bë me leje, ajo sapo u shpenzua — hiqet edhe këtu,
-                // që qeliza të mbyllet sërish pa pritur një rifreskim.
-                const requests = (d.requests || []).filter(
-                    (r) => !(r.student_id === student_id && r.subject_id === subject_id
-                        && r.term === term && r.status === 'approved')
-                );
-                return { ...d, finals, requests };
+                return { ...d, finals };
             });
         });
 
@@ -108,22 +102,6 @@ export default function DitariKlasa() {
     const handleReview = (payload) =>
         run(async () => {
             await reviewGrade(id, payload);
-            await load();
-        });
-
-    /**
-     * Kërkesa për ndryshimin e një note të mbyllur. Pas dërgimit ditari
-     * rilexohet, që qeliza të shënohet menjëherë «në pritje».
-     */
-    const handleRequestEdit = (student_id, subject_id, term, reason) =>
-        run(async () => {
-            await createEditRequest(id, { student_id, subject_id, term, reason });
-            await load();
-        });
-
-    const handleCancelRequest = (requestId) =>
-        run(async () => {
-            await cancelEditRequest(requestId);
             await load();
         });
 
@@ -197,8 +175,6 @@ export default function DitariKlasa() {
                     onDeleteGrade={handleDeleteGrade}
                     onSetFinal={handleSetFinal}
                     onSaveMeta={handleSaveMeta}
-                    onRequestEdit={handleRequestEdit}
-                    onCancelRequest={handleCancelRequest}
                     onReview={handleReview}
                 />
             )}

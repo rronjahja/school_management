@@ -382,6 +382,154 @@ async function monthlyReport(user, month, classId = null) {
     }));
 }
 
+
+// ---------------------------------------------------------------
+//  Orët e mbajtura — pasqyra e administratës
+// ---------------------------------------------------------------
+
+/**
+ * Kufijtë e periudhës së kërkuar.
+ *
+ *   'dita'  → një ditë e vetme
+ *   'java'  → e hëna deri të premten e asaj jave (shkolla s'punon fundjavë)
+ *   'muaji' → muaji i plotë
+ *
+ * Kthehen gjithnjë dy data të plota, që pyetja te baza të jetë e njëjtë
+ * për të tria rastet — një kusht i vetëm `BETWEEN`, jo tri degë.
+ */
+function periodRange(period, value) {
+    const iso = (d) => d.toISOString().slice(0, 10);
+
+    if (period === 'muaji') {
+        assertMonth(value);
+        const [y, m] = value.split('-').map(Number);
+        return {
+            from: iso(new Date(Date.UTC(y, m - 1, 1))),
+            to: iso(new Date(Date.UTC(y, m, 0))),
+            label: value,
+        };
+    }
+
+    const day = assertLessonDate(value);
+    if (period === 'dita') return { from: day, to: day, label: day };
+
+    if (period === 'java') {
+        const d = new Date(`${day}T00:00:00Z`);
+        // getUTCDay: 1 = e hënë. Data është ditë pune, sepse assertLessonDate
+        // i refuzon fundjavat.
+        const monday = new Date(d);
+        monday.setUTCDate(d.getUTCDate() - (d.getUTCDay() - 1));
+        const friday = new Date(monday);
+        friday.setUTCDate(monday.getUTCDate() + 4);
+        return { from: iso(monday), to: iso(friday), label: `${iso(monday)}…${iso(friday)}` };
+    }
+
+    throw httpError(400, 'Periudha duhet të jetë dita, java ose muaji.');
+}
+
+/**
+ * Orët e mbajtura brenda periudhës, me përmbledhjen për çdo mësimdhënës.
+ *
+ * Të dyja vijnë nga e njëjta pyetje e filtruar: nëse lista dhe shifrat
+ * do të nxirreshin veç e veç, një filtër i ndryshuar në njërën anë do
+ * ta bënte përmbledhjen të mos i përgjigjej më listës që shihet.
+ */
+async function heldLessons(user, filters = {}) {
+    if (!can(user, 'oret_raport')) {
+        throw httpError(403, 'Nuk keni qasje në pasqyrën e orëve të mbajtura.');
+    }
+
+    const period = filters.period || 'muaji';
+    const range = periodRange(period, filters.date);
+
+    const where = ['l.lesson_date BETWEEN ? AND ?'];
+    const params = [range.from, range.to];
+
+    if (filters.professor_id) {
+        // Zëvendësimet: ora i takon atij që e mbajti, ndaj filtrohet sipas
+        // professor_id — kështu ora e zëvendësuar del te zëvendësuesi.
+        where.push('l.professor_id = ?');
+        params.push(Number(filters.professor_id));
+    }
+    if (filters.class_id) {
+        where.push('l.class_id = ?');
+        params.push(Number(filters.class_id));
+    }
+    if (filters.only_substitutions === 'true' || filters.only_substitutions === true) {
+        where.push('l.substitute_for IS NOT NULL');
+    }
+
+    const clause = `WHERE ${where.join(' AND ')}`;
+
+    const [rows] = await pool.query(
+        `SELECT l.id, l.lesson_date, l.period, l.topic,
+            l.review_status, l.review_comment,
+            cs.name AS subject_name,
+            c.id AS class_id, c.name AS class_name, c.study_year,
+            cat.name AS category_name, cat.color AS category_color,
+            p.id AS professor_id, p.full_name AS professor_name,
+            m.full_name AS substitute_for_name,
+            r.full_name AS reviewed_by_name
+       FROM lessons l
+       JOIN class_subjects cs ON cs.id = l.subject_id
+       JOIN classes c ON c.id = l.class_id
+       JOIN categories cat ON cat.id = c.category_id
+       JOIN professors p ON p.id = l.professor_id
+  LEFT JOIN professors m ON m.id = l.substitute_for
+  LEFT JOIN users r ON r.id = l.reviewed_by
+      ${clause}
+      ORDER BY l.lesson_date, l.period, c.study_year, c.name`,
+        params
+    );
+
+    const [summary] = await pool.query(
+        `SELECT l.professor_id, p.full_name AS professor_name,
+            COUNT(*) AS total_hours,
+            SUM(l.substitute_for IS NOT NULL) AS substitutions,
+            SUM(l.review_status = 'ok') AS verified,
+            SUM(l.review_status = 'error') AS flagged,
+            COUNT(DISTINCT l.class_id) AS classes
+       FROM lessons l
+       JOIN professors p ON p.id = l.professor_id
+      ${clause}
+      GROUP BY l.professor_id, p.full_name
+      ORDER BY total_hours DESC, p.full_name`,
+        params
+    );
+
+    return {
+        period,
+        from: range.from,
+        to: range.to,
+        lessons: rows.map((l) => ({
+            ...l,
+            lesson_date: toISODate(l.lesson_date),
+            class_label: registerService.classLabelOf(l.study_year, l.class_name),
+        })),
+        summary: summary.map((r) => ({
+            ...r,
+            total_hours: Number(r.total_hours),
+            substitutions: Number(r.substitutions),
+            verified: Number(r.verified),
+            flagged: Number(r.flagged),
+            classes: Number(r.classes),
+        })),
+        total_hours: rows.length,
+    };
+}
+
+/** Mesimdhenesit dhe paralelet — per filtrat e faqes. */
+async function reportFilters(user) {
+    if (!can(user, 'oret_raport')) {
+        throw httpError(403, 'Nuk keni qasje në pasqyrën e orëve të mbajtura.');
+    }
+    const [professors] = await pool.query(
+        'SELECT id, full_name FROM professors ORDER BY is_active DESC, full_name'
+    );
+    const classes = await listClasses(user);
+    return { professors, classes };
+}
+
 module.exports = {
     MAX_PERIOD,
     listClasses,
@@ -391,4 +539,6 @@ module.exports = {
     deleteLesson,
     reviewLesson,
     monthlyReport,
+    heldLessons,
+    reportFilters,
 };

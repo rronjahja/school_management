@@ -13,10 +13,9 @@ import Graduates from './pages/Graduates.jsx';
 import Settings from './pages/Settings.jsx';
 import Ditari from './pages/Ditari.jsx';
 import DitariKlasa from './pages/DitariKlasa.jsx';
-import GradeRequests from './pages/GradeRequests.jsx';
 import Administrata from './pages/Administrata.jsx';
-import GradeIssues from './pages/GradeIssues.jsx';
 import Oret from './pages/Oret.jsx';
+import OretMbajtura from './pages/OretMbajtura.jsx';
 import Logs from './pages/Logs.jsx';
 
 /** Rruget e panjohura e cojne perdoruesin te faqja e tij e pare. */
@@ -103,22 +102,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/gabimet"
-          element={
-            <ProtectedRoute area="issues">
-              <GradeIssues />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/kerkesat"
-          element={
-            <ProtectedRoute area="requests">
-              <GradeRequests />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/financat"
           element={
             <ProtectedRoute area="finance">
@@ -131,6 +114,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute area="graduates">
               <Graduates />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/oret-e-mbajtura"
+          element={
+            <ProtectedRoute area="oret_raport">
+              <OretMbajtura />
             </ProtectedRoute>
           }
         />

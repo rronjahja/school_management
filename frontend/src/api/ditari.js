@@ -44,32 +44,6 @@ export const setFinalGrade = (classId, data) =>
 export const reviewGrade = (classId, data) =>
   client.post(`/classes/${classId}/reviews`, data).then((r) => r.data);
 
-export const fetchGradeIssues = (status = 'error') =>
-  client.get('/grade-issues', { params: { status } }).then((r) => r.data);
-
-export const fetchGradeIssueCount = () =>
-  client.get('/grade-issues/count').then((r) => r.data);
-
-export const closeGradeIssue = (id, status) =>
-  client.put(`/grade-issues/${id}`, { status }).then((r) => r.data);
-
-// ---- Kërkesat për ndryshimin e notës së mbyllur ----
-
-export const createEditRequest = (classId, data) =>
-  client.post(`/classes/${classId}/edit-requests`, data).then((r) => r.data);
-
-export const fetchEditRequests = (status = 'pending') =>
-  client.get('/edit-requests', { params: { status } }).then((r) => r.data);
-
-export const fetchEditRequestCount = () =>
-  client.get('/edit-requests/count').then((r) => r.data);
-
-export const decideEditRequest = (id, status, note) =>
-  client.put(`/edit-requests/${id}`, { status, note }).then((r) => r.data);
-
-export const cancelEditRequest = (id) =>
-  client.delete(`/edit-requests/${id}`).then((r) => r.data);
-
 // ---- Rendi i nxënësve ----
 
 export const saveStudentOrder = (classId, studentIds) =>

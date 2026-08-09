@@ -26,14 +26,6 @@ const GROUP_ORDER = ['gjuhet', 'matematika', 'shkencat', 'shoqeria', 'sportet',
 const TERM_LABELS = { gj1: 'Gjysmëvjetori I', gj2: 'Gjysmëvjetori II' };
 
 /** Mbyllja e notës: një për çdo gjysmëvjetor, plus ajo përfundimtare. */
-/** Shpjegimi që shfaqet kur qëndron miu mbi një mbyllje. */
-const STATE_HINTS = {
-  open: '',
-  unlocked: ' — leja u dha, mund ta ndryshoni një herë',
-  pending: ' — kërkesa pret miratimin e administratorit',
-  locked: ' — e mbyllur; kërkoni leje për ndryshim',
-};
-
 const CLOSING_LABELS = {
   gj1: 'Mbyllja e Gjysmëvjetorit I',
   gj2: 'Mbyllja e Gjysmëvjetorit II',
@@ -103,12 +95,12 @@ function anchorFrom(e) {
 
 export default function RegisterGrid({
   data, busy, onAddGrade, onDeleteGrade, onSetFinal, onSaveMeta,
-  onRequestEdit, onCancelRequest, onReview,
+  onReview,
 }) {
   const {
     class: cls, subjects, students, grades, finals, meta,
-    group_labels: groupLabels, requests = [], reviews = [],
-    can_edit_closed: canEditClosed, viewer_id: viewerId,
+    group_labels: groupLabels, reviews = [],
+    viewer_id: viewerId,
     can_write: canWrite = true, can_review: canReview = false,
   } = data;
 
@@ -177,36 +169,6 @@ export default function RegisterGrid({
     for (const f of finals) m.set(`${f.student_id}:${f.subject_id}:${f.term}`, f.value);
     return m;
   }, [finals]);
-
-  /**
-   * Kërkesat e hapura sipas qelizës. Nëse për të njëjtën qelizë ka disa,
-   * fiton ajo e miratuara: leja e dhënë është ajo që vlen.
-   */
-  const requestMap = useMemo(() => {
-    const m = new Map();
-    for (const r of requests) {
-      const key = `${r.student_id}:${r.subject_id}:${r.term}`;
-      const prev = m.get(key);
-      if (!prev || (r.status === 'approved' && prev.status !== 'approved')) m.set(key, r);
-    }
-    return m;
-  }, [requests]);
-
-  /**
-   * Gjendja e një mbylljeje për këtë përdorues:
-   *   'open'     → e lirë (bosh, ose administrator)
-   *   'unlocked' → e mbyllur, por leja është dhënë — një ndryshim i vetëm
-   *   'pending'  → e mbyllur, kërkesa pret administratorin
-   *   'locked'   → e mbyllur; duhet kërkuar leje
-   */
-  const closingState = (studentId, subjectId, term, closing) => {
-    if (closing === undefined || closing === null) return 'open';
-    if (canEditClosed) return 'open';
-    const req = requestMap.get(`${studentId}:${subjectId}:${term}`);
-    if (req && req.status === 'approved' && req.requested_by === viewerId) return 'unlocked';
-    if (req && req.status === 'pending' && req.requested_by === viewerId) return 'pending';
-    return 'locked';
-  };
 
   /**
    * Kontrollet sipas objektit: një notë e vazhdueshme çelësohet me id-në
@@ -288,7 +250,7 @@ export default function RegisterGrid({
     e.stopPropagation();
     const current = finalsMap.get(`${student.id}:${subject.id}:${term}`) ?? null;
 
-    // Kontrolluesi e shqyrton mbylljen, nuk e ndryshon
+    // Kontrolluesi e shqyrton mbylljen pa e ndryshuar
     if (!writing) {
       if (!reviewing || current === null || current === undefined) return;
       setDraft('');
@@ -299,19 +261,7 @@ export default function RegisterGrid({
       return;
     }
 
-    const state = closingState(student.id, subject.id, term, current);
-
-    // E mbyllur pa leje: nuk hapet fare zgjedhësi i notave — hapet kërkesa.
-    if (state === 'locked' || state === 'pending') {
-      setDraft('');
-      setPop({
-        kind: 'locked', ...anchorFrom(e), student, subject, term, current, state,
-        request: requestMap.get(`${student.id}:${subject.id}:${term}`) || null,
-      });
-      return;
-    }
-
-    setPop({ kind: 'final', ...anchorFrom(e), student, subject, term, current, state });
+    setPop({ kind: 'final', ...anchorFrom(e), student, subject, term, current });
   };
 
   const openAbsence = (e, student, field, label) => {
@@ -339,7 +289,6 @@ export default function RegisterGrid({
   const renderGradeCell = (student, subject, term) => {
     const cell = gradesMap.get(`${student.id}:${subject.id}:${term}`) || [];
     const closing = finalsMap.get(`${student.id}:${subject.id}:${term}`);
-    const state = closingState(student.id, subject.id, term, closing);
     return (
       <td key={subject.id} className="dt-td">
         <div className="dt-cell">
@@ -378,9 +327,9 @@ export default function RegisterGrid({
           {/* shifra e madhe e mbylljes së gjysmëvjetorit */}
           <button
             type="button"
-            className={`dt-close${closing ? '' : ' dt-close-empty'} dt-close-${state}`
+            className={`dt-close${closing ? '' : ' dt-close-empty'}`
               + reviewClass(closingReview(student.id, subject.id, term))}
-            title={`${CLOSING_LABELS[term]} · ${subject.name}${STATE_HINTS[state] || ''}`}
+            title={`${CLOSING_LABELS[term]} · ${subject.name}`}
             onClick={(e) => openFinal(e, student, subject, term)}
           >
             {closing || '·'}
@@ -392,15 +341,14 @@ export default function RegisterGrid({
 
   const renderFinalCell = (student, subject) => {
     const value = finalsMap.get(`${student.id}:${subject.id}:final`);
-    const state = closingState(student.id, subject.id, 'final', value);
     return (
       <td key={subject.id} className="dt-td dt-td-np">
         <div
-          className={`dt-cell dt-cell-np dt-close-${state}`
+          className={`dt-cell dt-cell-np`
             + reviewClass(closingReview(student.id, subject.id, 'final'))}
           role="button"
           tabIndex={0}
-          title={`Nota përfundimtare · ${subject.name}${STATE_HINTS[state] || ''}`}
+          title={`Nota përfundimtare · ${subject.name}`}
           onClick={(e) => openFinal(e, student, subject, 'final')}
           onKeyDown={(e) => e.key === 'Enter' && openFinal(e, student, subject, 'final')}
         >
@@ -715,11 +663,6 @@ export default function RegisterGrid({
                   {CLOSING_LABELS[pop.term]}
                   <em>{studentName(pop.student)} · {pop.subject.name}</em>
                 </p>
-                {pop.state === 'unlocked' && (
-                  <p className="dt-pop-note dt-pop-note-ok">
-                    Leja u dha — ky ndryshim i vetëm mbyll edhe lejen.
-                  </p>
-                )}
                 <div className="dt-pop-grades">
                   {[1, 2, 3, 4, 5].map((v) => (
                     <button
@@ -742,69 +685,6 @@ export default function RegisterGrid({
                   >
                     Hiq mbylljen
                   </button>
-                )}
-              </>
-            )}
-
-            {pop.kind === 'locked' && (
-              <>
-                <p className="dt-pop-title">
-                  {CLOSING_LABELS[pop.term]} është e mbyllur
-                  <em>{studentName(pop.student)} · {pop.subject.name} · nota {pop.current}</em>
-                </p>
-
-                {pop.state === 'pending' ? (
-                  <>
-                    <p className="dt-pop-note">
-                      Kërkesa u dërgua dhe pret miratimin e administratorit.
-                    </p>
-                    {pop.request?.reason && (
-                      <p className="dt-pop-reason">«{pop.request.reason}»</p>
-                    )}
-                    <div className="dt-pop-actions">
-                      <button type="button" className="btn btn-ghost btn-small" onClick={close}>
-                        Mbyll
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-small"
-                        onClick={() => commit(() => onCancelRequest(pop.request.id))}
-                      >
-                        Tërhiq kërkesën
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="dt-pop-note">
-                      Për ta ndryshuar, shkruani arsyen dhe dërgojeni te administratori.
-                    </p>
-                    <textarea
-                      className="dt-pop-textarea"
-                      rows={3}
-                      maxLength={500}
-                      autoFocus
-                      placeholder="p.sh. gabim gjatë transkriptimit nga fletorja"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                    />
-                    <div className="dt-pop-actions">
-                      <button type="button" className="btn btn-ghost btn-small" onClick={close}>
-                        Anulo
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-small"
-                        disabled={draft.trim().length < 5}
-                        onClick={() =>
-                          commit(() => onRequestEdit(
-                            pop.student.id, pop.subject.id, pop.term, draft.trim()
-                          ))}
-                      >
-                        Dërgo kërkesën
-                      </button>
-                    </div>
-                  </>
                 )}
               </>
             )}

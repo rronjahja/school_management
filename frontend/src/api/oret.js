@@ -20,6 +20,12 @@ export const deleteLesson = (lessonId) =>
 export const reviewLesson = (lessonId, data) =>
     client.put(`/lessons/${lessonId}/review`, data).then((r) => r.data);
 
+export const fetchHeldLessons = (params) =>
+    client.get('/lessons/held', { params }).then((r) => r.data);
+
+export const fetchReportFilters = () =>
+    client.get('/lessons/filters').then((r) => r.data);
+
 export const fetchLessonReport = (month, classId) =>
     client.get('/lessons/report', { params: { month, class_id: classId || undefined } })
         .then((r) => r.data);

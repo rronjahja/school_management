@@ -17,7 +17,7 @@ const ROLE_LABELS = {
     finance: 'Financa',
     kujdestar: 'Kujdestar/e',
     staff: 'Staf',
-  };
+};
 
 /**
  * Zonat e punës dhe rolet që i hapin.
@@ -25,15 +25,15 @@ const ROLE_LABELS = {
  *   dashboard    → Paneli
  *   administrata → Paralelet dhe kujdestaret
  *   mesimi       → Ditari i oreve te mesimit (e plotesojne stafi e lart)
+ *   oret_raport  → Oret e mbajtura: pasqyra dhe permbledhja per cdo mesimdhenes.
+ *                  Kujdestari e ka ditarin, jo raportin: sa ore ka mbajtur
+ *                  secili mesimdhenes eshte ceshtje e administrates.
  *   students  → Nxënësit (lista, kartela, ndryshimi)
  *   register  → Regjistrimi i nxënësit të ri
  *   finance   → Financat, pagesat, fletëpagesat, eksporti
  *   graduates → Të diplomuarit
  *   ditari    → Ditari i notave (shkrimi vetem te paralelja jote)
  *   review    → Kontrolli i notave: pranim ose shenim gabimi me koment
- *   approvals → Vendimi mbi kerkesat per ndryshimin e nje note te mbyllur
- *   issues    → Lista e gabimeve te gjetura
- *   requests  → Kërkesat për ndryshimin e notave të mbyllura
  *   settings  → Cilësimet (konfigurimi i sistemit)
  *   manage    → veprime të forta JASHTË cilësimeve: fshirja e një nxënësi
  *               ose e një pagese, vendimi mbi kërkesat për nota
@@ -54,13 +54,11 @@ const AREA_ROLES = {
     graduates: ['admin', 'menaxher', 'finance'],
     administrata: ['admin', 'menaxher', 'staff'],
     mesimi: ['admin', 'menaxher', 'staff', 'kujdestar'],
+    oret_raport: ['admin', 'menaxher', 'staff'],
     ditari: ['admin', 'menaxher', 'kujdestar', 'staff'],
     review: ['admin', 'menaxher', 'staff'],
-    approvals: ['admin', 'menaxher', 'staff'],
-    issues: ['admin', 'menaxher', 'staff', 'kujdestar'],
-    requests: ['admin', 'menaxher', 'kujdestar', 'staff'],
     logs: ['admin', 'menaxher'],
-  settings: ['admin'],
+    settings: ['admin'],
     manage: ['admin', 'menaxher'],
 };
 
@@ -78,12 +76,9 @@ const isManager = (user) => can(user, 'manage');
 /** Kush i kontrollon notat (i pranon ose i shenon si gabim). */
 const isReviewer = (user) => can(user, 'review');
 
-/** Kush vendos mbi kerkesat per ndryshimin e nje note te mbyllur. */
-const canApprove = (user) => can(user, 'approvals');
-
 /** A i sheh ky përdorues shifrat financiare? */
 const canSeeFinance = (user) => can(user, 'finance');
 
 module.exports = {
-    ROLES, ROLE_LABELS, AREA_ROLES, can, isManager, isReviewer, canApprove, canSeeFinance,
+    ROLES, ROLE_LABELS, AREA_ROLES, can, isManager, isReviewer, canSeeFinance,
 };

@@ -410,35 +410,6 @@ CREATE TABLE IF NOT EXISTS class_student_meta (
 CREATE INDEX idx_meta_position ON class_student_meta (class_id, position);
 
 -- ----------------------------------------------------------------
--- Kerkesat per ndryshimin e notes se mbyllur.
--- Kujdestari nuk e prek nje note te mbyllur: kerkon leje nga
--- administratori. Leja vlen per NJE ndryshim ('used' pas perdorimit).
--- ----------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS grade_edit_requests (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  class_id      INT NOT NULL,
-  student_id    INT NOT NULL,
-  subject_id    INT NOT NULL,
-  term          ENUM('gj1','gj2','final') NOT NULL,
-  old_value     TINYINT DEFAULT NULL,
-  reason        VARCHAR(500) NOT NULL,
-  status        ENUM('pending','approved','declined','used') NOT NULL DEFAULT 'pending',
-  requested_by  INT NOT NULL,
-  decided_by    INT DEFAULT NULL,
-  decision_note VARCHAR(500) DEFAULT NULL,
-  decided_at    DATETIME DEFAULT NULL,
-  used_at       DATETIME DEFAULT NULL,
-  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-  CONSTRAINT fk_req_class     FOREIGN KEY (class_id)     REFERENCES classes (id)        ON DELETE CASCADE,
-  CONSTRAINT fk_req_student   FOREIGN KEY (student_id)   REFERENCES students (id)       ON DELETE CASCADE,
-  CONSTRAINT fk_req_subject   FOREIGN KEY (subject_id)   REFERENCES class_subjects (id) ON DELETE CASCADE,
-  CONSTRAINT fk_req_requester FOREIGN KEY (requested_by) REFERENCES users (id),
-  CONSTRAINT fk_req_decider   FOREIGN KEY (decided_by)   REFERENCES users (id)          ON DELETE SET NULL
-) ENGINE = InnoDB;
-
-CREATE INDEX idx_req_status ON grade_edit_requests (status, created_at);
-CREATE INDEX idx_req_cell   ON grade_edit_requests (class_id, student_id, subject_id, term, status);
 
 -- ----------------------------------------------------------------
 -- Kontrolli i notave: stafi krahason ditarin elektronik me librin
