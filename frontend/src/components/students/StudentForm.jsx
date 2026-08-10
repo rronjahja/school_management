@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from 'dayjs';
 import Field from '../ui/Field.jsx';
-import PhoneInput from '../ui/PhoneInput.jsx';
+import DateInput from '../ui/DateInput.jsx';
 import { fetchNextContractNumber } from '../../api/students';
 import FinancePreview from './FinancePreview.jsx';
 import { DISCOUNT_LABELS, PLAN_LABELS, YEAR_LABELS, YEAR_ROMAN, defaultRegistrationGeneration } from '../../utils/format';
@@ -61,9 +61,6 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
 
   const set = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
 
-  /** Per fushat qe kthejne vlere te gatshme, jo ngjarje (p.sh. telefoni). */
-  const setValue = (name) => (value) => setForm((f) => ({ ...f, [name]: value }));
-
   // Kujdestari ligjor nuk mbahet si fushe e vecante: 'guardian' te
   // primary_contact eshte i vetmi burim i se vertetes.
   const hasGuardian = form.primary_contact === 'guardian';
@@ -84,7 +81,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
         // vetëm përgjigjja e fundit vlen (mbrojtje ndaj klikimeve të shpejta)
         if (id === reqId.current && nr) setForm((f) => ({ ...f, contract_number: nr }));
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         if (id === reqId.current) setContractBusy(false);
       });
@@ -158,7 +155,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
             <input value={form.last_name} onChange={set('last_name')} required maxLength={80} />
           </Field>
           <Field label="Datëlindja" required>
-            <input type="date" value={form.birthday} onChange={set('birthday')} required />
+            <DateInput value={form.birthday} onChange={set('birthday')} required />
           </Field>
           <Field label="Gjinia">
             <div className="seg" role="radiogroup" aria-label="Gjinia">
@@ -204,11 +201,15 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
           <Field label="Adresa" required>
             <input value={form.address} onChange={set('address')} required maxLength={160} />
           </Field>
-          <PhoneInput
-            label="Numri i telefonit"
-            value={form.phone}
-            onChange={setValue('phone')}
-          />
+          <Field label="Numri i telefonit">
+            <input
+              type="tel"
+              value={form.phone || ''}
+              onChange={set('phone')}
+              maxLength={30}
+              placeholder="+383 4x xxx xxx"
+            />
+          </Field>
           <Field label="E-mail">
             <input
               type="email"
@@ -262,13 +263,17 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Mbiemri">
                 <input value={form.guardian_last_name || ''} onChange={set('guardian_last_name')} maxLength={80} />
               </Field>
-              <PhoneInput
-                label="Telefoni"
-                value={form.guardian_phone}
-                onChange={setValue('guardian_phone')}
-              />
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.guardian_phone || ''}
+                  onChange={set('guardian_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
               <Field label="Datëlindja">
-                <input type="date" value={form.guardian_birthday || ''} onChange={set('guardian_birthday')} />
+                <DateInput value={form.guardian_birthday || ''} onChange={set('guardian_birthday')} />
               </Field>
               <Field label="Numri personal">
                 <input
@@ -332,13 +337,17 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Mbiemri">
                 <input value={form.mother_last_name || ''} onChange={set('mother_last_name')} maxLength={80} />
               </Field>
-              <PhoneInput
-                label="Telefoni"
-                value={form.mother_phone}
-                onChange={setValue('mother_phone')}
-              />
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.mother_phone || ''}
+                  onChange={set('mother_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
               <Field label="Datëlindja">
-                <input type="date" value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
+                <DateInput value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
               </Field>
               <Field label="Numri personal">
                 <input
@@ -378,13 +387,17 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Mbiemri">
                 <input value={form.father_last_name || ''} onChange={set('father_last_name')} maxLength={80} />
               </Field>
-              <PhoneInput
-                label="Telefoni"
-                value={form.father_phone}
-                onChange={setValue('father_phone')}
-              />
+              <Field label="Telefoni">
+                <input
+                  type="tel"
+                  value={form.father_phone || ''}
+                  onChange={set('father_phone')}
+                  maxLength={40}
+                  placeholder="+383 4x xxx xxx"
+                />
+              </Field>
               <Field label="Datëlindja">
-                <input type="date" value={form.father_birthday || ''} onChange={set('father_birthday')} />
+                <DateInput value={form.father_birthday || ''} onChange={set('father_birthday')} />
               </Field>
               <Field label="Numri personal">
                 <input
@@ -451,7 +464,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
             </span>
           </Field>
           <Field label="Data e regjistrimit" required>
-            <input type="date" value={form.enrollment_date} onChange={set('enrollment_date')} required />
+            <DateInput value={form.enrollment_date} onChange={set('enrollment_date')} required />
           </Field>
           <Field label="Nr. i kontratës">
             <span className="field-with-action">

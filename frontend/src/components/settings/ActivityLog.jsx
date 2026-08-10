@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchLogs, fetchLogFacets } from '../../api/meta';
 import { dateTime } from '../../utils/format';
 import { ROLE_LABELS } from '../../config/roles';
@@ -12,11 +12,13 @@ import EmptyState from '../ui/EmptyState.jsx';
  * pa fund dhe s'do të kishte kuptim të tërhiqej i tëri te shfletuesi.
  * Shkrimi është i pandryshueshëm — s'ka butona fshirjeje me qëllim,
  * përndryshe ditari s'do të kishte vlerë si dëshmi.
+ *
+ * Rreshtat grupohen sipas DITËS. Pyetja e vërtetë e këtij ekrani nuk është
+ * «rreshti i 37-të çfarë thotë», por «çfarë ndodhi të martën» — dhe një
+ * listë e pandarë datash të përsëritura e fsheh pikërisht atë.
  */
 
-// Dhjete veprimet e fundit per faqe: lista lexohet me nje veshtrim dhe
-// pyetja e zakonshme — «cfare ndodhi tani» — merr pergjigje pa rreshqitje.
-const PER_PAGE = 10;
+const PER_PAGE = 25;
 
 /** Deri ne 5 numra faqesh rreth asaj ku ndodhemi. */
 function pageWindow(current, total) {
@@ -27,16 +29,35 @@ function pageWindow(current, total) {
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 }
 
-/**
- * Data e veprimit. Delegon te ndihmesi i perbashket, qe formati te mos
- * jete nje kopje me vete qe mbetet pas kur ndryshon rregulli.
- */
-function stamp(value) {
-  if (!value) return '—';
+const toDate = (value) => {
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(0, 16).replace('T', ' ');
-  return dateTime(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+/** Vetem ora — data qendron nje here te vetme, te koka e grupit. */
+function clock(value) {
+  const d = toDate(value);
+  if (!d) return '—';
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
+
+const DAYS = ['E diel', 'E hënë', 'E martë', 'E mërkurë', 'E enjte', 'E premte', 'E shtunë'];
+const MONTHS = ['janar', 'shkurt', 'mars', 'prill', 'maj', 'qershor',
+  'korrik', 'gusht', 'shtator', 'tetor', 'nëntor', 'dhjetor'];
+
+/** Koka e grupit: «Sot», «Dje», ose «E martë, 12 gusht 2026». */
+function dayHeading(value) {
+  const d = toDate(value);
+  if (!d) return '—';
+
+  const midnight = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((midnight(new Date()) - midnight(d)) / 86400000);
+  if (diff === 0) return 'Sot';
+  if (diff === 1) return 'Dje';
+  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+const dayKey = (value) => String(value).slice(0, 10);
 
 /** Veprimet që meritojnë të bien në sy. */
 const TONE = {
@@ -47,15 +68,39 @@ const TONE = {
   logout: 'log-muted',
 };
 
+/** Nje shenje per cdo subjekt: syri e gjen rreshtin pa lexuar tekstin. */
+const ICONS = {
+  student: '🎓', payment: '€', user: '👤', bank: '🏦', category: '📚',
+  settings: '⚙', promotion: '↗', auth: '🔑', class: '🏫', subject: '📘',
+  grade: '✎', register: '📋', grade_review: '✓', lesson: '🕘',
+  professor: '👨‍🏫', export: '⬇', document: '📄',
+};
+
+const failed = (row) => Number(row.status_code) >= 400 || row.action === 'login-failed';
+
+/** «{"amount":"200"}» -> rreshta cift-vlere te lexueshem. */
+function parseDetails(raw) {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw);
+    const entries = Object.entries(obj);
+    return entries.length ? entries : null;
+  } catch {
+    return [['të dhënat', String(raw)]];
+  }
+}
+
 export default function ActivityLog() {
   const [data, setData] = useState(null);
-  const [facets, setFacets] = useState({ usernames: [], entities: [], actions: [] });
+  const [facets, setFacets] = useState({
+    usernames: [], entities: [], actions: [], failed: 0,
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(null);
 
   const [filters, setFilters] = useState({
-    search: '', username: '', entity: '', action: '', from: '', to: '',
+    search: '', username: '', entity: '', action: '', from: '', to: '', only_failed: '',
   });
   const [page, setPage] = useState(1);
 
@@ -72,9 +117,11 @@ export default function ActivityLog() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchLogFacets().then(setFacets).catch(() => {});
+  const loadFacets = useCallback(() => {
+    fetchLogFacets().then(setFacets).catch(() => { });
   }, []);
+
+  useEffect(() => { loadFacets(); }, [loadFacets]);
 
   // Kërkimi pret pak pas shtypjes së fundit — pa këtë, çdo shkronjë
   // do të nisë një kërkesë të re në server.
@@ -90,25 +137,59 @@ export default function ActivityLog() {
 
   const clear = () => {
     setPage(1);
-    setFilters({ search: '', username: '', entity: '', action: '', from: '', to: '' });
+    setFilters({
+      search: '', username: '', entity: '', action: '', from: '', to: '', only_failed: '',
+    });
+  };
+
+  const refresh = () => { load(filters, page); loadFacets(); };
+
+  const toggleFailed = () => {
+    setPage(1);
+    setFilters((f) => ({ ...f, only_failed: f.only_failed ? '' : 'true' }));
   };
 
   const hasFilters = Object.values(filters).some(Boolean);
 
+  // Grupimi sipas dites ruan rendin e serverit (me te rejat te parat).
+  const groups = useMemo(() => {
+    if (!data) return [];
+    const out = [];
+    for (const row of data.rows) {
+      const key = dayKey(row.created_at);
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.rows.push(row);
+      else out.push({ key, heading: dayHeading(row.created_at), rows: [row] });
+    }
+    return out;
+  }, [data]);
+
   return (
     <section className="card">
+      {/* Titulli i faqes e thote tashme se cfare eshte kjo; ketu rri vetem
+          ajo qe ndryshon — sa jane dhe si te rifreskohen. */}
       <div className="card-title-row">
-        <h2 className="card-title">Ditari i veprimeve</h2>
-        {data && (
-          <span className="muted log-count">
-            {data.total.toLocaleString('de-DE')} veprime
-          </span>
-        )}
+        <p className="muted card-sub log-intro">
+          Regjistrohen edhe përpjekjet e dështuara dhe shkarkimet e dokumenteve.
+          Shkrimi nuk mund të fshihet.
+        </p>
+        <span className="cell-actions">
+          {data && (
+            <span className="muted log-count">
+              {data.total.toLocaleString('de-DE')} veprime
+            </span>
+          )}
+          <button
+            type="button"
+            className="btn btn-ghost btn-small"
+            onClick={refresh}
+            disabled={busy}
+            title="Rifresko listën"
+          >
+            {busy ? 'Duke ngarkuar…' : '↻ Rifresko'}
+          </button>
+        </span>
       </div>
-      <p className="muted card-sub">
-        Çdo ndryshim në sistem: kush e bëri, çfarë ndryshoi dhe kur. Vetëm
-        administratorët e shohin. Shkrimi nuk mund të fshihet.
-      </p>
 
       <div className="log-filters">
         <input
@@ -132,6 +213,20 @@ export default function ActivityLog() {
         </select>
         <input type="date" value={filters.from} onChange={set('from')} aria-label="Nga data" />
         <input type="date" value={filters.to} onChange={set('to')} aria-label="Deri më" />
+
+        {/* Nje buton, jo nje zgjedhes: «cfare deshtoi» eshte pyetja e pare
+            kur dikush thote «nuk po punon», ndaj rri gjithnje nje klikim larg. */}
+        <button
+          type="button"
+          className={`log-fail-toggle${filters.only_failed ? ' active' : ''}`}
+          onClick={toggleFailed}
+          aria-pressed={Boolean(filters.only_failed)}
+          title="Vetëm veprimet që nuk u kryen"
+        >
+          ⚠ Të dështuara
+          {facets.failed > 0 && <span className="log-fail-count">{facets.failed}</span>}
+        </button>
+
         {hasFilters && (
           <button type="button" className="btn btn-ghost btn-small" onClick={clear}>
             Pastro
@@ -147,59 +242,92 @@ export default function ActivityLog() {
         <EmptyState
           title="Asnjë veprim"
           hint={hasFilters ? 'Provoni filtra të tjerë.' : 'Ende nuk është regjistruar asgjë.'}
+          action={hasFilters ? (
+            <button type="button" className="btn btn-ghost" onClick={clear}>
+              Pastro filtrat
+            </button>
+          ) : null}
         />
       ) : (
         <>
-          <div className={`table-wrap${busy ? ' is-busy' : ''}`}>
-            <table className="table log-table">
-              <thead>
-                <tr>
-                  <th>Data dhe ora</th>
-                  <th>Përdoruesi</th>
-                  <th>Veprimi</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {data.rows.map((r) => (
-                  <tr key={r.id}>
-                    <td className="mono log-time">{stamp(r.created_at)}</td>
-                    <td>
-                      <strong>{r.full_name || r.username}</strong>
-                      <span className="muted cell-sub">
-                        {r.username}
-                        {r.role ? ` · ${ROLE_LABELS[r.role] || r.role}` : ''}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={TONE[r.action] || ''}>{r.summary}</span>
-                    </td>
-                    <td className="num">
-                      {(r.details || r.path) && (
+          <div className={`log-feed${busy ? ' is-busy' : ''}`}>
+            {groups.map((g) => (
+              <div key={g.key} className="log-day">
+                <h3 className="log-day-head">
+                  <span>{g.heading}</span>
+                  <span className="muted">{g.rows.length}</span>
+                </h3>
+
+                <ul className="log-list">
+                  {g.rows.map((r) => {
+                    const bad = failed(r);
+                    const details = open === r.id ? parseDetails(r.details) : null;
+                    return (
+                      <li key={r.id} className={`log-item${bad ? ' is-failed' : ''}`}>
+                        <span className="log-item-time" title={dateTime(r.created_at)}>
+                          {clock(r.created_at)}
+                        </span>
+
+                        <span className="log-item-icon" aria-hidden="true">
+                          {ICONS[r.entity] || '•'}
+                        </span>
+
+                        <div className="log-item-body">
+                          <p className={`log-item-summary ${bad ? 'log-danger' : (TONE[r.action] || '')}`}>
+                            {r.summary}
+                          </p>
+                          <p className="log-item-who muted">
+                            {r.full_name || r.username}
+                            <span className="log-sep">·</span>
+                            {r.username}
+                            {r.role && (
+                              <>
+                                <span className="log-sep">·</span>
+                                {ROLE_LABELS[r.role] || r.role}
+                              </>
+                            )}
+                            {bad && <span className="log-badge-fail">nuk u krye</span>}
+                          </p>
+
+                          {open === r.id && (
+                            <dl className="log-details">
+                              <div>
+                                <dt>Rruga</dt>
+                                <dd className="mono">{r.method} {r.path}</dd>
+                              </div>
+                              <div>
+                                <dt>Përgjigjja</dt>
+                                <dd className="mono">{r.status_code || '—'}</dd>
+                              </div>
+                              {r.entity_id && (
+                                <div><dt>ID</dt><dd className="mono">{r.entity_id}</dd></div>
+                              )}
+                              {r.ip && <div><dt>IP</dt><dd className="mono">{r.ip}</dd></div>}
+                              {details && details.map(([k, v]) => (
+                                <div key={k}>
+                                  <dt>{k}</dt>
+                                  <dd className="mono">{String(v)}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                          )}
+                        </div>
+
                         <button
                           type="button"
-                          className="btn btn-ghost btn-small"
+                          className="log-item-more"
                           onClick={() => setOpen(open === r.id ? null : r.id)}
-                          title="Shfaq detajet"
+                          aria-expanded={open === r.id}
+                          title={open === r.id ? 'Mbyll detajet' : 'Shfaq detajet'}
                         >
                           {open === r.id ? '−' : '⋯'}
                         </button>
-                      )}
-                      {open === r.id && (
-                        <dl className="log-details">
-                          <div><dt>Rruga</dt><dd className="mono">{r.method} {r.path}</dd></div>
-                          {r.entity_id && <div><dt>ID</dt><dd className="mono">{r.entity_id}</dd></div>}
-                          {r.ip && <div><dt>IP</dt><dd className="mono">{r.ip}</dd></div>}
-                          {r.details && (
-                            <div><dt>Të dhënat</dt><dd className="mono log-json">{r.details}</dd></div>
-                          )}
-                        </dl>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>
 
           {data.pages > 1 && (
@@ -229,9 +357,6 @@ export default function ActivityLog() {
                   ← Më të reja
                 </button>
 
-                {/* Nje dritare e ngushte numrash: me 10 per faqe numri i
-                    faqeve rritet shpejt, dhe nje rresht i tere numrash do
-                    te ishte me i veshtire per t'u lexuar se vete lista. */}
                 {pageWindow(data.page, data.pages).map((n) => (
                   <button
                     key={n}

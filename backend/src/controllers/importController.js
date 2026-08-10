@@ -12,7 +12,13 @@ async function contract(req, res, next) {
     const raw = req.get('X-Filename') || 'kontrata.docx';
     let filename;
     try { filename = decodeURIComponent(raw); } catch { filename = raw; }
-    res.json(await importContract(req.body, filename));
+    const r = await importContract(req.body, filename);
+    const who = [r.data && r.data.first_name, r.data && r.data.last_name]
+      .filter(Boolean).join(' ');
+    res.locals.logSummary =
+      `U lexua kontrata «${filename}»${who ? ` — ${who}` : ''}`
+      + `${r.existing ? ' (numri i kontratës ekziston tashmë)' : ''}`;
+    res.json(r);
   } catch (err) { next(err); }
 }
 

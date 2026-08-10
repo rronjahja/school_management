@@ -18,7 +18,12 @@ async function preview(req, res, next) {
 
 async function run(req, res, next) {
   try {
-    res.json(await promotionService.promote(req.body));
+    const r = await promotionService.promote(req.body);
+    res.locals.logEntityId = r.to_generation;
+    res.locals.logSummary =
+      `Kalimi i vitit ${r.from_generation} → ${r.to_generation}: `
+      + `${r.promoted} nxënës kaluan, ${r.graduated} u diplomuan`;
+    res.json(r);
   } catch (err) { next(err); }
 }
 

@@ -29,10 +29,11 @@ const ENTITY_LABELS = {
   subject: 'Lënda',
   grade: 'Nota',
   register: 'Ditari i klasës',
-  grade_request: 'Kërkesa për notë',
   grade_review: 'Kontrolli i notave',
   lesson: 'Ora e mësimit',
   professor: 'Profesori',
+  export: 'Eksporti',
+  document: 'Dokumenti',
 };
 
 const ACTION_LABELS = {
@@ -47,52 +48,77 @@ const ACTION_LABELS = {
   run: 'u ekzekutua',
   import: 'u importua',
   export: 'u eksportua',
+  download: 'u shkarkua',
 };
 
-/** Rruga e kërkesës -> { entity, action } */
+/**
+ * Leximet që regjistrohen.
+ *
+ * Shfletimi i ekraneve NUK regjistrohet — do ta mbyste ditarin dhe s'thotë
+ * asgjë. Por nxjerrja e të dhënave jashtë sistemit është veprim: kush e
+ * shkarkoi tabelën e plotë të pagesave, kujt i doli kontrata, kush e
+ * printoi fletëpagesën. Këto lihen gjurmë sepse janë pikërisht ato që
+ * pyeten më vonë.
+ */
+const READ_ROUTES = [
+  [/^\/api\/export\/finance-excel$/, 'export', 'export'],
+  [/^\/api\/students\/\d+\/(document|registration-doc)$/, 'document', 'download'],
+  [/^\/api\/students\/\d+\/fletepagesa$/, 'document', 'download'],
+  [/^\/api\/payments\/\d+\/fletepagesa$/, 'document', 'download'],
+];
+
+/** Shkrimet: rruga -> subjekti. Modelet e ngushta PARA atyre të gjera. */
+const WRITE_ROUTES = [
+  [/^\/api\/students\/\d+$/, 'student'],
+  [/^\/api\/students$/, 'student'],
+  // Ditari i klasës — modelet e veçanta PËRPARA atij të përgjithshëm /classes
+  [/^\/api\/classes\/\d+\/grades/, 'grade'],
+  [/^\/api\/grades/, 'grade'],
+  [/^\/api\/classes\/\d+\/final-grade/, 'grade'],
+  [/^\/api\/classes\/\d+\/subjects/, 'subject'],
+  [/^\/api\/classes\/\d+\/meta/, 'register'],
+  [/^\/api\/classes\/\d+\/order/, 'register'],
+  [/^\/api\/classes\/\d+\/lessons/, 'lesson'],
+  [/^\/api\/classes\/\d+\/reviews/, 'grade_review'],
+  [/^\/api\/classes/, 'class'],
+  [/^\/api\/subjects/, 'subject'],
+  [/^\/api\/professors/, 'professor'],
+  [/^\/api\/lessons/, 'lesson'],
+  [/^\/api\/payments/, 'payment'],
+  [/^\/api\/users/, 'user'],
+  [/^\/api\/banks/, 'bank'],
+  [/^\/api\/categories/, 'category'],
+  [/^\/api\/settings/, 'settings'],
+  [/^\/api\/promotion/, 'promotion'],
+  [/^\/api\/import/, 'student'],
+  [/^\/api\/auth/, 'auth'],
+];
+
+const WRITE_VERBS = { POST: 'create', PUT: 'update', PATCH: 'update', DELETE: 'delete' };
+
+/** ID-ja e burimit është numri i PARË te rruga: /payments/12/fletepagesa -> 12 */
+function resourceId(path) {
+  const m = String(path).match(/\/(\d+)(?:\/|$)/);
+  return m ? m[1] : null;
+}
+
+/** Rruga e kërkesës -> { entity, action, entity_id } ose null (pa regjistrim). */
 function classify(method, path) {
   const p = String(path).split('?')[0];
-  const seg = p.split('/').filter(Boolean);      // ['api','students','7']
 
-  const verb = { POST: 'create', PUT: 'update', PATCH: 'update', DELETE: 'delete' }[method];
-  if (!verb) return null;                        // GET/HEAD nuk ndryshojnë asgjë
+  if (method === 'GET' || method === 'HEAD') {
+    const read = READ_ROUTES.find(([re]) => re.test(p));
+    if (!read) return null;
+    return { entity: read[1], action: read[2], entity_id: resourceId(p) };
+  }
 
-  const map = [
-    [/^\/api\/students\/\d+$/, 'student'],
-    [/^\/api\/students$/, 'student'],
-    // Ditari i klasës — modelet e veçanta PËRPARA atij të përgjithshëm /classes
-    [/^\/api\/classes\/\d+\/grades/, 'grade'],
-    [/^\/api\/grades/, 'grade'],
-    [/^\/api\/classes\/\d+\/final-grade/, 'grade'],
-    [/^\/api\/classes\/\d+\/subjects/, 'subject'],
-    [/^\/api\/subjects/, 'subject'],
-    [/^\/api\/classes\/\d+\/meta/, 'register'],
-    [/^\/api\/classes\/\d+\/order/, 'register'],
-    [/^\/api\/professors/, 'professor'],
-    [/^\/api\/subjects/, 'subject'],
-    [/^\/api\/classes\/\d+\/lessons/, 'lesson'],
-    [/^\/api\/lessons/, 'lesson'],
-    [/^\/api\/classes\/\d+\/reviews/, 'grade_review'],
-    [/^\/api\/grade-issues/, 'grade_review'],
-    [/^\/api\/classes\/\d+\/edit-requests/, 'grade_request'],
-    [/^\/api\/edit-requests/, 'grade_request'],
-    [/^\/api\/classes/, 'class'],
-    [/^\/api\/payments/, 'payment'],
-    [/^\/api\/users/, 'user'],
-    [/^\/api\/banks/, 'bank'],
-    [/^\/api\/categories/, 'category'],
-    [/^\/api\/settings/, 'settings'],
-    [/^\/api\/promotion/, 'promotion'],
-    [/^\/api\/import/, 'student'],
-    [/^\/api\/auth/, 'auth'],
-  ];
-  const hit = map.find(([re]) => re.test(p));
+  const verb = WRITE_VERBS[method];
+  if (!verb) return null;
+
+  const hit = WRITE_ROUTES.find(([re]) => re.test(p));
   if (!hit) return null;
 
-  const entity = hit[1];
   let action = verb;
-
-  // rastet e veçanta që s'janë thjesht create/update/delete
   if (p.endsWith('/reset-password')) action = 'password-reset';
   else if (p.endsWith('/change-password')) action = 'password-change';
   else if (p.endsWith('/logout')) action = 'logout';
@@ -100,16 +126,20 @@ function classify(method, path) {
   else if (p.startsWith('/api/promotion/run')) action = 'run';
   else if (p.startsWith('/api/import')) action = 'import';
 
-  const id = seg.find((x, i) => i > 1 && /^\d+$/.test(x)) || null;
-  return { entity, action, entity_id: id };
+  return { entity: hit[1], action, entity_id: resourceId(p) };
 }
 
-/** Përshkrim i shkurtër shqip, p.sh. «Nxënësi u krijua». */
-function describe({ entity, action, summary }) {
-  if (summary) return summary;
-  const e = ENTITY_LABELS[entity] || entity;
-  const a = ACTION_LABELS[action] || action;
-  return `${e} ${a}`;
+/**
+ * Përshkrim i shkurtër shqip, p.sh. «Nxënësi u krijua».
+ *
+ * Kur veprimi DËSHTOI, teksti e thotë që në fillim. Pa këtë, rreshti do
+ * të lexohej «Nxënësi u fshi» edhe kur fshirja u refuzua — dhe ditari do
+ * të dëshmonte diçka që s'ka ndodhur.
+ */
+function describe({ entity, action, summary, status_code: status }) {
+  const base = summary || `${ENTITY_LABELS[entity] || entity} ${ACTION_LABELS[action] || action}`;
+  if (status && status >= 400) return `Nuk u krye (${status}): ${base}`;
+  return base;
 }
 
 // ---------------------------------------------------------------
@@ -152,7 +182,9 @@ async function record(entry) {
  * Kërkim me filtra. `search` shikon te personi, përshkrimi dhe rruga —
  * kështu një emër, një fjalë si "fshi" ose një ID gjenden njësoj.
  */
-async function list({ search, username, entity, action, from, to, page, limit } = {}) {
+async function list({
+  search, username, entity, action, from, to, page, limit, only_failed,
+} = {}) {
   const where = [];
   const params = [];
 
@@ -167,6 +199,12 @@ async function list({ search, username, entity, action, from, to, page, limit } 
   if (action) { where.push('action = ?'); params.push(action); }
   if (from) { where.push('created_at >= ?'); params.push(`${from} 00:00:00`); }
   if (to) { where.push('created_at <= ?'); params.push(`${to} 23:59:59`); }
+  // Vetem perpjekjet e deshtuara: hyrje te gabuara, veprime te ndaluara,
+  // te dhena te pavlefshme. Kjo eshte pyetja e pare kur dicka «nuk punon».
+  if (only_failed === 'true' || only_failed === true) {
+    where.push('(status_code >= 400 OR action = ?)');
+    params.push('login-failed');
+  }
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const per = Math.min(Math.max(Number(limit) || 50, 1), 200);
@@ -195,7 +233,12 @@ async function facets() {
   const [actions] = await pool.query(
     'SELECT DISTINCT action FROM activity_log ORDER BY action'
   );
+  const [[fails]] = await pool.query(
+    "SELECT COUNT(*) AS n FROM activity_log WHERE status_code >= 400 OR action = 'login-failed'"
+  );
+
   return {
+    failed: Number(fails.n),
     usernames: users.map((r) => r.username),
     entities: entities.map((r) => ({ value: r.entity, label: ENTITY_LABELS[r.entity] || r.entity })),
     actions: actions.map((r) => ({ value: r.action, label: ACTION_LABELS[r.action] || r.action })),

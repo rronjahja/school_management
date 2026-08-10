@@ -75,6 +75,9 @@ async function changePassword(req, res, next) {
     // Perdoruesi i freskuar kthehet bashke me pergjigjen: nderfaqja e heq
     // ekranin e detyruar pa pasur nevoje per nje kerkese te dyte.
     const user = await authService.getUserById(req.user.id);
+    res.locals.logEntityId = String(req.user.id);
+    res.locals.logSummary =
+      `${req.user.full_name || req.user.username} ndryshoi fjalëkalimin e vet`;
     res.json({ ok: true, user });
   } catch (err) { next(err); }
 }

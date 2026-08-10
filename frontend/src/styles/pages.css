@@ -1530,6 +1530,7 @@ input.is-locked:focus {
   align-items: center;
   gap: 7px;
 }
+
 /* ---------- Ditari i veprimeve ---------- */
 .log-filters {
   display: flex;
@@ -1544,7 +1545,7 @@ input.is-locked:focus {
 }
 
 .log-filters select,
-.log-filters input[type="date"] {
+.log-filters .date-field {
   height: 40px;
   border: 1px solid var(--line);
   border-radius: var(--radius-small);
@@ -1559,37 +1560,215 @@ input.is-locked:focus {
   font-weight: 600;
 }
 
-.log-table td {
-  vertical-align: top;
+/* ---------- Ditari i veprimeve: rrjedha sipas ditës ---------- */
+.log-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  transition: opacity 0.15s;
 }
 
-.log-time {
+.log-feed.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.log-day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 2px;
+  margin-bottom: 4px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+}
+
+.log-day-head .muted {
+  font-family: var(--font-body, inherit);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+}
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.log-item {
+  display: grid;
+  grid-template-columns: 46px 26px 1fr 32px;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line-soft, var(--line));
+}
+
+.log-item:last-child {
+  border-bottom: 0;
+}
+
+.log-item:hover {
+  background: var(--neutral-bg);
+  border-radius: var(--radius-small);
+}
+
+/* Nje veprim i deshtuar duhet gjetur pa lexuar: vija e kuqe ne buze e ben
+   te dukshem edhe kur syri rrokulliset shpejt neper liste. */
+.log-item.is-failed {
+  box-shadow: inset 3px 0 0 var(--red);
+  padding-left: 10px;
+}
+
+.log-item-time {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+  padding-top: 2px;
+  cursor: help;
+}
+
+.log-item-icon {
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.log-item-body {
+  min-width: 0;
+}
+
+.log-item-summary {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.log-item-who {
+  margin-top: 2px;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.log-sep {
+  opacity: 0.5;
+}
+
+.log-badge-fail {
+  margin-left: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--red);
+  background: var(--red-bg);
+}
+
+.log-item-more {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+
+.log-item-more:hover {
+  color: var(--primary);
+  background: var(--neutral-bg);
+}
+
+.log-fail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
   white-space: nowrap;
-  font-size: 13.5px;
+}
+
+.log-fail-toggle:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.log-fail-toggle.active {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-bg);
+  font-weight: 600;
+}
+
+.log-fail-count {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.log-danger {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.log-ok {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.log-muted {
   color: var(--muted);
 }
 
-.log-danger { color: #b42318; font-weight: 600; }
-.log-ok { color: #1d6f42; font-weight: 600; }
-.log-muted { color: var(--muted); }
-
 .log-details {
-  margin-top: 8px;
-  text-align: left;
-  font-size: 13px;
   display: grid;
-  gap: 4px;
+  grid-template-columns: minmax(80px, auto) 1fr;
+  gap: 3px 14px;
+  margin-top: 9px;
+  padding: 10px 12px;
+  background: var(--neutral-bg);
+  border-radius: var(--radius-small);
+  font-size: 12.5px;
+}
+
+.log-details>div {
+  display: contents;
 }
 
 .log-details dt {
   color: var(--muted);
-  font-size: 12px;
 }
 
-.log-json {
+.log-details dd {
+  color: var(--ink-soft);
   word-break: break-all;
-  white-space: pre-wrap;
-  max-width: 420px;
 }
 
 .log-pager {
@@ -1613,6 +1792,7 @@ input.is-locked:focus {
   color: var(--muted);
   font-size: 13.5px;
 }
+
 /* Njoftimi per zbritjet qe bien gjate kalimit te vitit */
 .promo-discount-note {
   margin: 14px 0 0;
@@ -1626,9 +1806,15 @@ input.is-locked:focus {
 }
 
 /* Numrat e faqeve te ditari i veprimeve */
-.log-pager { flex-wrap: wrap; gap: 10px; }
+.log-pager {
+  flex-wrap: wrap;
+  gap: 10px;
+}
 
-.log-range { font-size: 12.5px; white-space: nowrap; }
+.log-range {
+  font-size: 12.5px;
+  white-space: nowrap;
+}
 
 .log-pager-btns {
   display: inline-flex;
@@ -1651,13 +1837,17 @@ input.is-locked:focus {
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.log-page-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.log-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
 
 .log-page-btn.active {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
 }
+
 /* ---------- Vendosja e fjalëkalimit në hyrjen e parë ---------- */
 .pw-note {
   font-size: 13.5px;
@@ -1744,4 +1934,9 @@ input.is-locked:focus {
 
 .user-pw-badge {
   margin-left: 6px;
+}
+
+.log-intro {
+  margin: 0;
+  max-width: 62ch;
 }

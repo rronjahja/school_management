@@ -18,6 +18,8 @@ async function generate(req, res, next) {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     );
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+    res.locals.logEntityId = req.params.id;
+    res.locals.logSummary = `U gjenerua dokumenti «${filename}»`;
     res.send(buffer);
   } catch (err) { next(err); }
 }
@@ -33,8 +35,12 @@ function sendDocx(res, { buffer, filename }) {
 
 /** GET /payments/:id/fletepagesa — fleta e një pagese të bërë */
 async function paymentSlip(req, res, next) {
-  try { sendDocx(res, await documentService.paymentSlip(Number(req.params.id))); }
-  catch (err) { next(err); }
+  try {
+    const doc = await documentService.paymentSlip(Number(req.params.id));
+    res.locals.logEntityId = req.params.id;
+    res.locals.logSummary = `Fletëpagesa e pagesës #${req.params.id} u shkarkua`;
+    sendDocx(res, doc);
+  } catch (err) { next(err); }
 }
 
 /** GET /students/:id/fletepagesa — fleta e detyrimeve (për rikujtesën) */
@@ -45,7 +51,11 @@ async function reminderSlip(req, res, next) {
     const seqs = raw
       ? raw.split(',').map((n) => Number(n)).filter((n) => Number.isInteger(n) && n >= 0)
       : null;
-    sendDocx(res, await documentService.reminderSlip(Number(req.params.id), seqs));
+    const doc = await documentService.reminderSlip(Number(req.params.id), seqs);
+    res.locals.logEntityId = req.params.id;
+    res.locals.logSummary =
+      `Fletëpagesa e detyrimeve për nxënësin #${req.params.id} u shkarkua`;
+    sendDocx(res, doc);
   } catch (err) { next(err); }
 }
 
