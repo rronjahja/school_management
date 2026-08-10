@@ -20,6 +20,10 @@ export default function ProtectedRoute({ children, area }) {
   if (!ready) return <Loader text="Duke verifikuar sesionin…" />;
   if (!user) return <Navigate to="/hyrje" state={{ from: location }} replace />;
 
+  // Fjalëkalimi i përkohshëm bllokon çdo faqe tjetër. Kjo është vetëm
+  // rrugëtim; ndalesa e vërtetë është te requireAuth në server.
+  if (user.must_change_password) return <Navigate to="/fjalekalimi-i-ri" replace />;
+
   if (area && !can(area)) {
     // Nese as shtepia s'i hapet (rast qe s'duhet te ndodhe), del te hyrja
     const target = home === location.pathname ? '/hyrje' : home;

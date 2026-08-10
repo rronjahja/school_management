@@ -54,7 +54,11 @@ function ask(question, hidden = false) {
       }
     }
 
-    const user = await authService.createUser({ username, password, full_name, role });
+    // Fjalekalimin e shkruan vete personi ne terminal, ndaj nuk eshte i
+    // perkohshem — s'ka kush tjeter qe ta dije.
+    const user = await authService.createUser({
+      username, password, full_name, role, mustChangePassword: false,
+    });
     console.log(`\n✓ U krijua përdoruesi "${user.username}" (${user.role}) — ${user.full_name}\n`);
     process.exit(0);
   } catch (err) {

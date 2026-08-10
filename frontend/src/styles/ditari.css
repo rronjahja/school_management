@@ -2079,3 +2079,8 @@ thead .dt-sticky {
     font-weight: 700;
     white-space: nowrap;
 }
+
+/* Emri i mesimdhenesit — kolona e pare e permbledhjes */
+.hl-name {
+    font-weight: 600;
+}

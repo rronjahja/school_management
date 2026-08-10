@@ -272,12 +272,14 @@ export default function StudentDetail() {
       {showFinance && (
         <div className="stat-grid">
           <StatCard
-            label="Kuota neto"
-            value={money(f.net_quota)}
+            label="Detyrimi total"
+            value={money(f.total_due)}
             hint={
-              student.discount_type !== 'none'
-                ? `${money(student.yearly_quota)} − zbritje ${discountText(student.discount_type, student.discount_value)}`
-                : `Plani: ${PLAN_LABELS[student.payment_plan]}`
+              Number(f.past_years_balance) > 0.005
+                ? `Kuota e vitit: ${money(f.net_quota)} + borxh i bartur ${money(f.past_years_balance)}`
+                : student.discount_type !== 'none'
+                  ? `${money(student.yearly_quota)} − zbritje ${discountText(student.discount_type, student.discount_value)}`
+                  : `Plani: ${PLAN_LABELS[student.payment_plan]}`
             }
           />
           <StatCard label="Paguar deri tani" value={money(f.total_paid)} tone="green" />

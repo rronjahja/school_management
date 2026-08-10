@@ -54,14 +54,14 @@ export default function UserManager() {
 
   const submitNew = async (e) => {
     e.preventDefault();
-    if (await wrap(() => createUser(form), 'Përdoruesi u krijua.')) {
+    if (await wrap(() => createUser(form), 'Përdoruesi u krijua. Fjalëkalimin e tij ai do ta vendosë në hyrjen e parë.')) {
       setAddOpen(false); setForm(EMPTY);
     }
   };
 
   const submitReset = async (e) => {
     e.preventDefault();
-    if (await wrap(() => resetUserPassword(pwUser.id, newPw), 'Fjalëkalimi u ndryshua.')) {
+    if (await wrap(() => resetUserPassword(pwUser.id, newPw), 'Fjalëkalimi u caktua. Përdoruesi do të vendosë të tijin në hyrjen e ardhshme.')) {
       setPwUser(null); setNewPw('');
     }
   };
@@ -122,6 +122,15 @@ export default function UserManager() {
                       <span className="badge-dot" />
                       {u.is_active ? 'Aktiv' : 'Çaktivizuar'}
                     </span>
+                    {Boolean(u.must_change_password) && (
+                      <span
+                        className="badge badge-yellow user-pw-badge"
+                        title="Fjalëkalimi është i përkohshëm. Përdoruesi do ta zëvendësojë vetë në hyrjen e ardhshme."
+                      >
+                        <span className="badge-dot" />
+                        Fjalëkalim i përkohshëm
+                      </span>
+                    )}
                   </td>
                   <td className="cell-tight">
                     <span className="cell-actions">
@@ -166,7 +175,11 @@ export default function UserManager() {
                   ))}
                 </select>
               </Field>
-              <Field label="Fjalëkalimi" required>
+              <Field
+                label="Fjalëkalimi fillestar"
+                required
+                hint="I përkohshëm — përdoruesi do të vendosë të tijin në hyrjen e parë."
+              >
                 <input type="password" value={form.password} required autoComplete="new-password"
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Min. 8 karaktere, shkronja + numra" />
@@ -183,7 +196,11 @@ export default function UserManager() {
       {pwUser && (
         <Modal title={`Fjalëkalim i ri për "${pwUser.username}"`} onClose={() => setPwUser(null)}>
           <form onSubmit={submitReset} className="modal-form">
-            <Field label="Fjalëkalimi i ri" required>
+            <Field
+              label="Fjalëkalimi i ri"
+              required
+              hint="I përkohshëm — përdoruesi do të vendosë të tijin në hyrjen e ardhshme."
+            >
               <input type="password" value={newPw} required autoFocus autoComplete="new-password"
                 onChange={(e) => setNewPw(e.target.value)}
                 placeholder="Min. 8 karaktere, shkronja + numra" />

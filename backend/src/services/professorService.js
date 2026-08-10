@@ -59,32 +59,45 @@ async function createSubject(data) {
 //  Profesorët
 // ---------------------------------------------------------------
 
-/** Profesorët me lëndët e secilit, në një kërkesë të vetme. */
+/**
+ * Profesorët me lëndët e secilit.
+ *
+ * DY pyetje, jo një me GROUP_CONCAT: bashkimi i id-ve dhe i emrave në dy
+ * lista teksti dhe çiftimi i tyre sipas indeksit ishte i brishtë —
+ * mjaftonte një ndarës brenda emrit të lëndës ose kufiri
+ * `group_concat_max_len` (1024 bajt si parazgjedhje) që emrat t'u
+ * ngjiteshin id-ve të gabuara. Kështu nuk ka tekst për t'u zbërthyer.
+ *
+ * Numri i orëve merret si nënpyetje, jo si LEFT JOIN: një bashkim me
+ * `lessons` shumëzon rreshtat për çdo lëndë të profesorit.
+ */
 async function listProfessors() {
   const [rows] = await pool.query(
     `SELECT p.id, p.full_name, p.is_active,
-            GROUP_CONCAT(DISTINCT s.id ORDER BY s.name SEPARATOR ',')   AS subject_ids,
-            GROUP_CONCAT(DISTINCT s.name ORDER BY s.name SEPARATOR '|') AS subject_names,
-            COUNT(DISTINCT l.id) AS lesson_count
+            (SELECT COUNT(*) FROM lessons l WHERE l.professor_id = p.id) AS lesson_count
        FROM professors p
-  LEFT JOIN professor_subjects ps ON ps.professor_id = p.id
-  LEFT JOIN subjects s ON s.id = ps.subject_id
-  LEFT JOIN lessons l ON l.professor_id = p.id
-      GROUP BY p.id, p.full_name, p.is_active
       ORDER BY p.is_active DESC, p.full_name`
   );
+
+  const [links] = await pool.query(
+    `SELECT ps.professor_id, s.id, s.name
+       FROM professor_subjects ps
+       JOIN subjects s ON s.id = ps.subject_id
+      ORDER BY s.name`
+  );
+
+  const byProfessor = new Map();
+  links.forEach((l) => {
+    if (!byProfessor.has(l.professor_id)) byProfessor.set(l.professor_id, []);
+    byProfessor.get(l.professor_id).push({ id: l.id, name: l.name });
+  });
 
   return rows.map((r) => ({
     id: r.id,
     full_name: r.full_name,
     is_active: r.is_active,
     lesson_count: Number(r.lesson_count),
-    subjects: r.subject_ids
-      ? r.subject_ids.split(',').map((id, i) => ({
-        id: Number(id),
-        name: r.subject_names.split('|')[i],
-      }))
-      : [],
+    subjects: byProfessor.get(r.id) || [],
   }));
 }
 

@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import Login from './pages/Login.jsx';
+import ChangePasswordRequired from './pages/ChangePasswordRequired.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Students from './pages/Students.jsx';
 import RegisterStudent from './pages/RegisterStudent.jsx';
@@ -151,6 +152,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/hyrje" element={<Login />} />
+      {/* Jashtë Layout-it dhe jashtë ProtectedRoute-it: ky ekran është i
+          vetmi që hapet me fjalëkalim të përkohshëm, ndaj do të binte në
+          cikël po ta mbronim me të njëjtin kusht që e dërgon këtu. */}
+      <Route path="/fjalekalimi-i-ri" element={<ChangePasswordRequired />} />
       <Route
         path="/*"
         element={

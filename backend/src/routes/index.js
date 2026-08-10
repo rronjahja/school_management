@@ -52,7 +52,11 @@ router.put('/users/:id', requireAdmin, userController.update);
 router.post('/users/:id/reset-password', requireAdmin, userController.resetPassword);
 
 // Meta
-router.get('/categories', metaController.categories);   // lista e drejtimeve i duhet cdo zone
+// Lista e drejtimeve i duhet Nxenesve, Financave, Regjistrimit dhe
+// Administrates — pra zones 'students'. NUK eshte e hapur per te gjithe:
+// rreshti mban `default_quota`, pra nje shifer financiare, dhe kujdestari
+// qe punon vetem ne ditar s'ka pse ta shohe.
+router.get('/categories', requireArea('students'), metaController.categories);
 router.get('/banks', requireFinance, metaController.banks);
 
 // Konfigurimet — vetëm administratorët mund të ndryshojnë

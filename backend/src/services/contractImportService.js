@@ -60,6 +60,10 @@ function parseAlDate(v) {
   const [, d, mo, y] = m;
   const day = Number(d); const mon = Number(mo);
   if (mon < 1 || mon > 12 || day < 1 || day > 31) return null;
+  // 31/02 nuk ekziston: pa kete kontroll, data e pamundur do te hynte ne
+  // formular dhe do te refuzohej vetem ne fund, te ruajtja.
+  const probe = new Date(Date.UTC(Number(y), mon - 1, day));
+  if (probe.getUTCMonth() !== mon - 1 || probe.getUTCDate() !== day) return null;
   return `${y}-${String(mon).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
@@ -67,8 +71,20 @@ function parseAlDate(v) {
 function parseMoney(v) {
   const t = String(v || '').replace(/[€\s]/g, '');
   if (!t) return null;
-  // formati europian 1.600,00 kthehet ne 1600.00
-  const norm = /,\d{2}$/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+
+  let norm;
+  if (/,\d{1,2}$/.test(t)) {
+    // formati europian me presje dhjetore: 1.600,00 -> 1600.00
+    norm = t.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(t)) {
+    // KUJDES: '1.600' ne kontrate eshte njemijegjashteqind, jo 1.6 —
+    // pika ketu eshte ndares mijesheje, sepse pas saj vijne SAKTESISHT
+    // tri shifra. Pa kete dege, cmimi i kontrates hyn ne formular si 1.60.
+    norm = t.replace(/\./g, '');
+  } else {
+    norm = t.replace(/,/g, '');
+  }
+
   const n = Number(norm);
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
 }
@@ -158,7 +174,11 @@ function parseContractDocx(buffer) {
     data.father_name = clean(emrat[0]);
     data.mother_name = clean(emrat[1]);
     data.father_last_name = clean(mbiemrat[0]);
-    data.mother_last_name = clean(mbiemrat[1] != null ? mbiemrat[1] : mbiemrat[0]);
+    // Mbiemri i perbashket i familjes vlen si rezerve VETEM nese nena
+    // eshte fare e permendur — perndryshe do te dilte nje mbiemer pa emer.
+    data.mother_last_name = data.mother_name
+      ? clean(mbiemrat[1] != null ? mbiemrat[1] : mbiemrat[0])
+      : null;
 
     // Kontrata mban NJE datelindje/telefon/nr.personal/e-mail — te perfaqesuesit.
     // Se cilit prind i takojne, e vendos emri te "i përfaqësuar nga ...".

@@ -110,7 +110,12 @@ CREATE TABLE IF NOT EXISTS students (
   updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_students_category
-    FOREIGN KEY (category_id) REFERENCES categories (id)
+    FOREIGN KEY (category_id) REFERENCES categories (id),
+  -- Nje numer kontrate i takon nje nxenesi te vetem. Aplikacioni e
+  -- kontrollon para insert-it, por dy regjistrime njekohesisht do ta
+  -- kalonin ate kontroll — ndalesa e vertete duhet te jete ketu.
+  -- (I njejti kufizim vjen edhe nga migrimi 007 per bazat ekzistuese.)
+  CONSTRAINT uq_students_contract_number UNIQUE (contract_number)
 ) ENGINE = InnoDB;
 
 CREATE INDEX idx_students_category ON students (category_id);
@@ -136,6 +141,10 @@ CREATE TABLE IF NOT EXISTS installments (
 ) ENGINE = InnoDB;
 
 CREATE INDEX idx_installments_due ON installments (due_date);
+-- Kestet lexohen e fshihen sipas vitit shkollor (perditesimi i nxenesit,
+-- kalimi i vitit) — pa kete indeks, cdo ndryshim skanon gjithe tabelen.
+-- (Shtohet edhe nga migrimi 005 per bazat ekzistuese.)
+CREATE INDEX idx_installments_generation ON installments (generation);
 
 -- ----------------------------------------------------------------
 -- Pagesat
@@ -206,6 +215,11 @@ CREATE TABLE IF NOT EXISTS users (
   full_name     VARCHAR(120) NOT NULL,
   role       ENUM('admin','menaxher','finance','kujdestar','staff') NOT NULL DEFAULT 'staff',
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
+  -- 1 = fjalëkalimi aktual është i përkohshëm (e caktoi administratori).
+  -- Derisa përdoruesi të vendosë të tijin, sesioni hap vetëm ndryshimin e
+  -- fjalëkalimit — kështu asnjë llogari nuk mbetet me një fjalëkalim që e
+  -- njohin dy veta.
+  must_change_password TINYINT(1) NOT NULL DEFAULT 0,
   failed_attempts INT       NOT NULL DEFAULT 0,
   locked_until    DATETIME  DEFAULT NULL,
   last_login_at TIMESTAMP NULL DEFAULT NULL,

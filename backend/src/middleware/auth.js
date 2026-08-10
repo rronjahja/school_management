@@ -20,10 +20,34 @@ async function requireAuth(req, res, next) {
     if (!user) throw httpError(401, 'Llogaria nuk është më aktive.');
 
     req.user = user;
+
+    // Fjalekalimi i perkohshem: derisa perdoruesi te vendose te tijin, sesioni
+    // hap VETEM ndryshimin e fjalekalimit (dhe daljen). Kontrolli behet KETU,
+    // jo me nje ekran te nderfaqes: perndryshe mjaftonte nje thirrje e
+    // drejtperdrejte e API-t per ta anashkaluar.
+    //
+    // Flamuri lexohet nga baza ne cdo kerkese, jo nga token-i: keshtu
+    // ndryshimi i fjalekalimit e heq kufizimin menjehere, pa dalje e hyrje.
+    if (user.must_change_password && !isPasswordChangeFlow(req)) {
+      return next(httpError(
+        403,
+        'Duhet të vendosni një fjalëkalim tuajin para se të vazhdoni.',
+        'PASSWORD_CHANGE_REQUIRED'
+      ));
+    }
+
     next();
   } catch (err) {
     next(err);
   }
+}
+
+/** Rruget e lejuara kur llogaria ka ende fjalekalimin e perkohshem. */
+const PASSWORD_FLOW = ['/auth/change-password', '/auth/me', '/auth/logout'];
+
+function isPasswordChangeFlow(req) {
+  const path = String(req.originalUrl || '').split('?')[0].replace(/^\/api/, '');
+  return PASSWORD_FLOW.includes(path);
 }
 
 /**

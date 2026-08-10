@@ -24,7 +24,8 @@ const {
 // te jete e njejte dhe te mos zbulohet cilat emra ekzistojne.
 const DUMMY_HASH = bcrypt.hashSync('nuk-ekziston-ky-perdorues', BCRYPT_ROUNDS);
 
-const PUBLIC_FIELDS = 'id, username, full_name, role, is_active, last_login_at, created_at';
+const PUBLIC_FIELDS =
+  'id, username, full_name, role, is_active, last_login_at, created_at, must_change_password';
 
 function validatePassword(password) {
   if (!password || password.length < MIN_PASSWORD_LENGTH) {
@@ -130,6 +131,10 @@ async function login(username, password, req) {
       username: user.username,
       full_name: user.full_name,
       role: user.role,
+      // Fjalekalimi i dhene nga administratori eshte i perkohshem: nderfaqja
+      // e con perdoruesin drejt e te vendosja e nje te tijit, dhe serveri
+      // (requireAuth) nuk e leshon gjetiu derisa ta beje.
+      must_change_password: Boolean(user.must_change_password),
     },
   };
 }
@@ -151,10 +156,18 @@ async function changeOwnPassword(userId, currentPassword, newPassword) {
   if (!ok) throw httpError(401, 'Fjalëkalimi aktual është i pasaktë.');
 
   validatePassword(newPassword);
-  await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [
-    await hashPassword(newPassword),
-    userId,
-  ]);
+
+  // Nje fjalekalim i perkohshem qe "ndryshohet" ne vetveten nuk ka ndryshuar
+  // asgje — ai e di ende administratori.
+  if (String(currentPassword) === String(newPassword)) {
+    throw httpError(400, 'Fjalëkalimi i ri duhet të jetë i ndryshëm nga ai aktual.');
+  }
+
+  await pool.query(
+    'UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?',
+    [await hashPassword(newPassword), userId]
+  );
+  return { must_change_password: false };
 }
 
 // ----------------------------- menaxhimi i perdoruesve (vetem admin)
@@ -164,7 +177,17 @@ async function listUsers() {
   return rows;
 }
 
-async function createUser({ username, password, full_name, role }) {
+/**
+ * Krijon nje perdorues.
+ *
+ * `mustChangePassword` eshte E VERTETE si parazgjedhje: fjalekalimin e para
+ * e shkruan administratori, ndaj ai e di. Perdoruesi detyrohet ta zevendesoje
+ * ne hyrjen e pare, qe askush pervec tij te mos e dije fjalekalimin e tij.
+ *
+ * Perjashtim ben `npm run create-admin`, ku administratori e shkruan VETE
+ * fjalekalimin e tij ne terminal — aty s'ka kush tjeter ta dije.
+ */
+async function createUser({ username, password, full_name, role, mustChangePassword = true }) {
   const name = String(username || '').trim().toLowerCase();
   if (!/^[a-z0-9._-]{3,60}$/.test(name)) {
     throw httpError(400, 'Emri i përdoruesit: 3-60 karaktere, vetëm shkronja, numra, . _ -');
@@ -181,6 +204,7 @@ async function createUser({ username, password, full_name, role }) {
     password_hash: await hashPassword(password),
     full_name: String(full_name).trim(),
     role,
+    must_change_password: mustChangePassword ? 1 : 0,
   }]);
   return getUserById(res.insertId);
 }
@@ -214,10 +238,20 @@ async function updateUser(id, { full_name, role, is_active }, actingUserId) {
   return getUserById(id);
 }
 
+/**
+ * Administratori i jep perdoruesit nje fjalekalim te ri.
+ *
+ * Ai fjalekalim eshte i PERKOHSHEM: pasi administratori e di, perdoruesi
+ * detyrohet ta zevendesoje ne hyrjen e ardhshme. Keshtu asnje llogari nuk
+ * mbetet me nje fjalekalim qe e njohin dy veta.
+ */
 async function resetPassword(id, newPassword) {
   validatePassword(newPassword);
   const [res] = await pool.query(
-    'UPDATE users SET password_hash = ?, failed_attempts = 0, locked_until = NULL WHERE id = ?',
+    `UPDATE users
+        SET password_hash = ?, must_change_password = 1,
+            failed_attempts = 0, locked_until = NULL
+      WHERE id = ?`,
     [await hashPassword(newPassword), id]
   );
   if (!res.affectedRows) throw httpError(404, 'Përdoruesi nuk u gjet.');

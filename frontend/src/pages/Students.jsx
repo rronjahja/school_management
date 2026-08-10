@@ -122,7 +122,7 @@ export default function Students() {
                   <th>Drejtimi</th>
                   <th>Gjenerata</th>
                   <th>Plani</th>
-                  <th className="num">{isFinance ? 'Kuota neto' : 'Kuota'}</th>
+                  <th className="num">{isFinance ? 'Detyrimi' : 'Kuota'}</th>
                   {isFinance && <th className="num">Paguar</th>}
                   {isFinance && <th className="num">Borxhi</th>}
                   {isFinance && <th>Statusi</th>}
@@ -147,7 +147,7 @@ export default function Students() {
                     </td>
                     <td>{shortGen(s.generation)}</td>
                     <td>{PLAN_LABELS[s.payment_plan]}</td>
-                    <td className="num">{money(isFinance ? s.finance.net_quota : s.yearly_quota)}</td>
+                    <td className="num">{money(isFinance ? s.finance.total_due : s.yearly_quota)}</td>
                     {isFinance && <td className="num">{money(s.finance.total_paid)}</td>}
                     {isFinance && <td className="num">{money(s.finance.balance)}</td>}
                     {isFinance && (

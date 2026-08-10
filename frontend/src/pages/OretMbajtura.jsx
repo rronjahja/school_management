@@ -20,12 +20,15 @@ import EmptyState from '../components/ui/EmptyState.jsx';
  */
 
 const DAY_NAMES = ['E diel', 'E hënë', 'E martë', 'E mërkurë', 'E enjte', 'E premte', 'E shtunë'];
+
+/** Emri i ditës nga një datë ISO — përdoret te titulli i periudhës. */
+const dayName = (iso) => DAY_NAMES[new Date(`${iso}T00:00:00Z`).getUTCDay()];
+
 const MONTHS = ['Janar', 'Shkurt', 'Mars', 'Prill', 'Maj', 'Qershor',
     'Korrik', 'Gusht', 'Shtator', 'Tetor', 'Nëntor', 'Dhjetor'];
 
 const dmy = (iso) => String(iso).split('-').reverse().join('/');
 
-const dayName = (iso) => DAY_NAMES[new Date(`${iso}T00:00:00Z`).getUTCDay()];
 
 /** Data e sotme si '2026-08-07'; nëse bie fundjavë, e premtja e fundit. */
 function workdayToday() {
@@ -75,16 +78,6 @@ export default function OretMbajtura() {
     }, [period, date, professorId, classId, onlySubs]);
 
     useEffect(() => { load(); }, [load]);
-
-    /** Orët e grupuara sipas ditës — një ditë lexohet si një bllok. */
-    const byDay = useMemo(() => {
-        const map = new Map();
-        for (const l of data?.lessons || []) {
-            if (!map.has(l.lesson_date)) map.set(l.lesson_date, []);
-            map.get(l.lesson_date).push(l);
-        }
-        return [...map.entries()];
-    }, [data]);
 
     const rangeLabel = useMemo(() => {
         if (!data) return '';
@@ -192,35 +185,37 @@ export default function OretMbajtura() {
                         <>
                             {/* ---- Përmbledhja: pyetja e parë është «sa mbajti kush» ---- */}
                             <section className="card">
-                                <h2 className="card-title">Përmbledhja sipas mësimdhënësit</h2>
+                                <h2 className="card-title">
+                                    Orët e mbajtura sipas mësimdhënësit
+                                    <span className="muted"> · {rangeLabel}</span>
+                                </h2>
                                 <div className="table-wrap">
                                     <table className="table">
                                         <thead>
                                             <tr>
                                                 <th>Mësimdhënësi</th>
-                                                <th className="num">Orë gjithsej</th>
                                                 <th className="num">Zëvendësime</th>
+                                                <th className="num">Totali i orëve</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {data.summary.map((r) => (
                                                 <tr key={r.professor_id}>
-                                                    <td>{r.professor_name}</td>
-                                                    {/* Sa orë mbajti ky mësimdhënës — shifra për të cilën
-                              hapet kjo faqe, ndaj e vetmja e theksuar. */}
-                                                    <td className="num hl-hours">{r.total_hours}</td>
+                                                    <td className="hl-name">{r.professor_name}</td>
                                                     <td className="num">{r.substitutions || '—'}</td>
+                                                    {/* Totali i ketij mesimdhenesi — kolona e fundit */}
+                                                    <td className="num hl-hours">{r.total_hours}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                         <tfoot>
                                             {/* E vetmja shifër e theksuar: ajo që kërkohet e para */}
                                             <tr className="hl-total">
-                                                <td>Total · {rangeLabel}</td>
-                                                <td className="num">{data.total_hours}</td>
+                                                <td>Të gjithë së bashku</td>
                                                 <td className="num">
                                                     {data.summary.reduce((a, r) => a + r.substitutions, 0) || '—'}
                                                 </td>
+                                                <td className="num">{data.total_hours}</td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -230,64 +225,6 @@ export default function OretMbajtura() {
                                 </p>
                             </section>
 
-                            {/* ---- Orët një nga një, të grupuara sipas ditës ---- */}
-                            <section className="card">
-                                <h2 className="card-title">Orët e mbajtura</h2>
-                                {byDay.map(([day, lessons]) => (
-                                    <div key={day} className="hl-day">
-                                        <h3 className="hl-day-title">
-                                            {dayName(day)}, {dmy(day)}
-                                            <span className="muted"> · {lessons.length} orë</span>
-                                        </h3>
-                                        <div className="table-wrap">
-                                            <table className="table hl-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th className="num">Ora</th>
-                                                        <th>Paralelja</th>
-                                                        <th>Lënda</th>
-                                                        <th>Njësia mësimore</th>
-                                                        <th>Mësimdhënësi</th>
-                                                        <th>Kontrolli</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {lessons.map((l) => (
-                                                        <tr key={l.id}>
-                                                            <td className="num"><strong>{l.period}</strong></td>
-                                                            <td>
-                                                                <span className="dt-cat-dot" style={{ background: l.category_color }} />
-                                                                {l.class_label}
-                                                            </td>
-                                                            <td>{l.subject_name}</td>
-                                                            <td className="hl-topic">{l.topic}</td>
-                                                            <td>
-                                                                {l.professor_name}
-                                                                {l.substitute_for_name && (
-                                                                    <span className="hl-sub" title={`Zëvendësim për ${l.substitute_for_name}`}>
-                                                                        zëv. për {l.substitute_for_name}
-                                                                    </span>
-                                                                )}
-                                                            </td>
-                                                            <td>
-                                                                {l.review_status === 'ok' && (
-                                                                    <span className="badge badge-green"><span className="badge-dot" />E pranuar</span>
-                                                                )}
-                                                                {l.review_status === 'error' && (
-                                                                    <span className="badge badge-red" title={l.review_comment}>
-                                                                        <span className="badge-dot" />Gabim
-                                                                    </span>
-                                                                )}
-                                                                {l.review_status === 'none' && <span className="muted">—</span>}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                ))}
-                            </section>
                         </>
                     )}
                 </>

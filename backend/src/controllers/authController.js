@@ -72,7 +72,10 @@ async function changePassword(req, res, next) {
   try {
     const { current_password, new_password } = req.body;
     await authService.changeOwnPassword(req.user.id, current_password, new_password);
-    res.json({ ok: true });
+    // Perdoruesi i freskuar kthehet bashke me pergjigjen: nderfaqja e heq
+    // ekranin e detyruar pa pasur nevoje per nje kerkese te dyte.
+    const user = await authService.getUserById(req.user.id);
+    res.json({ ok: true, user });
   } catch (err) { next(err); }
 }
 

@@ -16,6 +16,8 @@ import { downloadFinanceExcel } from '../api/meta';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
 
+const round2 = (n) => Math.round(n * 100) / 100;
+
 const STATUS_FILTERS = [
   ['', 'Të gjitha statuset'],
   ['overdue', 'Vonesë'],
@@ -95,13 +97,17 @@ export default function Finance() {
     );
   }, [students, status]);
 
+  // `total_due` e jo `net_quota`: kuota neto eshte vetem e vitit AKTUAL,
+  // ndersa borxhi llogaritet mbi TE GJITHA kestet (perfshire borxhin e
+  // bartur). Po t'i perzienim, rreshti nuk do te mbyllej: kuota - paguar
+  // nuk do te binte kurre me borxhin.
   const totals = useMemo(() => {
     if (!filtered) return null;
     return filtered.reduce(
       (acc, s) => ({
-        net: acc.net + s.finance.net_quota,
-        paid: acc.paid + s.finance.total_paid,
-        balance: acc.balance + s.finance.balance,
+        net: round2(acc.net + s.finance.total_due),
+        paid: round2(acc.paid + s.finance.total_paid),
+        balance: round2(acc.balance + s.finance.balance),
       }),
       { net: 0, paid: 0, balance: 0 }
     );
@@ -205,7 +211,7 @@ export default function Finance() {
         <>
           <div className="stat-grid">
             <StatCard label="Nxënës (sipas filtrave)" value={filtered.length} />
-            <StatCard label="Kuota totale neto" value={money(totals.net)} />
+            <StatCard label="Detyrimi total" value={money(totals.net)} />
             <StatCard label="Të arkëtuara" value={money(totals.paid)} tone="green" />
             <StatCard
               label="Borxh i mbetur"
@@ -254,7 +260,7 @@ export default function Finance() {
                         <td>{PLAN_LABELS[s.payment_plan]}</td>
                         <td className="num">{money(s.yearly_quota)}</td>
                         <td>{discountText(s.discount_type, s.discount_value)}</td>
-                        <td className="num">{money(s.finance.net_quota)}</td>
+                        <td className="num">{money(s.finance.total_due)}</td>
                         <td className="num cell-paid">{money(s.finance.total_paid)}</td>
                         <td className="num cell-owed">{money(s.finance.balance)}</td>
                         <td>

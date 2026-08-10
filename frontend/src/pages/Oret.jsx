@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
     fetchLessonClasses, fetchLessonMonth, createLesson, updateLesson, deleteLesson,
-    reviewLesson, fetchLessonReport,
+    reviewLesson,
 } from '../api/oret';
 import { errorMessage } from '../api/client';
 import PageHeader from '../components/ui/PageHeader.jsx';
@@ -53,11 +53,8 @@ export default function Oret() {
 
     const load = useCallback(() => {
         if (!classId) return Promise.resolve();
-        return Promise.all([
-            fetchLessonMonth(classId, month),
-            fetchLessonReport(month, classId),
-        ])
-            .then(([d, r]) => { setData(d); setReport(r); })
+        return fetchLessonMonth(classId, month)
+            .then(setData)
             .catch((err) => setError(errorMessage(err)));
     }, [classId, month]);
 

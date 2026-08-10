@@ -1658,3 +1658,90 @@ input.is-locked:focus {
   border-color: var(--primary);
   color: #fff;
 }
+/* ---------- Vendosja e fjalëkalimit në hyrjen e parë ---------- */
+.pw-note {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  background: var(--neutral-bg);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius-small);
+  padding: 11px 13px;
+  margin-bottom: 18px;
+}
+
+.pw-show {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  margin-top: -6px;
+}
+
+.pw-show input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Kërkesat rrinë gjithnjë të dukshme dhe ndriçohen ndërsa shkruhet:
+   përdoruesi e sheh se ç'i mungon PARA se të shtypë butonin. */
+.pw-rules {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 12px 14px;
+  background: var(--neutral-bg);
+  border-radius: var(--radius-small);
+}
+
+.pw-rule {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.pw-rule.ok {
+  color: var(--green);
+}
+
+.pw-rule-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.pw-signout {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.pw-signout:hover {
+  color: var(--ink);
+}
+
+.user-pw-badge {
+  margin-left: 6px;
+}

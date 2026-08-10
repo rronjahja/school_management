@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { computeNetQuota, buildInstallments, round2 } = require('../utils/finance');
+const { buildInstallments, round2 } = require('../utils/finance');
 const { httpError } = require('../middleware/errorHandler');
 const { isValidDate } = require('../utils/validateStudent');
 
@@ -60,9 +60,20 @@ async function preview(fromGeneration) {
     [fromGeneration]
   );
 
+  // Borxhi llogaritet SIC e llogarit summarizeFinance():
+  //   pagesa efektive = te gjitha pagesat - settled_paid
+  //   borxhi         = kestet - pagesa efektive
+  //
+  // `settled_paid` mban pjesen e pagesave qe u konsumua nga kestet e hequra
+  // ne nje kalim viti te meparshem. Pa e zbritur, e njejta pagese numerohet
+  // dy here dhe parapamja tregon nje borxh me te vogel se ai i vertete —
+  // pikerisht te nxenesit qe kane kaluar tashme nje vit.
   const [rows] = await pool.query(
     `SELECT s.study_year, COUNT(*) AS n,
-            SUM(GREATEST(COALESCE(i.total,0) - COALESCE(p.total,0), 0)) AS debt
+            SUM(GREATEST(
+              COALESCE(i.total, 0)
+              - GREATEST(COALESCE(p.total, 0) - COALESCE(s.settled_paid, 0), 0),
+            0)) AS debt
        FROM students s
        LEFT JOIN (SELECT student_id, SUM(amount) total FROM installments GROUP BY student_id) i
               ON i.student_id = s.id
@@ -275,8 +286,11 @@ async function promote({
       }
 
       if (create_new_year) {
-        const net = computeNetQuota(newQuota, s.discount_type, s.discount_value);
-        const fresh = buildInstallments(net, s.payment_plan, startDate, to);
+        // Zbritja u hoq nga rreshti i nxenesit disa rreshta me lart, sepse
+        // vlen VETEM per vitin ne te cilin u dha. Kestet duhet te ndjekin
+        // te njejten rregull — perndryshe baza do te thoshte «pa zbritje»
+        // ndersa kestet do ta mbanin ende ate te vitit te kaluar.
+        const fresh = buildInstallments(newQuota, s.payment_plan, startDate, to);
 
         const values = fresh.map((i) => [s.id, to, i.seq, i.due_date, i.amount]);
         await conn.query(

@@ -7,7 +7,11 @@ async function contract(req, res, next) {
     if (!Buffer.isBuffer(req.body) || req.body.length < 100) {
       throw httpError(400, 'Ngarkoni një skedar .docx të kontratës.');
     }
-    const filename = decodeURIComponent(req.get('X-Filename') || 'kontrata.docx');
+    // Nje header i keqformuar hedh URIError; pa kete, nje emer skedari i
+    // gabuar do te dilte si «gabim ne server» ne vend te emrit te pastruar.
+    const raw = req.get('X-Filename') || 'kontrata.docx';
+    let filename;
+    try { filename = decodeURIComponent(raw); } catch { filename = raw; }
     res.json(await importContract(req.body, filename));
   } catch (err) { next(err); }
 }

@@ -136,6 +136,21 @@ export default function ProfessorManager() {
     if (ok) setDeleting(null);
   };
 
+  // Gabimi shfaqet PARA ngarkuesit: perndryshe nje kerkese e deshtuar e
+  // linte faqen perjete te «Duke ngarkuar», sepse `professors` s'mbushej
+  // kurre dhe teksti i gabimit ndodhej me poshte, i paarritshem.
+  if (error && !professors) {
+    return (
+      <section className="card">
+        <h2 className="card-title">Profesorët dhe lëndët</h2>
+        <p className="form-error">{error}</p>
+        <button type="button" className="btn btn-ghost btn-small" onClick={load}>
+          Provo sërish
+        </button>
+      </section>
+    );
+  }
+
   if (!professors) return <Loader text="Duke ngarkuar profesorët…" />;
 
   return (

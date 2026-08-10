@@ -23,6 +23,10 @@ export default function Login() {
   }, []);
 
   if (ready && user) {
+    // Fjalëkalimi i dhënë nga administratori është i përkohshëm: përpara
+    // çdo gjëje tjetër, përdoruesi vendos të tijin.
+    if (user.must_change_password) return <Navigate to="/fjalekalimi-i-ri" replace />;
+
     // Pas hyrjes secili rol shkon te faqja e VET e pare: paneli nuk eshte
     // me i hapur per te gjithe, ndaj «/» s'eshte shtepi e perbashket.
     return <Navigate to={location.state?.from?.pathname || home} replace />;

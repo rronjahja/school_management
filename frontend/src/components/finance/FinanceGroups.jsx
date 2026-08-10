@@ -14,7 +14,9 @@ function aggregate(list) {
   return list.reduce(
     (a, s) => ({
       students: a.students + 1,
-      net: round2(a.net + s.finance.net_quota),
+      // detyrimi i plote (perfshire borxhin e bartur), qe subtotali te
+      // mbyllet me kolonat «Paguar» dhe «Borxhi»
+      net: round2(a.net + s.finance.total_due),
       paid: round2(a.paid + s.finance.total_paid),
       balance: round2(a.balance + s.finance.balance),
       overdue: a.overdue + (s.finance.status === 'overdue' ? 1 : 0),
@@ -136,7 +138,7 @@ export default function FinanceGroups({ students }) {
                                   </td>
                                   <td>{classLabel(s.study_year, s.class_name)}</td>
                                   <td>{PLAN_LABELS[s.payment_plan]}</td>
-                                  <td className="num">{money(s.finance.net_quota)}</td>
+                                  <td className="num">{money(s.finance.total_due)}</td>
                                   <td className="num cell-paid">{money(s.finance.total_paid)}</td>
                                   <td className="num cell-owed">{money(s.finance.balance)}</td>
                                   <td>

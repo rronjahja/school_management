@@ -368,15 +368,22 @@ async function deleteClass(id) {
   const [[cls]] = await pool.query('SELECT * FROM classes WHERE id = ?', [id]);
   if (!cls) throw httpError(404, 'Paralelja nuk u gjet.');
 
+  // Notat, oret e mesimit DHE kontrollet e notave jane dokument shkollor.
+  // Te treja varen nga paralelja me ON DELETE CASCADE, ndaj nje fshirje e
+  // palejuar do t'i merrte me vete pa asnje paralajmerim. Kontrollet numerohen
+  // vec: nje gabim i shenuar mbetet edhe pasi nota qe e shkaktoi fshihet, dhe
+  // eshte pikerisht ajo gjurme qe deshmon se ku ndryshoi ditari.
   const [[counts]] = await pool.query(
     `SELECT (SELECT COUNT(*) FROM class_grades       WHERE class_id = ?) +
-            (SELECT COUNT(*) FROM class_final_grades WHERE class_id = ?) AS total`,
-    [id, id]
+            (SELECT COUNT(*) FROM class_final_grades WHERE class_id = ?) AS grades,
+            (SELECT COUNT(*) FROM lessons            WHERE class_id = ?) AS lessons,
+            (SELECT COUNT(*) FROM grade_reviews      WHERE class_id = ?) AS reviews`,
+    [id, id, id, id]
   );
-  if (counts.total > 0) {
+  if (counts.grades > 0 || counts.lessons > 0 || counts.reviews > 0) {
     throw httpError(409,
-      'Kjo paralele ka nota të regjistruara dhe nuk mund të fshihet. '
-      + 'Çaktivizojeni nëse nuk përdoret më.');
+      'Kjo paralele ka nota, orë mësimi ose kontrolle të regjistruara dhe nuk mund '
+      + 'të fshihet. Çaktivizojeni nëse nuk përdoret më.');
   }
 
   await pool.query('DELETE FROM classes WHERE id = ?', [id]);
@@ -475,6 +482,16 @@ async function getRegister(user, classId) {
     [classId]
   );
 
+  // Kontrollet e notave: cilat jane pranuar, cilat jane shenuar gabim
+  const [reviews] = await pool.query(
+    `SELECT r.id, r.student_id, r.subject_id, r.kind, r.term, r.grade_id,
+            r.observed_value, r.status, r.comment, r.reviewed_by, r.reviewed_at,
+            u.full_name AS reviewed_by_name
+       FROM grade_reviews r
+       JOIN users u ON u.id = r.reviewed_by
+      WHERE r.class_id = ? AND r.status IN ('ok','error')`,
+    [classId]
+  );
 
   return {
     class: cls,
@@ -556,10 +573,13 @@ async function removeSubject(user, subjectId) {
   if (!subject) throw httpError(404, 'Lënda nuk u gjet.');
   const cls = await assertClassWrite(user, subject.class_id);
 
+  // Edhe oret e mesimit varen nga kjo lende (ON DELETE CASCADE): pa kete
+  // kontroll, heqja e nje kolone do te fshinte ne heshtje ditarin e oreve.
   const [[counts]] = await pool.query(
     `SELECT (SELECT COUNT(*) FROM class_grades       WHERE subject_id = ?) +
-            (SELECT COUNT(*) FROM class_final_grades WHERE subject_id = ?) AS total`,
-    [subjectId, subjectId]
+            (SELECT COUNT(*) FROM class_final_grades WHERE subject_id = ?) +
+            (SELECT COUNT(*) FROM lessons            WHERE subject_id = ?) AS total`,
+    [subjectId, subjectId, subjectId]
   );
 
   if (counts.total > 0) {
@@ -623,7 +643,7 @@ async function removeGrade(user, gradeId) {
   // Gabimi i shënuar mbi këtë notë u rregullua duke e hequr atë
   await autoResolveReviews({
     studentId: grade.student_id, subjectId: grade.subject_id,
-    term: grade.term, kind: 'mark', gradeId: Number(gradeId),
+    term: grade.term, kind: 'mark', gradeId: Number(gradeId), userId: user.id,
   });
   await pool.query('DELETE FROM class_grades WHERE id = ?', [gradeId]);
   return { grade, class: cls, term_label: TERM_LABELS[grade.term] };
@@ -648,6 +668,7 @@ async function setFinalGrade(user, classId, data) {
     // Nota ndryshoi: gabimi i shënuar mbi të s'ka më kuptim, mbyllet vetë.
     await autoResolveReviews({
       studentId: student.id, subjectId: subject.id, term, kind: 'closing',
+      userId: user.id,
     });
   };
 
@@ -766,17 +787,18 @@ const REVIEW_KINDS = ['mark', 'closing'];
  * kujtohej ta mbyllte edhe njoftimin — dhe lista do të mbushej me
  * gabime tashmë të rregulluara, derisa askush s'do t'i besonte më.
  */
-async function autoResolveReviews({ studentId, subjectId, term, kind, gradeId = null }) {
+async function autoResolveReviews({ studentId, subjectId, term, kind, gradeId = null, userId = null }) {
   const where = ['status = ?', 'student_id = ?', 'subject_id = ?', 'term = ?', 'kind = ?'];
   const params = ['error', studentId, subjectId, term, kind];
   if (gradeId !== null) {
     where.push('grade_id = ?');
     params.push(gradeId);
   }
+  // Kush e mbylli gabimin ruhet: nje gjurme pa emer nuk eshte gjurme.
   await pool.query(
-    `UPDATE grade_reviews SET status = 'resolved', resolved_at = NOW()
+    `UPDATE grade_reviews SET status = 'resolved', resolved_by = ?, resolved_at = NOW()
       WHERE ${where.join(' AND ')}`,
-    params
+    [userId, ...params]
   );
 }
 

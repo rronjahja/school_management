@@ -56,6 +56,16 @@ async function generateContractNumber(conn, categoryId, generation, enrollmentDa
   return `${String(max + 1).padStart(2, '0')}${suffix}`;
 }
 
+/** Sa here provohet nje numer kontrate i ri para se te dorezohemi. */
+const MAX_CONTRACT_RETRIES = 5;
+
+/** '06/2026/TD' -> '07/2026/TD'. Nese formati s'njihet, kthehet i paprekur. */
+function bumpContractNumber(value) {
+  const m = String(value || '').match(/^(\d+)(\/.+)$/);
+  if (!m) return value;
+  return `${String(Number(m[1]) + 1).padStart(2, '0')}${m[2]}`;
+}
+
 /**
  * Normalizon gjeneraten ne formatin e plote "2025/2026".
  * Perdoruesi mund te shkruaje "2025/26" ose "2025" — ruhet gjithmone i njejti format,
@@ -165,7 +175,27 @@ async function createStudent(body, opts = {}) {
       }
     }
 
-    const [result] = await conn.query('INSERT INTO students SET ?', [data]);
+    // Numri i kontrates gjenerohet me «lexo maksimumin, shto nje». Dy
+    // regjistrime njekohesisht e lexojne te njejtin maksimum dhe prodhojne
+    // te njejtin numer; kufizimi UNIQUE i bazes e ndalon te dytin. Ne vend
+    // qe perdoruesi te shohe nje gabim te pashpjegueshem, numri rritet me
+    // nje dhe provohet serish.
+    //
+    // Rritja behet KETU e jo me nje pyetje te re: brenda transaksionit,
+    // nje SELECT i dyte sheh te njejtin fotografim te bazes dhe do te
+    // kthente perseri te njejtin maksimum.
+    let result = null;
+    for (let attempt = 0; attempt < MAX_CONTRACT_RETRIES && !result; attempt += 1) {
+      try {
+        [result] = await conn.query('INSERT INTO students SET ?', [data]);
+      } catch (err) {
+        const duplicateContract = err.code === 'ER_DUP_ENTRY'
+          && String(err.message || '').includes('contract_number');
+        if (!duplicateContract || attempt === MAX_CONTRACT_RETRIES - 1) throw err;
+        data.contract_number = bumpContractNumber(data.contract_number);
+      }
+    }
+
     await insertInstallments(conn, result.insertId, data);
 
     await conn.commit();
@@ -194,10 +224,22 @@ const FINANCE_KEYS = [
   'yearly_quota', 'discount_type', 'discount_value', 'payment_plan', 'enrollment_date',
 ];
 
+/**
+ * A jane e njejta vlere? DECIMAL kthehet si tekst nga mysql2 ('0.00'),
+ * ndersa formulari dergon numer (0). Krahasimi si tekst do te dilte
+ * GJITHMONE i ndryshem dhe kestet do te rigjeneroheshin ne cdo ruajtje —
+ * edhe kur ndryshon vetem telefoni.
+ */
+function sameFieldValue(a, b) {
+  const na = Number(a);
+  const nb = Number(b);
+  if (a !== '' && b !== '' && Number.isFinite(na) && Number.isFinite(nb)) return na === nb;
+  return String(a) === String(b);
+}
+
 async function updateStudent(id, body) {
   const existing = await getStudentRow(id);
   const data = pickStudentFields(body);
-  const merged = { ...existing, ...data };
 
   // Nese ndryshon drejtimi, kuota merret nga konfigurimi i drejtimit te ri.
   // Nese drejtimi mbetet i njejti, kuota e studentit NUK preket — kontrata
@@ -209,8 +251,14 @@ async function updateStudent(id, body) {
     data.yearly_quota = existing.yearly_quota;
   }
 
+  // KUJDES: `merged` ndertohet PAS zgjidhjes se kuotes. Po ta merrnim me
+  // heret, kestet do te ndertoheshin mbi kuoten e derguar nga formulari,
+  // kurse baza do te ruante nje tjeter — dhe `yearly_quota` nuk do t'i
+  // binte me ndesh shumes se kesteve.
+  const merged = { ...existing, ...data };
+
   const financeChanged = FINANCE_KEYS.some(
-    (k) => data[k] !== undefined && String(data[k]) !== String(existing[k])
+    (k) => data[k] !== undefined && !sameFieldValue(data[k], existing[k])
   );
   // Ndryshimi i gjenerates trajtohet nga kalimi i vitit, jo nga ky formular
   const generationChanged =
@@ -225,20 +273,30 @@ async function updateStudent(id, body) {
 
     if (financeChanged || generationChanged) {
       const currentGen = normalizeGeneration(merged.generation);
+      const previousGen = normalizeGeneration(existing.generation);
 
-      // Fshihen VETEM kestet e vitit aktual. Vitet e kaluara mbeten te paprekura.
+      // Fshihen kestet e vitit aktual. Kur ndryshon gjenerata, fshihen edhe
+      // ato te vitit te MEPARSHEM: pa kete, `currentGen` do te ishte viti i
+      // RI (ku ende s'ka asnje kest), kestet e vjetra do te mbeteshin, dhe
+      // MAX(seq) me poshte do t'i shtynte te rejat pas tyre — nxenesi do te
+      // perfundonte me dy vite kestesh dhe borxh te dyfishuar.
+      //
+      // `is_carryover = 0` mbron rreshtin «Borxhi i vitit te kaluar»: ai i
+      // takon nje viti tjeter dhe nuk rillogaritet kurre ketu.
       await conn.query(
-        'DELETE FROM installments WHERE student_id = ? AND generation = ?',
-        [id, currentGen]
+        `DELETE FROM installments
+          WHERE student_id = ? AND is_carryover = 0 AND generation IN (?, ?)`,
+        [id, currentGen, previousGen]
       );
 
-      // Nese ndryshoi gjenerata, heqim edhe kestet pa vit (te dhena te vjetra)
-      if (generationChanged) {
-        await conn.query(
-          'DELETE FROM installments WHERE student_id = ? AND generation IS NULL',
-          [id]
-        );
-      }
+      // Kestet pa vit shkollor (te dhena para migrimit 005/007) hiqen
+      // GJITHMONE, jo vetem kur ndryshon gjenerata: po t'i linim, MAX(seq)
+      // me poshte do t'i shtynte kestet e reja pas tyre dhe borxhi i
+      // nxenesit do te dyfishohej ne heshtje.
+      await conn.query(
+        'DELETE FROM installments WHERE student_id = ? AND generation IS NULL',
+        [id]
+      );
 
       // Numrat e kesteve vazhdojne pas atyre qe mbeten
       const [[mx]] = await conn.query(
@@ -287,7 +345,9 @@ function studentFilter({ search, category_id, payment_plan, study_year, status }
 
   if (search) {
     where.push('(s.first_name LIKE ? OR s.last_name LIKE ? OR CONCAT(s.first_name, " ", s.last_name) LIKE ?)');
-    const like = `%${search}%`;
+    // '%' dhe '_' te shkruara nga perdoruesi jane shkronja, jo xhoker:
+    // pa kete, kerkimi per «%» do te ktheu te gjithe nxenesit.
+    const like = `%${String(search).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
     params.push(like, like, like);
   }
   if (category_id) {
@@ -342,7 +402,7 @@ async function listStudents(filters = {}) {
            FROM payments GROUP BY student_id
        ) p ON p.student_id = s.id
       ${clause}
-      ORDER BY s.created_at DESC
+      ORDER BY s.created_at DESC, s.id DESC
       ${paged ? 'LIMIT ? OFFSET ?' : ''}`,
     paged ? [...params, limit, offset] : params
   );
