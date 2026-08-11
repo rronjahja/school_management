@@ -39,6 +39,7 @@ const EMPTY = {
   primary_contact: 'father',
   category_id: '',
   contract_number: '',
+  is_transfer: false,
   generation: defaultRegistrationGeneration(),
   class_name: '',
   study_year: 1,
@@ -65,6 +66,11 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
   // primary_contact eshte i vetmi burim i se vertetes.
   const hasGuardian = form.primary_contact === 'guardian';
 
+  // Numri personal kerkohet VETEM per kontaktin e pare — ai person nenshkruan
+  // kontraten. Ylli levize vetvetiu kur nderrohet kontakti, qe forma te mos
+  // kerkoje nje fushe qe s'duket me e detyrueshme.
+  const isPrimary = (who) => form.primary_contact === who;
+
   // ---- Nr. i kontratës: mbushet vetvetiu sipas drejtimit + gjeneratës ----
   const isEdit = Boolean(initial && initial.id);
   // Kontrata e migruar sjell numrin e VET — gjenerimi automatik nuk e prek
@@ -81,7 +87,7 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
         // vetëm përgjigjja e fundit vlen (mbrojtje ndaj klikimeve të shpejta)
         if (id === reqId.current && nr) setForm((f) => ({ ...f, contract_number: nr }));
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (id === reqId.current) setContractBusy(false);
       });
@@ -275,12 +281,13 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Datëlindja">
                 <DateInput value={form.guardian_birthday || ''} onChange={set('guardian_birthday')} />
               </Field>
-              <Field label="Numri personal">
+              <Field label="Numri personal" required hint="Kërkohet për kontaktin e parë.">
                 <input
                   value={form.guardian_personal_id || ''}
                   onChange={set('guardian_personal_id')}
                   maxLength={20}
                   inputMode="numeric"
+                  required
                 />
               </Field>
               <Field label="Gjinia" hint="Përcakton përshëndetjen: z. ose znj.">
@@ -349,12 +356,17 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Datëlindja">
                 <DateInput value={form.mother_birthday || ''} onChange={set('mother_birthday')} />
               </Field>
-              <Field label="Numri personal">
+              <Field
+                label="Numri personal"
+                required={isPrimary('mother')}
+                hint={isPrimary('mother') ? 'Kërkohet për kontaktin e parë.' : undefined}
+              >
                 <input
                   value={form.mother_personal_id || ''}
                   onChange={set('mother_personal_id')}
                   maxLength={20}
                   inputMode="numeric"
+                  required={isPrimary('mother')}
                 />
               </Field>
               <Field label="E-mail">
@@ -399,12 +411,17 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               <Field label="Datëlindja">
                 <DateInput value={form.father_birthday || ''} onChange={set('father_birthday')} />
               </Field>
-              <Field label="Numri personal">
+              <Field
+                label="Numri personal"
+                required={isPrimary('father')}
+                hint={isPrimary('father') ? 'Kërkohet për kontaktin e parë.' : undefined}
+              >
                 <input
                   value={form.father_personal_id || ''}
                   onChange={set('father_personal_id')}
                   maxLength={20}
                   inputMode="numeric"
+                  required={isPrimary('father')}
                 />
               </Field>
               <Field label="E-mail">
@@ -447,24 +464,47 @@ export default function StudentForm({ initial, categories, onSubmit, busy, submi
               ))}
             </select>
           </Field>
-          <Field label="Paralelja">
+          <Field label="Paralelja" hint="Opsionale — lëreni bosh nëse ende s'është caktuar.">
             <span className="parallel-input">
               <span className="parallel-prefix">
                 {YEAR_ROMAN[Number(form.study_year)] || '—'}/
               </span>
+              {/*
+                Fusha eshte TEKST, jo `type="number"`. Nje fushe numerike e
+                bllokon ruajtjen e gjithe formularit kur permbajtja s'i pelqen
+                shfletuesit (hapesire e mbetur, «1.», «e», minus) — edhe pa
+                `required`. Perdoruesi sheh vetem nje flluske te vogel dhe
+                mendon se fusha eshte e detyrueshme.
+                Ketu pranohen vetem shifra, dhe formati kontrollohet serish
+                ne server.
+              */}
               <input
-                type="number"
-                min="1"
-                max="99"
-                step="1"
+                type="text"
+                inputMode="numeric"
+                maxLength={2}
                 value={form.class_name || ''}
-                onChange={set('class_name')}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, class_name: e.target.value.replace(/\D/g, '') }))
+                }
                 placeholder="1"
               />
             </span>
           </Field>
           <Field label="Data e regjistrimit" required>
             <DateInput value={form.enrollment_date} onChange={set('enrollment_date')} required />
+          </Field>
+          <Field
+            label="Transfer"
+            hint="Nxënës i ardhur nga një shkollë tjetër. Shfaqet te titulli i kontratës."
+          >
+            <label className="mini-check">
+              <input
+                type="checkbox"
+                checked={Boolean(Number(form.is_transfer))}
+                onChange={(e) => setForm((f) => ({ ...f, is_transfer: e.target.checked }))}
+              />
+              <span>Nxënësi është transfer</span>
+            </label>
           </Field>
           <Field label="Nr. i kontratës">
             <span className="field-with-action">

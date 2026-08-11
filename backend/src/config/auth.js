@@ -28,10 +28,17 @@ function loadSecret() {
 module.exports = {
   JWT_SECRET: loadSecret(),
 
-  // Sa zgjat sesioni
-  TOKEN_TTL: '8h',
+  // ── Sesioni: 15 minuta PA VEPRIMTARI ─────────────────────────
+  //
+  // Nuk eshte afat i prere nga hyrja, por nga veprimi i FUNDIT: cdo
+  // kerkese e vlefshme e rifreskon cookie-n (shih middleware/auth.js).
+  // Kush punon vazhdimisht nuk e verejne kurre; kush largohet nga tavolina
+  // e humb sesionin brenda nje cerek ore — kompjuteret e zyres jane te
+  // perbashket dhe nje sesion i hapur eshte deren e hapur.
+  SESSION_IDLE_MINUTES: 15,
+  TOKEN_TTL: '15m',
   COOKIE_NAME: 'ispe_session',
-  COOKIE_MAX_AGE: 8 * 60 * 60 * 1000,
+  COOKIE_MAX_AGE: 15 * 60 * 1000,
 
   // Cookie: e palexueshme nga JavaScript, nuk dërgohet nga faqe të tjera
   cookieOptions: {
@@ -39,7 +46,7 @@ module.exports = {
     sameSite: 'strict',
     secure: isProd, // kërkon HTTPS në prodhim
     path: '/',
-    maxAge: 8 * 60 * 60 * 1000,
+    maxAge: 15 * 60 * 1000,
   },
 
   // Fjalëkalimet

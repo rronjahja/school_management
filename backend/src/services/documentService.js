@@ -11,14 +11,7 @@ const { PLAN_CONFIG } = require('../config/finance');
 // Te gjitha shabllonet Word qendrojne ketu (kontrata, vertetime, etj.)
 const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates');
 
-const formatDate = (d) => (d ? dayjs(d).format('DD/MM/YYYY') : '');
-
-/** Zgjedh formen sipas gjinise; kur s'dihet, kthen formen e dyfishte. */
-const genderPick = (gender, male, female, unknown) => {
-  if (gender === 'm') return male;
-  if (gender === 'f') return female;
-  return unknown;
-};
+const formatDate = (d) => (d ? dayjs(d).format('DD.MM.YYYY') : '');
 /** '2025/2026' -> '2025/26' */
 const shortGen = (g) => {
   const m = String(g || '').match(/(\d{4})\s*\/\s*(\d{2,4})/);
@@ -122,7 +115,12 @@ function buildTemplateData(student) {
     emaili_babait: student.father_email || '',
     emaili_kujdestarit: student.guardian_email || '',
     emaili_prindit: primaryField(student, 'email'),
+    // Kontakti i pare — prindi/kujdestari qe perfaqeson nxenesin.
+    // Dy emra per te njejten gje: {kontakti_i_pare} eshte emri i vjeter i
+    // kontrates, {emri_kontaktit} eshte ai i mesazhit te rikujteses. Te dy
+    // punojne, qe te mos duhet te mbahet mend se cili shabllon perdor cilin.
     kontakti_i_pare: primaryName(student),
+    emri_kontaktit: primaryName(student),
     // Kujdestari ligjor (bosh kur nxenesi ka prinder te regjistruar)
     emri_kujdestarit: student.guardian_name || '',
     mbiemri_kujdestarit: student.guardian_last_name || '',
@@ -130,20 +128,7 @@ function buildTemplateData(student) {
     data_lindjes_kujdestarit: formatDate(student.guardian_birthday),
     numri_personal_kujdestarit: student.guardian_personal_id || '',
 
-    // ---- Gjinia: shqipja e ndryshon mbaresen, ndaj shabllonet duhet ta
-    // dine. Pa keto, cdo verte-tim do te shkruante «i lindur ... nxenes i
-    // rregullt» edhe per nje vajze.
-    // Kur gjinia s'eshte shenuar, perdoret forma e dyfishte «i/e».
-    i_e: genderPick(student.gender, 'i', 'e', 'i/e'),
-    nxenesi: genderPick(student.gender, 'nxënësi', 'nxënësja', 'nxënësi/ja'),
-    nxenes: genderPick(student.gender, 'nxënës', 'nxënëse', 'nxënës/e'),
-    i_rregullt: genderPick(student.gender, 'i rregullt', 'e rregullt', 'i/e rregullt'),
-    i_regjistruar: genderPick(student.gender, 'i regjistruar', 'e regjistruar', 'i/e regjistruar'),
-    i_lindur: genderPick(student.gender, 'i lindur', 'e lindur', 'i/e lindur'),
-
     // Shkollimi
-    // Emri i plote i drejtimit, p.sh. «Asistent i Fizioterapise».
-    // Kodi i shkurter (AF) perdoret vetem te numri i kontrates.
     drejtimi: student.category_name,
 
     // Viti shkollor — i njejti informacion, tri forma per t'u zgjedhur ne shabllon
@@ -151,18 +136,18 @@ function buildTemplateData(student) {
     gjenerata_shkurt: shortGen(student.generation),   // 2025/26
     viti_shkollor: student.generation,                // alias i {gjenerata}
     viti_studimit: YEAR_LABELS[student.study_year] || '', // Viti I / II / III
-    // Klasa eshte VITI: X, XI, XII. Ne verte-tim thuhet «ne klasen XII» —
-    // paralelja eshte ndarje e brendshme e shkolles dhe s'i intereson
-    // institucionit qe e lexon dokumentin.
-    klasa: ROMAN_YEAR[student.study_year] || '',
-    paralelja: student.class_name || '',   // vetem numri, p.sh. 1
-    // Kur duhen te dyja bashke, p.sh. te nje liste e brendshme: «XII/1»
-    klasa_paralelja: student.class_name
+    // Paralelja: ne baze ruhet vetem numri, prefiksi vjen nga viti i studimit
+    klasa: student.class_name
       ? `${ROMAN_YEAR[student.study_year] || ''}${ROMAN_YEAR[student.study_year] ? '/' : ''}${student.class_name}`
-      : (ROMAN_YEAR[student.study_year] || ''),
+      : '',
+    paralelja: student.class_name || '',   // vetem numri, p.sh. 1
     nr_kontrates: student.contract_number || '',
+    // «(Transfer)» ose asgje fare. Kllapat jane pjese e VLERES, qe shablloni
+    // te mbaje nje {transfer} te thjeshte: po t'i shkruante vete si
+    // «({transfer})», nje nxenes i zakonshem do te linte «()» bosh te titulli.
+    transfer: Number(student.is_transfer) ? '(Transfer)' : '',
     data_regjistrimit: formatDate(student.enrollment_date),
-    data_sotme: dayjs().format('DD/MM/YYYY'),
+    data_sotme: dayjs().format('DD.MM.YYYY'),
 
     // Financat
     cmimi: formatMoney(student.yearly_quota),
@@ -301,7 +286,7 @@ function buildFletepagesa(student, description, amount) {
     emri_babait:
       student.father_name || student.mother_name || student.guardian_name || '',
     nr_kontrates: student.contract_number || '',
-    data_sotme: dayjs().format('DD/MM/YYYY'),
+    data_sotme: dayjs().format('DD.MM.YYYY'),
     pershkrimi_pageses: description,
     shuma: formatMoney(amount),
     // Gjendja financiare — total_due i perfshin edhe kestet e bartura,

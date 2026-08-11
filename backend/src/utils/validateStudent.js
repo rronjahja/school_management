@@ -44,6 +44,15 @@ function isValidGeneration(value) {
   return end === start + 1;
 }
 
+/**
+ * Kush eshte kontakti i pare -> fusha e numrit personal qe i takon.
+ */
+const PRIMARY_ID_FIELD = {
+  mother: ['mother_personal_id', 'nënës'],
+  father: ['father_personal_id', 'babait'],
+  guardian: ['guardian_personal_id', 'kujdestarit'],
+};
+
 /** Kthen listën e gabimeve; bosh nëse të dhënat janë në rregull. */
 function validateStudent(body) {
   const errors = [];
@@ -115,7 +124,7 @@ function validateStudent(body) {
         errors.push('Zbritja në përqindje nuk mund të kalojë 100%.');
       }
       if (discountType === 'amount' && isFiniteNumber(body.yearly_quota) &&
-          dv > Number(body.yearly_quota)) {
+        dv > Number(body.yearly_quota)) {
         errors.push('Zbritja nuk mund të jetë më e madhe se kuota vjetore.');
       }
     }
@@ -144,7 +153,7 @@ function validateStudent(body) {
   Object.keys(EMAIL_OWNER).forEach((f) => {
     const v = body[f];
     if (v !== undefined && String(v).trim() !== '' &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())) {
       errors.push(`E-maili i ${EMAIL_OWNER[f]} nuk është i vlefshëm.`);
     }
   });
@@ -152,14 +161,14 @@ function validateStudent(body) {
   // ---- prinderit ----
   // Emrat nuk jane te detyrueshem. Kontakti i pare duhet te jete i vlefshem.
   if (body.primary_contact !== undefined &&
-      !['mother', 'father', 'guardian'].includes(body.primary_contact)) {
+    !['mother', 'father', 'guardian'].includes(body.primary_contact)) {
     errors.push('Kontakti i parë duhet të jetë nëna, babai ose kujdestari ligjor.');
   }
 
   // Me kujdestar ligjor, emri i tij eshte i detyrueshem — pa te, mesazhet
   // e rikujteses nuk kane kujt t'i drejtohen.
   if (body.primary_contact === 'guardian' &&
-      String(body.guardian_name || '').trim() === '') {
+    String(body.guardian_name || '').trim() === '') {
     errors.push('Emri i kujdestarit ligjor është i detyrueshëm.');
   }
 
@@ -181,16 +190,31 @@ function validateStudent(body) {
 
   // Numri personal: shifra, gjatesi e arsyeshme
   [['mother_personal_id', 'nënës'], ['father_personal_id', 'babait'],
-   ['guardian_personal_id', 'kujdestarit']].forEach(([f, kujt]) => {
+  ['guardian_personal_id', 'kujdestarit']].forEach(([f, kujt]) => {
     const v = body[f];
     if (v !== undefined && String(v).trim() !== '' && !/^\d{6,20}$/.test(String(v).trim())) {
       errors.push(`Numri personal i ${kujt} duhet të jetë 6-20 shifra.`);
     }
   });
 
+  // Numri personal i KONTAKTIT TE PARE eshte i vetmi i detyrueshem: ai
+  // person nenshkruan kontraten dhe pergjigjet per pagesat. Prindi tjeter
+  // mund te mos e kete fare te shenuar.
+  const [primaryIdField, primaryIdOwner] =
+    PRIMARY_ID_FIELD[body.primary_contact] || PRIMARY_ID_FIELD.father;
+  if (String(body[primaryIdField] || '').trim() === '') {
+    errors.push(
+      `Numri personal i ${primaryIdOwner} është i detyrueshëm (kontakti i parë).`
+    );
+  }
+
   // ---- paralelja ----
   // Ruhet vetem numri; viti (X/XI/XII) shtohet automatikisht ne shfaqje.
-  if (body.class_name !== undefined && String(body.class_name).trim() !== '') {
+  // Paralelja eshte OPSIONALE. `null` duhet trajtuar si «pa vlere» njesoj si
+  // '' — pa kete, String(null) jep tekstin "null", qe s'i pergjigjet rregexit
+  // dhe nje nxenes pa paralele refuzohet me nje mesazh qe s'ka lidhje.
+  if (body.class_name !== undefined && body.class_name !== null &&
+    String(body.class_name).trim() !== '') {
     if (!/^\d{1,2}$/.test(String(body.class_name).trim())) {
       errors.push('Paralelja duhet të jetë vetëm numër (p.sh. 1, 2, 3).');
     }
@@ -207,4 +231,6 @@ function validateStudent(body) {
   return errors;
 }
 
-module.exports = { validateStudent, isValidDate, isValidGeneration, isFiniteNumber };
+module.exports = {
+  validateStudent, isValidDate, isValidGeneration, isFiniteNumber, PRIMARY_ID_FIELD,
+};

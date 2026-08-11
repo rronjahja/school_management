@@ -13,7 +13,8 @@ const STUDENT_FIELDS = [
   'guardian_name', 'guardian_last_name', 'guardian_phone',
   'guardian_birthday', 'guardian_personal_id', 'guardian_gender', 'guardian_email',
   'primary_contact',
-  'category_id', 'contract_number', 'generation', 'class_name', 'study_year', 'enrollment_date',
+  'category_id', 'contract_number', 'is_transfer',
+  'generation', 'class_name', 'study_year', 'enrollment_date',
   'yearly_quota', 'discount_type', 'discount_value', 'payment_plan',
 ];
 
@@ -67,6 +68,29 @@ function bumpContractNumber(value) {
 }
 
 /**
+ * Kush e mban kete numer kontrate? Kthen nxenesin ose null.
+ * `exceptId` perjashton vete nxenesin qe po perditesohet.
+ */
+async function contractHolder(conn, number, exceptId = null) {
+  if (!number) return null;
+  const [rows] = await conn.query(
+    `SELECT id, first_name, last_name FROM students
+      WHERE contract_number = ?${exceptId ? ' AND id <> ?' : ''} LIMIT 1`,
+    exceptId ? [number, exceptId] : [number]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Gabim i kuptueshem per numrin e zene. Emri i mbajtesit shtohet kur dihet:
+ * pa te, perdoruesi s'ka nga t'ia nise per ta zgjidhur konfliktin.
+ */
+function contractTakenError(number, holder) {
+  const who = holder ? ` nga ${holder.first_name} ${holder.last_name}` : '';
+  return httpError(409, `Nr. i kontratës ${number} është i zënë${who}.`, 'CONTRACT_TAKEN');
+}
+
+/**
  * Normalizon gjeneraten ne formatin e plote "2025/2026".
  * Perdoruesi mund te shkruaje "2025/26" ose "2025" — ruhet gjithmone i njejti format,
  * qe grupimet dhe krahasimet te mos ndahen ne dy variante te te njejtit vit.
@@ -104,6 +128,13 @@ function pickStudentFields(body) {
   STUDENT_FIELDS.forEach((f) => {
     if (body[f] !== undefined) data[f] = body[f] === '' ? null : body[f];
   });
+
+  // Kolona is_transfer eshte NOT NULL: nje kutize e pashenuar mund te vije
+  // si false, '0', null a undefined — te gjitha kthehen ne 0/1.
+  if (data.is_transfer !== undefined) {
+    data.is_transfer = (data.is_transfer === true || data.is_transfer === 1
+      || data.is_transfer === '1' || data.is_transfer === 'true') ? 1 : 0;
+  }
   PHONE_FIELDS.forEach((f) => {
     if (data[f] !== undefined && data[f] !== null) data[f] = normalizePhone(data[f]);
   });
@@ -154,6 +185,11 @@ async function createStudent(body, opts = {}) {
     data.yearly_quota = await quotaForCategory(data.category_id, data.yearly_quota);
   }
 
+  // A e shkroi numrin vete perdoruesi? Kjo vendos si trajtohet nje perplasje:
+  // numri i shkruar me dore NUK nderrohet ne heshtje, sepse kontrata ne leter
+  // mban pikerisht ate numer. Numri i gjeneruar vete mund te rritet lirshem.
+  const userSuppliedNumber = Boolean(data.contract_number);
+
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -163,16 +199,8 @@ async function createStudent(body, opts = {}) {
         conn, data.category_id, data.generation, data.enrollment_date
       );
     } else {
-      // Numri vjen nga formulari — sigurohemi qe s'eshte zene nderkohe
-      const [dup] = await conn.query(
-        'SELECT id FROM students WHERE contract_number = ? LIMIT 1',
-        [data.contract_number]
-      );
-      if (dup.length) {
-        data.contract_number = await generateContractNumber(
-          conn, data.category_id, data.generation, data.enrollment_date
-        );
-      }
+      const holder = await contractHolder(conn, data.contract_number);
+      if (holder) throw contractTakenError(data.contract_number, holder);
     }
 
     // Numri i kontrates gjenerohet me «lexo maksimumin, shto nje». Dy
@@ -191,7 +219,17 @@ async function createStudent(body, opts = {}) {
       } catch (err) {
         const duplicateContract = err.code === 'ER_DUP_ENTRY'
           && String(err.message || '').includes('contract_number');
-        if (!duplicateContract || attempt === MAX_CONTRACT_RETRIES - 1) throw err;
+        if (!duplicateContract) throw err;
+
+        // Numri i shkruar nga perdoruesi raportohet, nuk rritet: perndryshe
+        // nxenesi do te ruhej me nje numer tjeter nga ai i kontrates se tij.
+        if (userSuppliedNumber) {
+          throw contractTakenError(
+            data.contract_number,
+            await contractHolder(conn, data.contract_number)
+          );
+        }
+        if (attempt === MAX_CONTRACT_RETRIES - 1) throw err;
         data.contract_number = bumpContractNumber(data.contract_number);
       }
     }
@@ -268,6 +306,16 @@ async function updateStudent(id, body) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+
+    // Numri i kontrates nuk kontrollohej fare gjate ndryshimit: mjaftonte te
+    // shkruhej nje numer i zene per te krijuar nje dublikat. Tani konflikti
+    // raportohet me emrin e mbajtesit, para se ta ndaloje baza me nje gabim
+    // qe s'do t'i thoshte perdoruesit se ku eshte problemi.
+    if (data.contract_number !== undefined &&
+      String(data.contract_number || '') !== String(existing.contract_number || '')) {
+      const holder = await contractHolder(conn, data.contract_number, id);
+      if (holder) throw contractTakenError(data.contract_number, holder);
+    }
 
     await conn.query('UPDATE students SET ? WHERE id = ?', [data, id]);
 
@@ -438,4 +486,5 @@ module.exports = {
   listStudents,
   countStudents,
   installmentsByStudent,
+  bumpContractNumber,
 };

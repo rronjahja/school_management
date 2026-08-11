@@ -1,7 +1,31 @@
+const jwt = require('jsonwebtoken');
 const authService = require('../services/authService');
-const { COOKIE_NAME } = require('../config/auth');
+const {
+  COOKIE_NAME, cookieOptions, JWT_SECRET, TOKEN_TTL,
+} = require('../config/auth');
 const { httpError } = require('./errorHandler');
 const { can, canSeeFinance, isManager } = require('../config/roles');
+
+/**
+ * Rifreskon sesionin: leshon nje token te ri me 15 minuta te plota.
+ *
+ * Keshtu afati numerohet nga VEPRIMI I FUNDIT, jo nga hyrja. Pa kete, nje
+ * token 15-minutesh do ta nxirrte jashte edhe dike qe punon pa nderprerje.
+ *
+ * Token-i i ri ndertohet nga i vjetri duke hequr vetem `iat` dhe `exp`:
+ * keshtu ruhet cdo e dhene qe vendos authService, pa i ditur ato ketu —
+ * nese nje dite shtohet nje fushe e re ne token, kjo vazhdon te punoje.
+ */
+function slideSession(res, payload) {
+  try {
+    const { iat, exp, ...claims } = payload;
+    const token = jwt.sign(claims, JWT_SECRET, { expiresIn: TOKEN_TTL });
+    res.cookie(COOKIE_NAME, token, cookieOptions);
+  } catch {
+    // Nje deshtim ketu s'duhet ta rrezoje kerkesen: perdoruesi thjesht
+    // e mban afatin e vjeter dhe do te dale kur ai te skadoje.
+  }
+}
 
 /**
  * Kerkon nje sesion te vlefshem.
@@ -20,6 +44,9 @@ async function requireAuth(req, res, next) {
     if (!user) throw httpError(401, 'Llogaria nuk është më aktive.');
 
     req.user = user;
+
+    // Sesion rreshqites: cdo kerkese e vlefshme e shtyn afatin edhe 15 minuta
+    slideSession(res, payload);
 
     // Fjalekalimi i perkohshem: derisa perdoruesi te vendose te tijin, sesioni
     // hap VETEM ndryshimin e fjalekalimit (dhe daljen). Kontrolli behet KETU,
@@ -67,6 +94,7 @@ const MESSAGES = {
   register: 'Ky veprim kërkon të drejta për regjistrimin e nxënësve.',
   students: 'Ky veprim kërkon të drejta për nxënësit.',
   dashboard: 'Ky veprim kërkon të drejta administratori ose menaxheri.',
+  logs: 'Ky veprim kërkon të drejta administratori.',
 };
 
 function requireArea(area) {
