@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchProfessors, fetchSubjects, createProfessor, updateProfessor,
-  deleteProfessor, createSubject,
+  deleteProfessor, createSubject, deleteSubject, setSubjectCategories,
 } from '../../api/profesoret';
+import { fetchCategories } from '../../api/meta';
 import { errorMessage } from '../../api/client';
 import Modal from '../ui/Modal.jsx';
 import Field from '../ui/Field.jsx';
@@ -24,6 +25,8 @@ import Loader from '../ui/Loader.jsx';
  */
 
 const EMPTY = { full_name: '', subject_ids: [] };
+
+const ALL_DIRECTIONS = 'Të gjitha drejtimet';
 
 const GROUP_LABELS = {
   gjuhet: 'Gjuhët',
@@ -49,11 +52,15 @@ export default function ProfessorManager() {
   const [form, setForm] = useState(EMPTY);
   const [deleting, setDeleting] = useState(null);
   const [newSubject, setNewSubject] = useState('');
+  const [newSubjectCats, setNewSubjectCats] = useState([]);
   const [subjectOpen, setSubjectOpen] = useState(false);
+  const [deletingSubject, setDeletingSubject] = useState(null);
+  const [editingCats, setEditingCats] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   const load = useCallback(
-    () => Promise.all([fetchProfessors(), fetchSubjects()])
-      .then(([p, s]) => { setProfessors(p); setSubjects(s); })
+    () => Promise.all([fetchProfessors(), fetchSubjects(), fetchCategories()])
+      .then(([p, s, c]) => { setProfessors(p); setSubjects(s); setCategories(c); })
       .catch((err) => setError(errorMessage(err))),
     []
   );
@@ -124,8 +131,27 @@ export default function ProfessorManager() {
   const addSubject = async () => {
     const name = newSubject.trim();
     if (!name) return;
-    const ok = await run(() => createSubject({ name }), `Lënda «${name}» u shtua.`);
-    if (ok) { setNewSubject(''); setSubjectOpen(false); }
+    const ok = await run(
+      () => createSubject({ name, category_ids: newSubjectCats }),
+      `Lënda «${name}» u shtua.`
+    );
+    if (ok) { setNewSubject(''); setNewSubjectCats([]); setSubjectOpen(false); }
+  };
+
+  const removeSubject = async () => {
+    const ok = await run(
+      () => deleteSubject(deletingSubject.id),
+      `Lënda «${deletingSubject.name}» u fshi.`
+    );
+    if (ok) setDeletingSubject(null);
+  };
+
+  const saveSubjectCats = async () => {
+    const ok = await run(
+      () => setSubjectCategories(editingCats.id, editingCats.category_ids),
+      `Drejtimet u ruajtën për «${editingCats.name}».`
+    );
+    if (ok) setEditingCats(null);
   };
 
   const removeProfessor = async () => {
@@ -274,9 +300,31 @@ export default function ProfessorManager() {
                   Shto
                 </button>
                 <button type="button" className="btn btn-ghost btn-small"
-                  onClick={() => { setSubjectOpen(false); setNewSubject(''); }}>
+                  onClick={() => {
+                    setSubjectOpen(false); setNewSubject(''); setNewSubjectCats([]);
+                  }}>
                   Anulo
                 </button>
+                <div className="pm-new-cats">
+                  <span className="muted">
+                    {newSubjectCats.length ? 'Vetëm për:' : ALL_DIRECTIONS}
+                  </span>
+                  {categories.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`pm-pick${newSubjectCats.includes(c.id) ? ' active' : ''}`}
+                      aria-pressed={newSubjectCats.includes(c.id)}
+                      onClick={() => setNewSubjectCats((prev) => (
+                        prev.includes(c.id)
+                          ? prev.filter((x) => x !== c.id)
+                          : [...prev, c.id]
+                      ))}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
               </>
             ) : (
               <button type="button" className="btn btn-ghost btn-small"
@@ -294,7 +342,14 @@ export default function ProfessorManager() {
                   const holders = bySubject.get(s.id) || [];
                   return (
                     <div key={s.id} className="pm-subject">
-                      <span className="pm-subject-name">{s.name}</span>
+                      <span className="pm-subject-name">
+                        {s.name}
+                        {s.categories && s.categories.length > 0 && (
+                          <span className="pm-cats">
+                            {s.categories.map((c) => c.code || c.name).join(', ')}
+                          </span>
+                        )}
+                      </span>
                       {holders.length === 0 ? (
                         <span className="pm-warn">Askush nuk e jep</span>
                       ) : (
@@ -312,6 +367,28 @@ export default function ProfessorManager() {
                           ))}
                         </span>
                       )}
+                      <span className="pm-subject-actions">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-small"
+                          disabled={busy}
+                          onClick={() => setEditingCats({
+                            id: s.id,
+                            name: s.name,
+                            category_ids: (s.categories || []).map((c) => c.id),
+                          })}
+                        >
+                          Drejtimet
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger-ghost btn-small"
+                          disabled={busy}
+                          onClick={() => setDeletingSubject(s)}
+                        >
+                          Fshi
+                        </button>
+                      </span>
                     </div>
                   );
                 })}
@@ -319,6 +396,71 @@ export default function ProfessorManager() {
             ))}
           </div>
         </>
+      )}
+
+      {deletingSubject && (
+        <Modal title="Fshi lëndën" onClose={() => setDeletingSubject(null)}>
+          <p>
+            Të fshihet lënda <strong>{deletingSubject.name}</strong> nga katalogu?
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn btn-ghost"
+              onClick={() => setDeletingSubject(null)}>
+              Anulo
+            </button>
+            <button type="button" className="btn btn-danger"
+              disabled={busy} onClick={removeSubject}>
+              Fshi
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {editingCats && (
+        <Modal
+          title={`Drejtimet për «${editingCats.name}»`}
+          onClose={() => setEditingCats(null)}
+        >
+          <div className="modal-form">
+            <p className="muted">
+              Pa asnjë drejtim të zgjedhur, lënda del te të gjitha paralelet.
+              Zgjidhni një ose disa drejtime që lënda të dalë vetëm atje.
+            </p>
+            <div className="pm-picks">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={`pm-pick${editingCats.category_ids.includes(c.id) ? ' active' : ''}`}
+                  aria-pressed={editingCats.category_ids.includes(c.id)}
+                  onClick={() => setEditingCats((prev) => ({
+                    ...prev,
+                    category_ids: prev.category_ids.includes(c.id)
+                      ? prev.category_ids.filter((x) => x !== c.id)
+                      : [...prev.category_ids, c.id],
+                  }))}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+            <p className="muted">
+              {editingCats.category_ids.length
+                ? `${editingCats.category_ids.length} drejtime të zgjedhura`
+                : ALL_DIRECTIONS}
+            </p>
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="btn btn-ghost"
+              onClick={() => setEditingCats(null)}>
+              Anulo
+            </button>
+            <button type="button" className="btn btn-primary"
+              disabled={busy} onClick={saveSubjectCats}>
+              Ruaj
+            </button>
+          </div>
+        </Modal>
       )}
 
       {modalOpen && (

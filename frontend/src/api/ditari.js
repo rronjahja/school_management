@@ -53,3 +53,5 @@ export const saveStudentOrder = (classId, studentIds) =>
 
 export const saveStudentMeta = (classId, studentId, data) =>
   client.put(`/classes/${classId}/meta/${studentId}`, data).then((r) => r.data);
+export const fetchAvailableSubjects = (classId) =>
+  client.get(`/classes/${classId}/available-subjects`).then((r) => r.data);
