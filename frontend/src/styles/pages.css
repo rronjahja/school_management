@@ -1975,3 +1975,43 @@ input.is-locked:focus {
   gap: 8px;
   margin: 10px 0;
 }
+
+.stat-secret-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stat-masked {
+  letter-spacing: 3px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.stat-eye {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stat-eye:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+
+.stat-eye.is-on {
+  color: var(--primary);
+  border-color: var(--primary);
+}

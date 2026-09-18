@@ -34,10 +34,10 @@ export default function Dashboard() {
       <div className="stat-grid">
         <StatCard label="Nxënës gjithsej" value={totals.students} />
         {isFinance && (
-          <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" />
+          <StatCard label="Të arkëtuara" value={money(totals.collected)} tone="green" secret />
         )}
         {isFinance && (
-          <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" />
+          <StatCard label="Borxh i mbetur" value={money(totals.outstanding)} tone="amber" secret />
         )}
         {isFinance && (
           <StatCard

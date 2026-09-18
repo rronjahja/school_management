@@ -126,6 +126,7 @@ router.delete('/classes/:id', requireArea('administrata'), registerController.re
 
 router.get('/classes/:id/register', requireKujdestar, registerController.getRegister);
 
+router.get('/classes/:id/available-subjects', requireKujdestar, registerController.availableSubjects);
 router.post('/classes/:id/subjects', requireKujdestar, registerController.addSubject);
 router.put('/subjects/:id', requireKujdestar, registerController.updateSubject);
 router.delete('/subjects/:id', requireKujdestar, registerController.removeSubject);
@@ -140,6 +141,8 @@ router.put('/classes/:id/order', requireKujdestar, registerController.saveOrder)
 // Roli 'profesor' shkruhet ne server dhe nuk merret kurre nga kerkesa.
 router.get('/subjects', requireArea('administrata'), professorController.listSubjects);
 router.post('/subjects', requireArea('administrata'), professorController.createSubject);
+router.delete('/catalog/subjects/:id', requireArea('administrata'), professorController.removeSubject);
+router.put('/catalog/subjects/:id/categories', requireArea('administrata'), professorController.setSubjectCategories);
 router.get('/professors', requireArea('administrata'), professorController.list);
 router.post('/professors', requireArea('administrata'), professorController.create);
 router.put('/professors/:id', requireArea('administrata'), professorController.update);

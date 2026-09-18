@@ -145,7 +145,13 @@ async function reviewGrade(req, res, next) {
   } catch (err) { next(err); }
 }
 
+async function availableSubjects(req, res, next) {
+  try { res.json(await registerService.listAvailableSubjects(req.params.id)); }
+  catch (err) { next(err); }
+}
+
 module.exports = {
+  availableSubjects,
   listClasses,
   classOptions,
   createClass,

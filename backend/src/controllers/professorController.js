@@ -15,6 +15,24 @@ async function createSubject(req, res, next) {
   } catch (err) { next(err); }
 }
 
+async function removeSubject(req, res, next) {
+  try {
+    const s = await professorService.deleteSubject(req.params.id);
+    res.locals.logEntityId = s.id;
+    res.locals.logSummary = `U fshi lënda «${s.name}» nga katalogu`;
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+}
+
+async function setSubjectCategories(req, res, next) {
+  try {
+    const s = await professorService.setSubjectCategories(req.params.id, req.body.category_ids);
+    res.locals.logEntityId = s.id;
+    res.locals.logSummary = `U caktuan drejtimet për lëndën «${s.name}»`;
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+}
+
 async function list(req, res, next) {
   try { res.json(await professorService.listProfessors()); } catch (err) { next(err); }
 }
@@ -46,4 +64,7 @@ async function remove(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listSubjects, createSubject, list, create, update, remove };
+module.exports = {
+  listSubjects, createSubject, removeSubject, setSubjectCategories,
+  list, create, update, remove,
+};

@@ -30,13 +30,100 @@ function assertFullName(name) {
 async function listSubjects() {
   const [rows] = await pool.query(
     `SELECT s.id, s.name, s.grp, s.is_active,
-            COUNT(ps.professor_id) AS professor_count
+            COUNT(DISTINCT ps.professor_id) AS professor_count
        FROM subjects s
   LEFT JOIN professor_subjects ps ON ps.subject_id = s.id
       GROUP BY s.id, s.name, s.grp, s.is_active
       ORDER BY s.name`
   );
-  return rows.map((r) => ({ ...r, professor_count: Number(r.professor_count) }));
+
+  const [links] = await pool.query(
+    `SELECT sc.subject_id, sc.category_id, c.name, c.code
+       FROM subject_categories sc
+       JOIN categories c ON c.id = sc.category_id
+      ORDER BY c.name`
+  );
+
+  const bySubject = {};
+  links.forEach((l) => {
+    (bySubject[l.subject_id] = bySubject[l.subject_id] || []).push({
+      id: l.category_id, name: l.name, code: l.code,
+    });
+  });
+
+  return rows.map((r) => ({
+    ...r,
+    professor_count: Number(r.professor_count),
+    categories: bySubject[r.id] || [],
+  }));
+}
+
+async function replaceSubjectCategories(conn, subjectId, categoryIds) {
+  await conn.query('DELETE FROM subject_categories WHERE subject_id = ?', [subjectId]);
+
+  const ids = [...new Set((Array.isArray(categoryIds) ? categoryIds : [])
+    .map(Number).filter(Number.isInteger))];
+  if (!ids.length) return [];
+
+  await conn.query(
+    `INSERT IGNORE INTO subject_categories (subject_id, category_id) VALUES ${
+      ids.map(() => '(?, ?)').join(', ')}`,
+    ids.flatMap((cid) => [subjectId, cid])
+  );
+  return ids;
+}
+
+async function setSubjectCategories(subjectId, categoryIds) {
+  const [[subject]] = await pool.query(
+    'SELECT id, name FROM subjects WHERE id = ?', [subjectId]
+  );
+  if (!subject) throw httpError(404, 'Lënda nuk u gjet.');
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await replaceSubjectCategories(conn, subject.id, categoryIds);
+    await conn.commit();
+    return subject;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+async function deleteSubject(id) {
+  const [[subject]] = await pool.query(
+    'SELECT id, name FROM subjects WHERE id = ?', [id]
+  );
+  if (!subject) throw httpError(404, 'Lënda nuk u gjet.');
+
+  const [[used]] = await pool.query(
+    `SELECT
+       (SELECT COUNT(*) FROM professor_subjects WHERE subject_id = ?) AS professors,
+       (SELECT COUNT(*) FROM class_subjects     WHERE subject_id = ?) AS classes,
+       (SELECT COUNT(*)
+          FROM lessons l
+          JOIN class_subjects cs ON cs.id = l.subject_id
+         WHERE cs.subject_id = ?)                                     AS lessons`,
+    [id, id, id]
+  );
+
+  const blockers = [];
+  if (Number(used.professors)) blockers.push(`${used.professors} profesorë`);
+  if (Number(used.classes)) blockers.push(`${used.classes} paralele`);
+  if (Number(used.lessons)) blockers.push(`${used.lessons} orë mësimi`);
+
+  if (blockers.length) {
+    throw httpError(
+      409,
+      `Lënda «${subject.name}» nuk fshihet dot: përdoret nga ${blockers.join(' dhe ')}.`
+    );
+  }
+
+  await pool.query('DELETE FROM subjects WHERE id = ?', [id]);
+  return subject;
 }
 
 async function createSubject(data) {
@@ -46,6 +133,14 @@ async function createSubject(data) {
 
   try {
     const [r] = await pool.query('INSERT INTO subjects SET ?', [{ name: name.slice(0, 80), grp }]);
+    if (Array.isArray(data.category_ids) && data.category_ids.length) {
+      const conn = await pool.getConnection();
+      try {
+        await replaceSubjectCategories(conn, r.insertId, data.category_ids);
+      } finally {
+        conn.release();
+      }
+    }
     return { id: r.insertId, name, grp };
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
@@ -235,6 +330,7 @@ async function professorsBySubject() {
 }
 
 module.exports = {
+  deleteSubject, setSubjectCategories,
   listSubjects,
   createSubject,
   listProfessors,

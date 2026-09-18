@@ -212,11 +212,12 @@ export default function Finance() {
           <div className="stat-grid">
             <StatCard label="Nxënës (sipas filtrave)" value={filtered.length} />
             <StatCard label="Detyrimi total" value={money(totals.net)} />
-            <StatCard label="Të arkëtuara" value={money(totals.paid)} tone="green" />
+            <StatCard label="Të arkëtuara" value={money(totals.paid)} tone="green" secret />
             <StatCard
               label="Borxh i mbetur"
               value={money(totals.balance)}
               tone={totals.balance > 0 ? 'amber' : 'green'}
+              secret
             />
           </div>
 

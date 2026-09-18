@@ -310,6 +310,33 @@ function duplicateMessage(payload) {
     + `ekziston tashmë për vitin shkollor ${payload.school_year}.`;
 }
 
+async function listAvailableSubjects(classId) {
+  const [[cls]] = await pool.query(
+    'SELECT id, category_id FROM classes WHERE id = ?', [classId]
+  );
+  if (!cls) throw httpError(404, 'Paralelja nuk u gjet.');
+
+  const [rows] = await pool.query(
+    `SELECT s.id, s.name, s.grp,
+            EXISTS (SELECT 1 FROM subject_categories sc WHERE sc.subject_id = s.id) AS is_professional,
+            EXISTS (SELECT 1 FROM class_subjects cs
+                     WHERE cs.class_id = ? AND cs.subject_id = s.id) AS already_added
+       FROM subjects s
+      WHERE s.is_active = 1
+        AND (NOT EXISTS (SELECT 1 FROM subject_categories sc WHERE sc.subject_id = s.id)
+             OR EXISTS (SELECT 1 FROM subject_categories sc
+                         WHERE sc.subject_id = s.id AND sc.category_id = ?))
+      ORDER BY s.name`,
+    [classId, cls.category_id]
+  );
+
+  return rows.map((r) => ({
+    ...r,
+    is_professional: Boolean(Number(r.is_professional)),
+    already_added: Boolean(Number(r.already_added)),
+  }));
+}
+
 async function createClass(data) {
   const payload = await validateClassPayload(data);
 
@@ -880,6 +907,7 @@ async function reviewGrade(user, classId, data) {
 }
 
 module.exports = {
+  listAvailableSubjects,
   MAX_PARALLELS,
   classLabelOf,
   GROUP_LABELS,
