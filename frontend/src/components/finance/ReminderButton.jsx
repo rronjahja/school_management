@@ -65,7 +65,7 @@ export default function ReminderButton({ studentId, compact = false, label = 'Ri
     <>
       <button
         type="button"
-        className={`btn btn-ghost ${compact ? 'btn-icon' : 'btn-small'}`}
+        className={`btn btn-danger-ghost ${compact ? 'btn-icon' : 'btn-small'}`}
         onClick={generate}
         disabled={busy}
         title="Gjenero rikujtesë dhe kopjoje"

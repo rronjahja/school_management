@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useStickyState } from '../../hooks/usePageState';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../ui/StatusBadge.jsx';
 import ReminderButton from './ReminderButton.jsx';
@@ -57,13 +58,13 @@ function buildGroups(students) {
     });
 }
 
-export default function FinanceGroups({ students }) {
+export default function FinanceGroups({ students, onPay }) {
   const navigate = useNavigate();
   const groups = useMemo(() => buildGroups(students), [students]);
 
   // Vitet e hapura si parazgjedhje; drejtimet te mbyllura (permbledhje e paster)
-  const [closedYears, setClosedYears] = useState({});
-  const [openCats, setOpenCats] = useState({});
+  const [closedYears, setClosedYears] = useStickyState('fin:years', {});
+  const [openCats, setOpenCats] = useStickyState('fin:cats', {});
 
   const toggleYear = (y) => setClosedYears((s) => ({ ...s, [y]: !s[y] }));
   const toggleCat = (key) => setOpenCats((s) => ({ ...s, [key]: !s[key] }));
@@ -147,11 +148,22 @@ export default function FinanceGroups({ students }) {
                                       : '—'}
                                   </td>
                                   <td>
-                                    <StatusBadge status={s.finance.status} />
+                                    <span className="status-cell">
+                                      <StatusBadge status={s.finance.status} />
+                                      {canRemind(s.finance) && (
+                                        <ReminderButton studentId={s.id} compact />
+                                      )}
+                                    </span>
                                   </td>
                                   <td className="cell-tight">
-                                    {canRemind(s.finance) && (
-                                      <ReminderButton studentId={s.id} compact />
+                                    {onPay && Number(s.finance.balance) > 0.004 && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-primary btn-small"
+                                        onClick={(e) => { e.stopPropagation(); onPay(s); }}
+                                      >
+                                        Bëj pagesë
+                                      </button>
                                     )}
                                   </td>
                                 </tr>

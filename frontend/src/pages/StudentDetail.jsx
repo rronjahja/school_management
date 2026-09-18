@@ -11,6 +11,7 @@ import { fetchBanks } from '../api/meta';
 import { errorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import PageHeader from '../components/ui/PageHeader.jsx';
+import BackButton from '../components/ui/BackButton.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
 import CategoryChip from '../components/ui/CategoryChip.jsx';
 import StatCard from '../components/ui/StatCard.jsx';
@@ -195,6 +196,8 @@ export default function StudentDetail() {
 
   return (
     <>
+      <BackButton to="/studentet" />
+
       <PageHeader
         title={`${student.first_name} ${student.last_name}`}
         subtitle={

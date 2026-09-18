@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchStudents } from '../api/students';
-import { fetchCategories } from '../api/meta';
+import { fetchStudents, fetchStudent } from '../api/students';
+import { fetchCategories, fetchBanks } from '../api/meta';
+import { createPayment } from '../api/payments';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useStickyState, useScrollRestore } from '../hooks/usePageState';
 import { errorMessage } from '../api/client';
 import PageHeader from '../components/ui/PageHeader.jsx';
 import StatusBadge from '../components/ui/StatusBadge.jsx';
@@ -15,6 +18,7 @@ import { canRemind } from '../utils/reminder';
 import { downloadFinanceExcel } from '../api/meta';
 import { money, date, PLAN_LABELS, YEAR_LABELS, discountText } from '../utils/format';
 import Avatar from '../components/ui/Avatar.jsx';
+import PaymentModal from '../components/finance/PaymentModal.jsx';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -28,19 +32,64 @@ const STATUS_FILTERS = [
 
 export default function Finance() {
   const navigate = useNavigate();
+  const { isFinance } = useAuth();
   const [students, setStudents] = useState(null);
+  useScrollRestore('financat', Boolean(students));
   const [categories, setCategories] = useState([]);
-  const [categoryId, setCategoryId] = useState('');
-  const [plan, setPlan] = useState('');
-  const [status, setStatus] = useState('');
-  const [studyYear, setStudyYear] = useState('');
-  const [search, setSearch] = useState('');
-  const [view, setView] = useState('grouped'); // 'grouped' | 'list'
+  const [categoryId, setCategoryId] = useStickyState('fin:categoryId', '');
+  const [plan, setPlan] = useStickyState('fin:plan', '');
+  const [status, setStatus] = useStickyState('fin:status', '');
+  const [studyYear, setStudyYear] = useStickyState('fin:studyYear', '');
+  const [search, setSearch] = useStickyState('fin:search', '');
+  const [view, setView] = useStickyState('fin:view', 'grouped'); // 'grouped' | 'list'
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchCategories().then(setCategories).catch(() => {});
+    fetchCategories().then(setCategories).catch(() => { });
   }, []);
+
+  const [banks, setBanks] = useState([]);
+  const [payFor, setPayFor] = useState(null);
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState('');
+
+  useEffect(() => {
+    if (isFinance) fetchBanks().then(setBanks).catch(() => { });
+  }, [isFinance]);
+
+  const reload = () => fetchStudents({
+    category_id: categoryId || undefined,
+    payment_plan: plan || undefined,
+    study_year: studyYear || undefined,
+    search: search || undefined,
+  })
+    .then((d) => { setStudents(d); setError(''); })
+    .catch((err) => setError(errorMessage(err)));
+
+  const openPayment = async (student) => {
+    setPayError('');
+    try {
+      setPayFor(await fetchStudent(student.id));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const handlePayment = async (data) => {
+    setPayBusy(true);
+    setPayError('');
+    try {
+      const updated = await createPayment(data);
+      setPayFor(updated);
+      await reload();
+      return updated.last_payment_id || null;
+    } catch (err) {
+      setPayError(errorMessage(err));
+      return null;
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -211,7 +260,7 @@ export default function Finance() {
         <>
           <div className="stat-grid">
             <StatCard label="Nxënës (sipas filtrave)" value={filtered.length} />
-            <StatCard label="Detyrimi total" value={money(totals.net)} />
+            <StatCard label="Detyrimi total" value={money(totals.net)} secret />
             <StatCard label="Të arkëtuara" value={money(totals.paid)} tone="green" secret />
             <StatCard
               label="Borxh i mbetur"
@@ -224,7 +273,7 @@ export default function Finance() {
           {filtered.length === 0 ? (
             <EmptyState title="Asnjë rezultat" hint="Ndryshoni filtrat për të parë nxënësit." />
           ) : view === 'grouped' ? (
-            <FinanceGroups students={filtered} />
+            <FinanceGroups students={filtered} onPay={isFinance ? openPayment : undefined} />
           ) : (
             <div className="card table-card">
               <div className="table-wrap">
@@ -275,11 +324,22 @@ export default function Finance() {
                           )}
                         </td>
                         <td>
-                          <StatusBadge status={s.finance.status} />
+                          <span className="status-cell">
+                            <StatusBadge status={s.finance.status} />
+                            {canRemind(s.finance) && (
+                              <ReminderButton studentId={s.id} compact />
+                            )}
+                          </span>
                         </td>
                         <td className="cell-tight">
-                          {canRemind(s.finance) && (
-                            <ReminderButton studentId={s.id} compact />
+                          {isFinance && Number(s.finance.balance) > 0.004 && (
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-small"
+                              onClick={(e) => { e.stopPropagation(); openPayment(s); }}
+                            >
+                              Bëj pagesë
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -290,6 +350,17 @@ export default function Finance() {
             </div>
           )}
         </>
+      )}
+
+      {payFor && (
+        <PaymentModal
+          student={payFor}
+          banks={banks}
+          busy={payBusy}
+          error={payError}
+          onClose={() => { setPayFor(null); setPayError(''); }}
+          onSubmit={handlePayment}
+        />
       )}
     </>
   );

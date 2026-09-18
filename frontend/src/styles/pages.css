@@ -2015,3 +2015,44 @@ input.is-locked:focus {
   color: var(--primary);
   border-color: var(--primary);
 }
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 9px 18px 9px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-small);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg);
+}
+
+.btn-back-arrow {
+  font-size: 22px;
+  line-height: 1;
+  margin-top: -2px;
+}

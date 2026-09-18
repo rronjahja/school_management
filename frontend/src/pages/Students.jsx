@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useStickyState, useScrollRestore } from '../hooks/usePageState';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchStudents } from '../api/students';
@@ -24,11 +25,12 @@ export default function Students() {
   const { isFinance } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState(null);
+  useScrollRestore('nxenesit', Boolean(students));
   const [meta, setMeta] = useState({ total: 0, page: 1, pages: 1, limit: PER_PAGE });
   const [categories, setCategories] = useState([]);
-  const [search, setSearch] = useState('');
-  const [categoryId, setCategoryId] = useState('');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useStickyState('std:search', '');
+  const [categoryId, setCategoryId] = useStickyState('std:categoryId', '');
+  const [page, setPage] = useStickyState('std:page', 1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,7 +40,19 @@ export default function Students() {
 
   // Nje filter i ri e nis listen nga e para: faqja 7 e nje kerkimi te
   // meparshem s'ka kuptim per rezultatet e reja.
-  useEffect(() => { setPage(1); }, [search, categoryId]);
+  //
+  // KUJDES me montimin e pare: efekti ekzekutohet edhe atehere, dhe do ta
+  // fshinte faqen e ruajtur sapo perdoruesi te kthehej nga nje nxenes.
+  // Krahasohen VLERAT, jo «a eshte montimi i pare»: nen StrictMode efektet
+  // ekzekutohen dy here dhe nje flamur i thjeshte montimi do ta linte
+  // rivendosjen te ndizej ne ekzekutimin e dyte, duke fshire faqen e ruajtur.
+  const lastFilters = useRef(`${search}|${categoryId}`);
+  useEffect(() => {
+    const sig = `${search}|${categoryId}`;
+    if (lastFilters.current === sig) return;
+    lastFilters.current = sig;
+    setPage(1);
+  }, [search, categoryId]);
 
   useEffect(() => {
     setBusy(true);
@@ -52,6 +66,11 @@ export default function Students() {
         .then((d) => {
           setStudents(d.rows);
           setMeta({ total: d.total, page: d.page, pages: d.pages, limit: d.limit });
+          // Serveri e kufizon faqen brenda intervalit. Nese faqja e ruajtur
+          // ka mbetur jashte (p.sh. 5 kur kane mbetur 2), sinkronizohet ketu —
+          // perndryshe ne sessionStorage do te rrinte nje numer qe do te
+          // kercente papritur sapo filtri te zgjerohej perseri.
+          if (d.page !== page) setPage(d.page);
           setError('');
         })
         .catch((err) => setError(errorMessage(err)))
